@@ -1,16 +1,15 @@
 `include "../uop.vh"
 module register(
     input [0:0]clk,
-    
-    input[63:0]stable_counter,
-
+    //从exe2段后输入
     input [0:0]write_en_0,
     input [0:0]write_en_1,
     input [31:0]write_addr_0,
     input [31:0]write_addr_1,
     input [31:0]write_data_0,
     input [31:0]write_data_1,
-
+    //从issue段后输入
+    input[63:0]stable_counter,
     input[0:0]eu0_en_in,
     input[`WIDTH_UOP-1:0]eu0_uop_in,
     input [4:0]eu0_rd_in,
@@ -20,7 +19,6 @@ module register(
     input[31:0]eu0_pc_next_in,
     input [5:0]eu0_exp_in,
     input[31:0]eu0_imm_in,
-
     input[0:0]eu1_en_in,
     input[`WIDTH_UOP-1:0]eu1_uop_in,
     input [4:0]eu1_rd_in,
@@ -30,7 +28,7 @@ module register(
     input[31:0]eu1_pc_next_in,
     input [5:0]eu1_exp_in,
     input[31:0]eu1_imm_in,
-
+    //向rf段后输出
     output reg [0:0]eu0_en_out,
     output reg [`WIDTH_UOP-1:0]eu0_uop_out,
     output reg  [4:0]eu0_rd_out,
@@ -39,9 +37,6 @@ module register(
     output reg [31:0]eu0_pc_out,
     output reg [31:0]eu0_pc_next_out,
     output reg  [5:0]eu0_exp_out,
-    output reg [0:0]eu0_ready,
-    output reg [0:0]eu0_finish,
- 
     output reg [0:0]eu1_en_out,
     output reg [`WIDTH_UOP-1:0]eu1_uop_out,
     output reg  [4:0]eu1_rd_out,
@@ -50,13 +45,10 @@ module register(
     output reg [31:0]eu1_pc_out,
     output reg [31:0]eu1_pc_next_out,
     output reg  [5:0]eu1_exp_out,
-    output reg [0:0]eu1_ready,
-    output reg [0:0]eu1_finish,
-
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]read_data10,
-    output reg [31:0]read_data11
+    output reg [31:0]read_data11,
 
 );
 

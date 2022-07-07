@@ -1,13 +1,14 @@
+`include "../uop.vh"
 module alu (
-    input clk,
-    input[0:0]eu0_en_in,
-    input[`WIDTH_UOP-1:0]eu0_uop_in,
-    input [4:0]eu0_rd_in,
-    input [5:0]eu0_exp_in,
-    input [31:0]data00,
-    input[31:0]data10,
+    input[0:0]alu_en_in,
+    input[3:0]alu_control,
+    input [4:0]alu_rd_in,
+    input [31:0]alu_sr0,
+    input[31:0]alu_sr1,
+    output[0:0]alu_en_out,
+    output[4:0]alu_rd_out,
+    output[31:0]alu_result
 );
-
     wire op_add;
     wire op_sub;
     wire op_slt;
@@ -19,17 +20,17 @@ module alu (
     wire op_sll;
     wire op_srl;
     wire op_sra;
-    assign op_add  = alu_control[ 0 ];
-    assign op_sub  = alu_control[ 1 ];
-    assign op_slt  = alu_control[ 2 ];
-    assign op_sltu = alu_control[ 3 ];
-    assign op_and  = alu_control[ 4 ];
-    assign op_or   = alu_control[ 5 ];
-    assign op_nor  = alu_control[ 6 ];
-    assign op_xor  = alu_control[ 7 ];
-    assign op_sll  = alu_control[ 8 ];
-    assign op_srl  = alu_control[ 9 ];
-    assign op_sra  = alu_control[ 10 ];
+    assign op_add  = alu_control==`CTRL_ALU_ADD;
+    assign op_sub  = alu_control==`CTRL_ALU_SUB;
+    assign op_slt  = alu_control==`CTRL_ALU_SLT;
+    assign op_sltu = alu_control==`CTRL_ALU_SLTU;
+    assign op_and  = alu_control==`CTRL_ALU_NOR;
+    assign op_or   = alu_control==`CTRL_ALU_AND;
+    assign op_nor  = alu_control==`CTRL_ALU_OR;
+    assign op_xor  = alu_control==`CTRL_ALU_XOR;
+    assign op_sll  = alu_control==`CTRL_ALU_SLL;
+    assign op_srl  = alu_control==`CTRL_ALU_SRL;
+    assign op_sra  = alu_control==`CTRL_ALU_SRA;
     wire[ 31:0 ]add_sub_result;
     wire[ 31:0 ]slt_result;
     wire[ 31:0 ]sltu_result;
@@ -61,16 +62,16 @@ module alu (
     assign sll_result                = alu_sr1<<alu_sr0[ 4:0 ];
     assign srl_result                = alu_sr1>>alu_sr0[ 4:0 ];
     assign sra_result                = ( $signed ( alu_sr1 ) )>>>alu_sr0[ 4:0 ];
-    assign alu_result_pre            = ( {32{op_add|op_sub}}&add_sub_result )|( {32{op_slt}}&slt_result )|( {32{op_sltu}}&sltu_result )|( {32{op_and}}&and_result )|( {32{op_nor}}&nor_result )|( {32{op_or}}&or_result )|( {32{op_xor}}&xor_result )|( {32{op_sll}}&sll_result )|( {32{op_srl}}&srl_result )|( {32{op_sra}}&sra_result );
-    always @( posedge clk ) begin
-        if ( !rstn )begin
-            alu_result        <= 0;
-            alu_from_addr_out <= 0;
-            alu_from_chosen   <= 0;
-            end else if ( alu_validn )begin
-            alu_result        <= alu_result_pre;
-            alu_from_addr_out <= alu_from_addr_in;
-            alu_from_chosen   <= alu_to_chosen;
-        end
-    end
+    assign alu_result                = ( {32{op_add|op_sub}}&add_sub_result )
+                                        |( {32{op_slt}}&slt_result )
+                                        |( {32{op_sltu}}&sltu_result )
+                                        |( {32{op_and}}&and_result )
+                                        |( {32{op_nor}}&nor_result )
+                                        |( {32{op_or}}&or_result )
+                                        |( {32{op_xor}}&xor_result )
+                                        |( {32{op_sll}}&sll_result )
+                                        |( {32{op_srl}}&srl_result )
+                                        |( {32{op_sra}}&sra_result );
+    assign alu_rd_out=alu_rd_in;
+    assign alu_en_out=alu_en_in;
 endmodule
