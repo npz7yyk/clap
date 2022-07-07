@@ -1,0 +1,87 @@
+`timescale 1ns / 1ps
+module mem_rd_ctrl_d(
+    input [31:0] addr_rbuf,
+    input [3:0] r_way_sel,
+    input [2047:0] mem_dout,
+    input [512:0] r_data_AXI,
+    input r_data_sel,
+    input [3:0] miss_way_sel,
+    output reg [511:0] miss_sel_data,
+    output reg [31:0] r_data
+    );
+    parameter HIT0 = 4'b0001;
+    parameter HIT1 = 4'b0010;
+    parameter HIT2 = 4'b0100;
+    parameter HIT3 = 4'b1000;
+    parameter M_SEL0 = 4'b0001;
+    parameter M_SEL1 = 4'b0010;
+    parameter M_SEL2 = 4'b0100;
+    parameter M_SEL3 = 4'b1000;
+    reg [31:0] r_data_mem, r_word_AXI;
+    reg [511:0] way_data;
+
+    always @(*)begin
+        case(r_way_sel)
+        HIT0: way_data = mem_dout[511:0];
+        HIT1: way_data = mem_dout[1023:512];
+        HIT2: way_data = mem_dout[1535:1024];
+        HIT3: way_data = mem_dout[2047:1536];
+        default: way_data = 0;
+        endcase
+    end
+    always @(*) begin
+        case(addr_rbuf[5:2])
+        4'd0: r_data_mem = way_data[31:0];
+        4'd1: r_data_mem = way_data[63:32];
+        4'd2: r_data_mem = way_data[95:64];
+        4'd3: r_data_mem = way_data[127:96];
+        4'd4: r_data_mem = way_data[159:128];
+        4'd5: r_data_mem = way_data[191:160];
+        4'd6: r_data_mem = way_data[223:192];
+        4'd7: r_data_mem = way_data[255:224];
+        4'd8: r_data_mem = way_data[287:256];
+        4'd9: r_data_mem = way_data[319:288];
+        4'd10: r_data_mem = way_data[351:320];
+        4'd11: r_data_mem = way_data[383:352];
+        4'd12: r_data_mem = way_data[415:384];
+        4'd13: r_data_mem = way_data[447:416];
+        4'd14: r_data_mem = way_data[479:448];
+        4'd15: r_data_mem = way_data[511:480];
+        endcase
+    end
+    always @(*) begin
+        case(addr_rbuf[5:2])
+        4'd0: r_word_AXI = r_data_AXI[31:0];
+        4'd1: r_word_AXI = r_data_AXI[63:32];
+        4'd2: r_word_AXI = r_data_AXI[95:64];
+        4'd3: r_word_AXI = r_data_AXI[127:96];
+        4'd4: r_word_AXI = r_data_AXI[159:128];
+        4'd5: r_word_AXI = r_data_AXI[191:160];
+        4'd6: r_word_AXI = r_data_AXI[223:192];
+        4'd7: r_word_AXI = r_data_AXI[255:224];
+        4'd8: r_word_AXI = r_data_AXI[287:256];
+        4'd9: r_word_AXI = r_data_AXI[319:288];
+        4'd10: r_word_AXI = r_data_AXI[351:320];
+        4'd11: r_word_AXI = r_data_AXI[383:352];
+        4'd12: r_word_AXI = r_data_AXI[415:384];
+        4'd13: r_word_AXI = r_data_AXI[447:416];
+        4'd14: r_word_AXI = r_data_AXI[479:448];
+        4'd15: r_word_AXI = r_data_AXI[511:480];
+        endcase
+    end
+    always @(*)begin
+        case(r_data_sel)
+        1'b0: r_data = r_word_AXI;
+        1'b1: r_data = r_data_mem;
+        endcase
+    end
+    always @(*) begin
+        case(miss_way_sel)
+        M_SEL0: miss_sel_data = mem_dout[511:0];
+        M_SEL1: miss_sel_data = mem_dout[1023:512];
+        M_SEL2: miss_sel_data = mem_dout[1535:1024];
+        M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
+        endcase
+
+    end
+endmodule
