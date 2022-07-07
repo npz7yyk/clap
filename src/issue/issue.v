@@ -18,9 +18,7 @@
 `include "../uop.vh"
 
 module is_stage
-#(
-    parameter FIFO_QUEUE_SIZE = 8
-)(
+(
     input clk,rstn, //时钟, 复位
     ////控制信号////
     output reg [1:0] num_read,  //实际读取的指令条数 00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
@@ -54,11 +52,11 @@ module is_stage
 );
     localparam RST_VAL = {32'd4,32'd0,1'd0,32'd0,15'd0,`INST_NOP};
     //pc_next,pc,invalid,imm,rd,rk,rj,uop
-    reg [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] fifo[0:FIFO_QUEUE_SIZE-1];
-    reg [4:0] fifo_size;
+    reg [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
+    reg [1:0] fifo_size;
     
-    wire first_nop = uop0[`UOP_TYPE] == 0;
-    wire second_nop = uop1[`UOP_TYPE] == 0;
+    wire first_nop = uop0[`UOP_TYPE] == 0 && !invalid0;
+    wire second_nop = uop1[`UOP_TYPE] == 0 && !invalid1;
     
     wire [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] input0 = {pc_next0,pc0,invalid0,imm0,rd0,rk0,rj0,uop0};
     wire [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] input1 = {pc_next1,pc1,invalid1,imm1,rd1,rk1,rj1,uop1};
@@ -88,96 +86,35 @@ module is_stage
         else num_read = 2'b11;
 
     always @(posedge clk)
-        if(~rstn)
-            fifo[0] <= RST_VAL;
+        if(~rstn || flush)
+            fifo0 <= RST_VAL;
         else case({eu1_en,eu0_en})
             2'b10,2'b01: //一输出
-                fifo[0] <= fifo_size<=1?input0:fifo[1];
+                fifo0 <= fifo_size<=1?input0:fifo1;
             2'b11://两输出
-                fifo[0] <= fifo_size<=2?input0:fifo[2];
+                fifo0 <= input0;
             2'b00:
-                if(fifo_size==0)fifo[0] <= input0;
+                if(fifo_size==0)fifo0 <= input0;
         endcase
     
     always @(posedge clk)
         if(~rstn || flush)
-            fifo[1] <= RST_VAL;
+            fifo1 <= RST_VAL;
         else case({eu1_en,eu0_en})
             2'b10,2'b01: begin//一输出
                 if(fifo_size==2)
-                    fifo[1] <= input0;
+                    fifo1 <= input0;
                 else if(fifo_size<=1)
-                    fifo[1] <= input1;
-                else fifo[1]<= fifo[2];
+                    fifo1 <= input1;
+                else fifo1 <= RST_VAL;
             end
             2'b11://两输出
-                fifo[1] <= fifo_size<=2?input1:fifo[3];
+                fifo1 <= input1;
             2'b00:
                 if(fifo_size==1)
-                    fifo[1] <= input0;
+                    fifo1 <= input0;
                 else if(fifo_size==0)
-                    fifo[1] <= input1;
-        endcase
-    
-    generate
-        for(genvar i=2;i<=FIFO_QUEUE_SIZE-3;i=i+1)
-        begin
-            always @(posedge clk)
-            if(~rstn)
-                    fifo[i] <= RST_VAL;
-            else begin
-                if(size_after_out==i)
-                    fifo[i] <= input0;
-                else if(size_after_out==i-1)
-                    fifo[i] <= input1;
-                else fifo[i] <= fifo[i+size_out];
-            end
-        end
-    endgenerate
-    
-    
-    always @(posedge clk)
-        if(~rstn || flush)
-            fifo[FIFO_QUEUE_SIZE-2] <= RST_VAL;
-        else case({eu1_en,eu0_en})
-            2'b00:
-                if(fifo_size==FIFO_QUEUE_SIZE-2)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input0;
-                else if(fifo_size==FIFO_QUEUE_SIZE-3)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input1;
-            2'b10,2'b01:
-                if(fifo_size==FIFO_QUEUE_SIZE-1)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input0;
-                else if(fifo_size==FIFO_QUEUE_SIZE-2)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input1;
-                else fifo[FIFO_QUEUE_SIZE-2] <= fifo[FIFO_QUEUE_SIZE-1];
-            2'b11:
-                if(fifo_size==FIFO_QUEUE_SIZE)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input0;
-                else if(fifo_size==FIFO_QUEUE_SIZE-1)
-                    fifo[FIFO_QUEUE_SIZE-2] <= input1;
-                else fifo[FIFO_QUEUE_SIZE-2] <= RST_VAL;
-        endcase
-    
-    always @(posedge clk)
-        if(~rstn || flush)
-            fifo[FIFO_QUEUE_SIZE-1] <= RST_VAL;
-        else case({eu1_en,eu0_en})
-            2'b00:
-                if(fifo_size==FIFO_QUEUE_SIZE-1)
-                    fifo[FIFO_QUEUE_SIZE-1] <= input0;
-                else if(fifo_size==FIFO_QUEUE_SIZE-2)
-                    fifo[FIFO_QUEUE_SIZE-1] <= input1;
-            2'b10,2'b01:
-                if(fifo_size==FIFO_QUEUE_SIZE)
-                    fifo[FIFO_QUEUE_SIZE-1] <= input0;
-                else if(fifo_size==FIFO_QUEUE_SIZE-1)
-                    fifo[FIFO_QUEUE_SIZE-1] <= input1;
-                else fifo[FIFO_QUEUE_SIZE-1] <= RST_VAL;
-            2'b11:
-                if(fifo_size==FIFO_QUEUE_SIZE-1)
-                    fifo[FIFO_QUEUE_SIZE-1] <= input1;
-                else fifo[FIFO_QUEUE_SIZE-1] <= RST_VAL;
+                    fifo1 <= input1;
         endcase
 
     wire [2:0] tmp_4WcsDb8esTV8xg = num_read[0] + num_read[1];
@@ -192,19 +129,18 @@ module is_stage
                 fifo_size <= (fifo_size<=2?0:fifo_size-2)+tmp_4WcsDb8esTV8xg;
        endcase
     
-    //TODO: 需要checkpoint?
     reg [31:0] register_valid;
     reg [31:0] register_valid_next;
     reg [4:0] rd_of_instruction_executing_in_eu0,rd_of_instruction_executing_in_eu1;
 
     //当FIFO[0]的指令是ALU指令时，把FIFO[0]发射到执行单元 #1
-    wire swap_fifo0_fifo1 = fifo[0][`ITYPE_IDX_ALU];
+    wire swap_fifo0_fifo1 = fifo0[`ITYPE_IDX_ALU];
 
-    assign {eu0_pc_next,eu0_pc,eu0_invalid,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = swap_fifo0_fifo1?fifo[1]:fifo[0];
-    assign {eu1_pc_next,eu1_pc,eu1_invalid,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = swap_fifo0_fifo1?fifo[0]:fifo[1];
+    assign {eu0_pc_next,eu0_pc,eu0_invalid,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = swap_fifo0_fifo1?fifo1:fifo0;
+    assign {eu1_pc_next,eu1_pc,eu1_invalid,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = swap_fifo0_fifo1?fifo0:fifo1;
     
     always @(posedge clk)
-        if(~rstn)
+        if(~rstn || flush)
             register_valid <= {32{1'b1}};
         else register_valid <= register_valid_next;
     always @* begin
@@ -230,7 +166,7 @@ module is_stage
                 eu0_en = 1;
                 if(eu0_rd)register_valid_next[eu0_rd] = 0;
                 
-                if(register_valid_next[eu1_rj]&&register_valid_next[eu1_rk]&&eu1_ready&&fifo[1][`ITYPE_IDX_ALU]) begin
+                if(register_valid_next[eu1_rj]&&register_valid_next[eu1_rk]&&eu1_ready&&fifo1[`ITYPE_IDX_ALU]) begin
                     eu1_en = 1;
                     if(eu1_rd)register_valid_next[eu1_rd] = 0;
                 end
@@ -239,13 +175,13 @@ module is_stage
     end
 
     always @(posedge clk)
-        if(~rstn)
+        if(~rstn || flush)
             rd_of_instruction_executing_in_eu0 <= 0;
         else if(eu0_en)
             rd_of_instruction_executing_in_eu0 <= eu0_rd;
     
     always @(posedge clk)
-        if(~rstn)
+        if(~rstn || flush)
             rd_of_instruction_executing_in_eu1 <= 0;
         else if(eu1_en)
             rd_of_instruction_executing_in_eu1 <= eu1_rd;
