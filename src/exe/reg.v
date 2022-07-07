@@ -48,8 +48,7 @@ module register(
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]read_data10,
-    output reg [31:0]read_data11,
-
+    output reg [31:0]read_data11
 );
 
 reg[31:0]register_file[31:0];
