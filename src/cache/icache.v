@@ -28,7 +28,6 @@ module icache(
     wire cache_hit, rbuf_we;
     wire way_sel_en;
 
-    assign r_type = 3'd4;
     assign r_addr = addr_rbuf;
     register#(32) req_buf(
         .clk    (clk),
