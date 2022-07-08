@@ -22,8 +22,8 @@ module mul_0(
 );
     wire [ 35:0 ]mul_mid_sr0;
     wire [ 35:0 ]mul_mid_sr1;
-    assign mul_mid_sr0 = mul_usign?{{4{mul_sr0[ 31 ]}},mul_sr0}:{4'b0,mul_sr0};
-    assign mul_mid_sr1 = mul_usign?{{4{mul_sr1[ 31 ]}},mul_sr1}:{4'b0,mul_sr1};
+    assign mul_mid_sr0 = !mul_usign?{{4{mul_sr0[ 31 ]}},mul_sr0}:{4'b0,mul_sr0};
+    assign mul_mid_sr1 = !mul_usign?{{4{mul_sr1[ 31 ]}},mul_sr1}:{4'b0,mul_sr1};
     assign mul_mid_rs0 = mul_mid_sr0[ 35:18 ]*mul_mid_sr1[ 35:18 ];
     assign mul_mid_rs1 = mul_mid_sr0[ 35:18 ]*mul_mid_sr1[ 17:0 ];
     assign mul_mid_rs2 = mul_mid_sr0[ 17:0 ]*mul_mid_sr1[ 35:18 ];

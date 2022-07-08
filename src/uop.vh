@@ -29,7 +29,7 @@
 `define UOP_MEM_WIDTH 17:16
 //`define UOP_MEM_EN 18:18
 `define UOP_MEM_WRITE 19:19
-`define UOP_COND 20:16
+`define UOP_COND 19:16
 `define UOP_USIGN 21:21
 `define UOP_MEM_ATM 22:22
 `define WIDTH_UOP 23
