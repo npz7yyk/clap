@@ -391,23 +391,24 @@ module para #(
     output wire [PARA_WIDTH - 1:0] ifParaLower,
     output wire [PARA_WIDTH - 1:0] ifParaUpper
 );
-    wire erAddrLower = {erPC[HASH_DEPTH + 1:3], 1'b0};
-    wire erAddrUpper = {erPC[HASH_DEPTH + 1:3], 1'b1};
-    wire bdAddr = bdPC[ADDR_WIDTH - 1:2];
+    wire [HASH_DEPTH - 1:0] erAddrLower = {erPC[HASH_DEPTH + 1:3], 1'b0};
+    wire [HASH_DEPTH - 1:0] erAddrUpper = {erPC[HASH_DEPTH + 1:3], 1'b1};
+    wire [HASH_DEPTH - 1:0] bdAddr = bdPC[HASH_DEPTH + 1:2];
 
     reg [(1 << HASH_DEPTH) - 1:0] vld;
     initial vld <= 64'b0;
     always @(posedge clk or negedge rstn) begin
-        if (erEn) begin
+        if (rstn) vld <= 64'b0;
+        else if (erEn) begin
             // erPC needs to be invalidated
             if (eraseLower) begin
                 vld[erAddrLower] <= 1'b0;
-                if (erAddrLower != bdAddr & bdEn)
+                if (erAddrLower != bdAddr && bdEn)
                     vld[bdAddr] <= 1'b1;
             end
             if (eraseUpper) begin
                 vld[erAddrUpper] <= 1'b0;
-                if (erAddrUpper != bdAddr & bdEn)
+                if (erAddrUpper != bdAddr && bdEn)
                     vld[bdAddr] <= 1'b1;
             end
         end else if (bdEn)
@@ -425,13 +426,13 @@ module para #(
     wire [PARA_WIDTH - 1:0] rdata_p2;
 
     triple_port_memory #(
-        .DATA_DEPTH     (HASH_DEPTH),
+        .ADDR_WIDTH     (HASH_DEPTH),
         .DATA_WIDTH     (PARA_WIDTH)
     ) inst_para (
         .clk        (clk),
-        .write_en   (en),
-        .waddr      (waddr_ex),
-        .wdata      (wdata_ex),
+        .wt_en      (bdEn),
+        .wtaddr     (waddr_ex),
+        .wtdata     (wdata_ex),
         .raddr1     (raddr_ex),
         .rdata1     (rdata_ex),
         .raddr2     (raddr_p1),
@@ -442,35 +443,23 @@ module para #(
 
     wire [PARA_WIDTH - 1:0] init;
     log_init log_init(
-        .branch (branch),
+        .branch (bdBranch),
         .back   (bdBack),
-        .type   (type),
+        .type   (bdType),
         .log    (init)
     );
 
-    wire [9:0] update;
+    wire [PARA_WIDTH - 1:0] update;
     log_update log_update(
-        .branch (branch),
+        .branch (bdBranch),
         .old    (rdata_ex),
         .new    (update)
     );
 
     assign wdata_ex = vld[waddr_ex] ? update : init;
 
-    single_port_memory #(
-        .ADDR_DEPTH (HASH_DEPTH),
-        .ADDR_WIDTH (ADDR_WIDTH)
-    ) para (
-        .clk        (clk),
-        .write_en   (en),
-        .wtaddr     (data_wtaddr),
-        .wtdata     (data_wtdata),
-        .r1addr     (data_r1addr),
-        .r1data     (data_r1data)
-    );
-
-    assign p1Para = rdata_p1;
-    assign p2Para = rdata_p2; 
+    assign ifParaLower = rdata_p1;
+    assign ifParaUpper = rdata_p2;
 
 endmodule
 
