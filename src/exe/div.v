@@ -9,105 +9,127 @@ module div(
     input [ 31:0 ] div_sr1,
     input [ 4:0 ]div_addr_in,
 
-    output div_en_out,
-    output stall_because_div,
+    output reg div_en_out,
+    output reg stall_because_div,
     output reg [ 31:0 ] div_result,
     output reg[ 4:0 ]div_addr_out
 );
-    // reg[ 63:0 ] temp_a;
-    // reg[ 63:0 ] temp_b;
-    // reg[ 5:0 ] i;
-    // reg div_op_r;
-    // reg done_r;
-    // reg sign_a;
-    // reg sign_b;
-    // //    ------------------------------------------------
-    // always @( posedge clk )
-    // begin
-    //     if ( !rstn ||div_validn ) i      <= 6'd0;
-    //     else if ( div_start && i < 6'd34 ) i <= i+1'b1;
-    //     else i                           <= 6'd0;
-    // end
-    // //    ------------------------------------------------
-    // always @( posedge clk )
-    // begin
-    //     if ( !rstn ||div_validn ) done_r <= 1'b0;
-    //     else if ( i == 6'd33 ) done_r <= 1'b1;
-    //     else if ( i == 6'd34 ) done_r <= 1'b0;
-    // end
-    // assign div_done = done_r;
-    // //    ------------------------------------------------
-    // always @ ( posedge clk )
-    // begin
-    //     if ( !rstn ||div_validn )
-    //     begin
-    //         temp_a <= 64'h0;
-    //         temp_b <= 64'h0;
-    //     end
-    //     else if ( div_start )
-    //     begin
-    //         div_from_addr <= div_from_addr_in;
-    //         if ( i == 6'd0 )
-    //         begin
-    //             if ( div_sign == 0 )
-    //             begin
-    //                 temp_a <= {32'h00000000,div_sr0};
-    //                 temp_b <= {div_sr1,32'h00000000};
-    //                 sign_a <= 0;
-    //                 sign_b <= 0;
-    //                 div_op_r<=div_op;
-    //             end
-    //             else
-    //             begin
-    //                 if ( div_sr0[ 31 ] )temp_a <= {32'h00000000,~div_sr0+1};
-    //                 else temp_a          <= {32'h0,div_sr0};
-    //                 if ( div_sr1[ 31 ] )temp_b <= {~div_sr1+1,32'h0};
-    //                 else temp_b          <= {div_sr1,32'h00000000};
-    //                 sign_a               <= div_sr0[ 31 ];
-    //                 sign_b               <= div_sr1[ 31 ];
-    //             end
-    //         end
-    //         else if ( i == 34 )
-    //         begin
-    //             case ( {sign_a,sign_b} )
-    //                 0:
-    //                 begin
-    //                     temp_a[ 31:0 ]  <= temp_a[ 31:0 ];
-    //                     temp_a[ 63:32 ] <= temp_a[ 63:32 ];
-    //                 end
-    //                 1:
-    //                 begin
-    //                     temp_a[ 31:0 ]  <= ~temp_a[ 31:0 ]+1;
-    //                     temp_a[ 63:32 ] <= ~temp_a[ 63:32 ]+1;
-    //                 end
-    //                 2:
-    //                 begin
-    //                     temp_a[ 31:0 ]  <= ~temp_a[ 31:0 ]+1;
-    //                     temp_a[ 63:32 ] <= temp_a[ 63:32 ];
-    //                 end
-    //                 3:
-    //                 begin
-    //                     temp_a[ 31:0 ]  <= temp_a[ 31:0 ];
-    //                     temp_a[ 63:32 ] <= ~temp_a[ 63:32 ]+1;
-    //                 end
-    //             endcase
-    //         end
-    //         else
-    //         begin
-    //             temp_a        = {temp_a[ 63:1 ],1'b0};
-    //             if ( temp_a >= temp_b ) temp_a = temp_a - temp_b + 1'b1;
-    //             else temp_a   = temp_a;
-    //         end
-    //     end
-    //         end
-            
-    //         assign qoucient = temp_a[ 31:0 ];
-    //         assign remains  = temp_a[ 63:32 ];
-    //         always @(posedge clk) begin
-    //             if(div_op_r)
-    //                 div_result<=qoucient;
-    //                 else
-    //                 div_result<=remains;
-    //         end
-            
+
+reg [5:0]i;
+reg [63:0]dividend;
+reg [63:0]divisor;
+reg [0:0]op;
+reg [0:0]sign;
+reg [4:0]addr;
+reg [31:0]qoucient;
+
+wire [31:0]dividend_one_hot;
+wire [31:0]divisor_one_hot;
+wire [4:0]m;
+wire [4:0]n;
+
+
+assign dividend_one_hot=div_sr0&(~div_sr0+1);
+assign divisor_one_hot=div_sr1&(~div_sr1+1);
+
+assign m=dividend_one_hot== 32'b1000_0000_0000_0000_0000_0000_0000_0000 ?32:
+        dividend_one_hot== 32'b0100_0000_0000_0000_0000_0000_0000_0000 ?31:
+        dividend_one_hot== 32'b0010_0000_0000_0000_0000_0000_0000_0000 ?30:
+        dividend_one_hot== 32'b0001_0000_0000_0000_0000_0000_0000_0000 ?29:
+        dividend_one_hot== 32'b0000_1000_0000_0000_0000_0000_0000_0000 ?28:
+        dividend_one_hot== 32'b0000_0100_0000_0000_0000_0000_0000_0000 ?27:
+        dividend_one_hot== 32'b0000_0010_0000_0000_0000_0000_0000_0000 ?26:
+        dividend_one_hot== 32'b0000_0001_0000_0000_0000_0000_0000_0000 ?25:
+        dividend_one_hot== 32'b0000_0000_1000_0000_0000_0000_0000_0000 ?24:
+        dividend_one_hot== 32'b0000_0000_0100_0000_0000_0000_0000_0000 ?23:
+        dividend_one_hot== 32'b0000_0000_0010_0000_0000_0000_0000_0000 ?22:
+        dividend_one_hot== 32'b0000_0000_0001_0000_0000_0000_0000_0000 ?21:
+        dividend_one_hot== 32'b0000_0000_0000_1000_0000_0000_0000_0000 ?20:
+        dividend_one_hot== 32'b0000_0000_0000_0100_0000_0000_0000_0000 ?19:
+        dividend_one_hot== 32'b0000_0000_0000_0010_0000_0000_0000_0000 ?18:
+        dividend_one_hot== 32'b0000_0000_0000_0001_0000_0000_0000_0000 ?17:
+        dividend_one_hot== 32'b0000_0000_0000_0000_1000_0000_0000_0000 ?16:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0100_0000_0000_0000 ?15:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0010_0000_0000_0000 ?14:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0001_0000_0000_0000 ?13:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_1000_0000_0000 ?12:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0100_0000_0000 ?11:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0010_0000_0000 ?10:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0001_0000_0000 ?9:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_1000_0000 ?8:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0100_0000 ?7:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0010_0000 ?6:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0001_0000 ?5:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_1000 ?4:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0100 ?3:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0010 ?2:
+        dividend_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0001 ?1:0;
+
+assign n=divisor_one_hot== 32'b1000_0000_0000_0000_0000_0000_0000_0000 ?32:
+        divisor_one_hot== 32'b0100_0000_0000_0000_0000_0000_0000_0000 ?31:
+        divisor_one_hot== 32'b0010_0000_0000_0000_0000_0000_0000_0000 ?30:
+        divisor_one_hot== 32'b0001_0000_0000_0000_0000_0000_0000_0000 ?29:
+        divisor_one_hot== 32'b0000_1000_0000_0000_0000_0000_0000_0000 ?28:
+        divisor_one_hot== 32'b0000_0100_0000_0000_0000_0000_0000_0000 ?27:
+        divisor_one_hot== 32'b0000_0010_0000_0000_0000_0000_0000_0000 ?26:
+        divisor_one_hot== 32'b0000_0001_0000_0000_0000_0000_0000_0000 ?25:
+        divisor_one_hot== 32'b0000_0000_1000_0000_0000_0000_0000_0000 ?24:
+        divisor_one_hot== 32'b0000_0000_0100_0000_0000_0000_0000_0000 ?23:
+        divisor_one_hot== 32'b0000_0000_0010_0000_0000_0000_0000_0000 ?22:
+        divisor_one_hot== 32'b0000_0000_0001_0000_0000_0000_0000_0000 ?21:
+        divisor_one_hot== 32'b0000_0000_0000_1000_0000_0000_0000_0000 ?20:
+        divisor_one_hot== 32'b0000_0000_0000_0100_0000_0000_0000_0000 ?19:
+        divisor_one_hot== 32'b0000_0000_0000_0010_0000_0000_0000_0000 ?18:
+        divisor_one_hot== 32'b0000_0000_0000_0001_0000_0000_0000_0000 ?17:
+        divisor_one_hot== 32'b0000_0000_0000_0000_1000_0000_0000_0000 ?16:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0100_0000_0000_0000 ?15:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0010_0000_0000_0000 ?14:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0001_0000_0000_0000 ?13:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_1000_0000_0000 ?12:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0100_0000_0000 ?11:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0010_0000_0000 ?10:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0001_0000_0000 ?9:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_1000_0000 ?8:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0100_0000 ?7:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0010_0000 ?6:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0001_0000 ?5:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_1000 ?4:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0100 ?3:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0010 ?2:
+        divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0001 ?1:0;
+
+always @(posedge clk) begin
+    if(i==0&&div_en_in)begin
+        if(m<n||n==0)begin
+            div_result<=div_op?0:div_sr0;
+            div_addr_out<=div_addr_in;
+            stall_because_div<=0;
+            div_en_out<=div_en_in;
+        end else begin
+            op<=div_op;
+            sign<=div_sign;
+            addr<=div_addr_in;
+            dividend<=div_sr0;
+            divisor<=div_sr1<<m-n;
+            i=i+m-n+2;
+            stall_because_div<=1;
+            div_en_out<=0;
+        end
+    end else if(i==1)begin
+        i<=0;
+        stall_because_div<=0;
+        div_result<=op?qoucient:dividend;
+        div_addr_out<=addr;
+        div_en_out<=1;
+    end else begin
+        i=i-1;
+        if (dividend>=divisor) begin
+            dividend<=dividend-divisor;
+            qoucient<={qoucient[30:0],1'b1};
+        end else begin
+            qoucient<={qoucient[30:0],1'b0};
+        end
+        divisor=divisor>>1;
+    end 
+end
 endmodule

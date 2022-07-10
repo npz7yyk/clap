@@ -112,32 +112,36 @@ wire[31:0]div_result;
 wire[4:0]div_addr_out;
 //中段寄存器更新
 always @(posedge clk) begin
-    eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
-    eu1_en_0<=eu1_alu_en_mid;
-    eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
-    eu1_rd_0<=eu1_alu_rd_mid;
-    data_mid00<=br_rd_data_mid|alu_result_mid;
-    data_mid10<=eu1_alu_result_mid;
-    mem_exp_exe1<=mem_exp_mid;
-    mem_rd_exe1<=mem_rd_mid;
-    mem_en_exe1<=mem_en_mid;
-    mem_width_exe1<=mem_width_mid;
-    mul_sel_exe1<=mul_sel_mid;
-    mul_sr0_exe1<=mul_rs0_mid;
-    mul_sr1_exe1<=mul_rs1_mid;
-    mul_sr2_exe1<=mul_rs2_mid;
-    mul_sr3_exe1<=mul_rs3_mid;
-    exp_exe1<=eu0_exp_in;
+    if(!stall)begin
+        eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
+        eu1_en_0<=eu1_alu_en_mid;
+        eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
+        eu1_rd_0<=eu1_alu_rd_mid;
+        data_mid00<=br_rd_data_mid|alu_result_mid;
+        data_mid10<=eu1_alu_result_mid;
+        mem_exp_exe1<=mem_exp_mid;
+        mem_rd_exe1<=mem_rd_mid;
+        mem_en_exe1<=mem_en_mid;
+        mem_width_exe1<=mem_width_mid;
+        mul_sel_exe1<=mul_sel_mid;
+        mul_sr0_exe1<=mul_rs0_mid;
+        mul_sr1_exe1<=mul_rs1_mid;
+        mul_sr2_exe1<=mul_rs2_mid;
+        mul_sr3_exe1<=mul_rs3_mid;
+        exp_exe1<=eu0_exp_in;
+    end
 end
 //末段寄存器更新
 always @(posedge clk) begin
-    en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
-    en_out1<=eu1_en_0;
-    data_out0<=data_mid00|mul_result|div_result|mem_data_out;
-    addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
-    data_out1<=data_mid10;
-    addr_out1<=eu1_rd_0;
-    exp_out<=exp_exe1|mem_exp_out;
+    if(!stall_because_cache)begin
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
+        en_out1<=eu1_en_0;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
+        data_out1<=data_mid10;
+        addr_out1<=eu1_rd_0;
+        exp_out<=exp_exe1|mem_exp_out;
+    end
 end
 hazard  u_hazard (
     .eu0_en_0                ( eu0_en_in              ),
