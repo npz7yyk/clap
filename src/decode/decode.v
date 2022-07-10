@@ -19,7 +19,9 @@
 // 2022-05-13: Create module.
 // 2022-05-17: fetch buffer and instruction decoder (without privileged instructions decoding)
 // 2022-05-28: decoder: immediate number generator, signals used by branch prediction unit
+// 2022-07-10: use predecoder module to generate feedback signals for branch prediction unit
 
+`timescale 1ns / 1ps
 `include "../uop.vh"
 
 // 指令译码器: 将指令转换为微操作
@@ -31,13 +33,13 @@ module id_stage
 (
     input clk,rstn, //时钟, 复位
     ////控制信号////
-    //input write_en,           //输入使能，等于1时向fetch_buffer写入一或二条指令
+    input input_valid,
     input flush,
     input [1:0]read_en,         //读取使能，00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
-    //output full,empty,        //FIFO空/FIFO满
     output full,                //full信号相当于stall
     ////输入信号////
     input [31:0] inst0, inst1,  //两条待解码指令
+    input unknown0, unknown1,   //来自预测器，指令未知
     input first_inst_jmp,       //第一条指令发生了跳转（即inst1无效）
     ////输出信号////
     output [`WIDTH_UOP-1:0] uop0, uop1, //微操作
@@ -52,9 +54,51 @@ module id_stage
     output [31:0] pc0_out,pc1_out,
     output [31:0] pc_next0_out,pc_next1_out,
     ////反馈信号////
+    //给预测器
+    output feedback_valid,
+    output [31:0] pc_for_predict0,pc_for_predict1,
     output [31:0] jmpdist0,jmpdist1,//跳转目标
-    output [1:0] categroy0,categroy1//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
+    output [1:0] categroy0,categroy1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
+    //给PC
+    output reg [31:0] probably_right_destination,
+    output wire set_pc
 );
+    wire valid0 = ~pc_in[2];   //输入的指令0有效
+    wire valid1 = ~first_inst_jmp;//输入的指令1有效
+
+    //预译码
+    wire [31:0] pc_offset0,pc_offset1;
+    pre_decoder pre_decoder0 (.inst(inst0),.categroy(categroy0),.pc_offset(pc_offset0));
+    pre_decoder pre_decoder1 (.inst(inst1),.categroy(categroy1),.pc_offset(pc_offset1));
+    assign pc_for_predict0 = pc_in;
+    assign pc_for_predict1 = pc_in+4;
+    assign jmpdist0 = pc_in + pc_offset0;
+    assign jmpdist1 = pc_in+4 + pc_offset1;
+    assign feedback_valid = input_valid;
+    wire should_jmp0 = categroy0=='b10 || categroy0=='b01&&pc_offset0[31];
+    wire should_jmp1 = categroy1=='b10 || categroy1=='b01&&pc_offset1[31];
+    reg set_pc_due_to_inst0,set_pc_due_to_inst1;
+    assign set_pc = set_pc_due_to_inst0|set_pc_due_to_inst1;
+    always @* begin
+        set_pc_due_to_inst0 = 0;
+        set_pc_due_to_inst1 = 0;
+        probably_right_destination = jmpdist0;
+        if(valid0) begin
+            if(unknown0&&should_jmp0) begin
+                probably_right_destination = jmpdist0;
+                set_pc_due_to_inst0 = 1;
+            end
+            else if(valid1&&unknown1&&should_jmp1) begin
+                probably_right_destination = jmpdist1;
+                set_pc_due_to_inst1 = 1;
+            end
+        end
+        else if(valid1&&unknown1&&should_jmp1) begin
+            probably_right_destination = jmpdist1;
+            set_pc_due_to_inst1 = 1;
+        end
+    end
+
     wire empty;            //FIFO空
     
     //用交叠法实现伪双端口循环队列，浪费25%的空间，以简化push/pop逻辑
@@ -72,15 +116,13 @@ module id_stage
     assign empty = empty0&&empty1;
     assign full  = full0||full1;
     
-    wire valid0 = ~pc_in[2];   //输入的指令0有效
-    wire valid1 = ~first_inst_jmp;//输入的指令1有效
-    
     wire valid_either = valid0 ^ valid1;
     wire valid_both   = valid0 && valid1;
     
     //真正有效的第一条输入指令， 当valid0时，它就是inst0，否则它是inst1
-    wire [31:0] real_inst0 = valid0? inst0:inst1;
-    wire [31:0] real_inst1 = inst1;
+    //TODO不把空指令放进FIFO
+    wire [31:0] real_inst0 = input_valid? (valid0? inst0:(set_pc_due_to_inst0?`INST_NOP:inst1)) : `INST_NOP;
+    wire [31:0] real_inst1 = input_valid&&!set_pc_due_to_inst0? inst1 : `INST_NOP;
     
     //真正有效的第一条输入指令的pc
     wire [31:0] real_pc0 = pc_in;
@@ -138,8 +180,10 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
-        .jmpdist(jmpdist0),.categroy(categroy0)
+        .invalid(invalid0)
     );
+    assign pc_for_predict0 = pc0_out;
+    assign feedback_valid0 = uop0!=0;
     decoder decoder1
     (
         .pcnext_pc_inst(pop_sel==1?
@@ -147,9 +191,9 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
-        .jmpdist(jmpdist1),.categroy(categroy1)
-
+        .invalid(invalid1)
     );
+    
 endmodule
 
 //纯组合逻辑，译码器
@@ -163,15 +207,11 @@ module decoder
     output [31:0] imm,
     output [4:0] rd,
     output [4:0] rj,
-    output [4:0] rk,
-    output [31:0] jmpdist,//如果指令时跳转指令，则等于跳转目的
-    output [1:0] categroy
-    
+    output [4:0] rk
 );
     wire [31:0] inst = pcnext_pc_inst[31:0];
     assign pc=pcnext_pc_inst[63:32];
     assign pc_next=pcnext_pc_inst[95:64];
-    assign jmpdist = pc + {imm[29:0],2'b0};
     /////////////////////////////
     //鉴别指令类型
     wire [`UOP_TYPE] type;
@@ -184,8 +224,9 @@ module decoder
     wire is_pcadd = inst[30:25]=='b001110;
     wire is_lui = inst[30:25]=='b001010;
     assign type[`ITYPE_IDX_CSR] = inst[30:24]=='b0000100;
-    wire is_alu_imm = inst[30:25]=='b000001;
+    wire is_alu_imm = inst[30:25]=='b0000001;
     assign type[`ITYPE_IDX_CACHE] = inst[30:22]=='b000011000;
+    //这个invalid的含义是与众不同的，这里的invalid表示指令INVTLB，而其他地方的invalid表示unknown instruction
     wire tlb_invalid = inst[30:15]=='b0000110010010011;
     assign type[`ITYPE_IDX_IDLE] = inst[30:15]=='b0000110010010001;
     assign type[`ITYPE_IDX_ERET] = inst[30:10]=='b000011001001000001110;
@@ -199,9 +240,6 @@ module decoder
     wire is_time = inst[30:11]=='b00000000000000001100;
     wire is_alu = inst[30:19]=='b000000000010;
     assign type[`ITYPE_IDX_ALU]=is_alu||is_time||is_sra||is_alu_sfti||is_alu_imm||is_pcadd||is_lui;
-    
-    assign categroy[1]=is_b_or_bl|is_jilr;
-    assign categroy[0]=type[`ITYPE_IDX_BR]&~is_b_or_bl;
     ///////////////////////////////////
     
     ///////////////////////////////////
@@ -260,28 +298,31 @@ module decoder
         else if(is_sra) alu_op=`CTRL_ALU_SRA;
     end
     
-    reg [4:0] cond;
+    reg [3:0] cond;
     reg br_invalid;
     always @* begin
-        br_invalid=0;
         cond=0;
-        case(inst[29:26])
-        //jirl, b, bl
-        4'b0011, 4'b0100, 4'b0101: cond=5'b11111;
-        //beq
-        4'b0110: cond=5'b00001;
-        //bne
-        4'b0111: cond=5'b11110;
-        //blt
-        4'b1000: cond=5'b01000;
-        //bge
-        4'b1001: cond=5'b10001;
-        //bltu
-        4'b1010: cond=5'b00010;
-        //bgeu
-        4'b1011: cond=5'b00101;
-        default: br_invalid=1;
-        endcase
+        br_invalid=0;
+        if(type[`ITYPE_IDX_BR]) begin
+            cond = inst[29:26];
+            case(inst[29:26])
+            //jirl, b, bl
+            4'b0011, 4'b0100, 4'b0101,
+            //beq
+            4'b0110,
+            //bne
+            4'b0111,
+            //blt
+            4'b1000,
+            //bge
+            4'b1001,
+            //bltu
+            4'b1010,
+            //bgeu
+            4'b1011: ;
+            default: br_invalid=1;
+            endcase
+        end
     end
     
     //为NOP指令分配专门的UOP_TYPE，方便后续处理
@@ -298,10 +339,10 @@ module decoder
     //各种指令格式的操作位（包括alu、mul、div、mem、br）
     assign uop[`UOP_COND]=
         {4{type[`ITYPE_IDX_ALU]}}&alu_op |
-        (type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&inst[15] |
+        {3'b0,(type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&inst[15]} |
         //inst[27]==1时是保留取字和条件存字，宽度是32位
         {4{type[`ITYPE_IDX_MEM]}}&{inst[24],1'b1,inst[27]?2'b10:inst[23:22]}|
-        {5{type[`ITYPE_IDX_BR]}}&cond;
+        {4{type[`ITYPE_IDX_BR]}}&cond;
     ////////////////////////////////////
     
     ///////////////////////////////////
@@ -312,9 +353,9 @@ module decoder
     wire [5:0] tmp_and0 = type[5:0]&type[11:6];
     wire [2:0] tmp_or1 = tmp_or0[2:0]|tmp_or0[5:3];
     wire [2:0] tmp_and1 = tmp_or0[2:0]&tmp_or0[5:3];
-    wire [1:0] tmp_or2 = tmp_or1[1:0]|tmp_or1[2:2];
-    wire [1:0] tmp_and2 = tmp_or1[1:0]&tmp_or1[2:2];
-    wire [0:0] tmp_and3 = tmp_or2[0]|tmp_or2[1];
+    wire [1:0] tmp_or2 = tmp_or1[1:0]|{1'b0,tmp_or1[2:2]};
+    wire [1:0] tmp_and2 = tmp_or1[1:0]&{1'b0,tmp_or1[2:2]};
+    wire [0:0] tmp_and3 = tmp_or2[0]&tmp_or2[1];
     wire type_invalid = tmp_and0!=0||tmp_and1!=0||tmp_and2!=0||tmp_and3!=0||type==0;
     
     assign invalid=alu_op_invalid||type_invalid||br_invalid||inst[31];
@@ -380,4 +421,23 @@ module decoder
         i26_result&{32{is_i26}} |
         i20_result&{32{is_i20}};
     ////////////////////////////////////////////
+endmodule
+
+//combine logic
+//pre-decoder the instruction before pushing it to the FIFO, 
+//to get feedback signals
+module pre_decoder
+(
+    input [31:0] inst,
+    output [1:0] categroy,
+    output reg [31:0] pc_offset
+);
+    assign categroy[1]=inst[30:27]=='b1010|inst[30:26]=='b10011;
+    assign categroy[0]=inst[30]&~(inst[29:27]=='b010);
+    always @*
+        case(categroy)
+            2'b00,2'b11: pc_offset = 4;
+            2'b01:       pc_offset = {{14{inst[25]}},inst[25:10],2'b00};
+            2'b10:       pc_offset = {{4{inst[25]}},inst[9:0],inst[25:10],2'b00};
+        endcase
 endmodule
