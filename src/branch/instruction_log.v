@@ -31,8 +31,6 @@ module data #(
     // wire for build
     input wire                    idEn,             // whether the pair needs to be built
     input wire [ADDR_WIDTH - 1:0] idPC,             // instruction pair to build
-    input wire                    idUsefulLower,    // whether instructions are useful
-    input wire                    idUsefulUpper,    // whether instructions are useful
     input wire              [1:0] idTypeLower,      // type of instruction1
     input wire              [1:0] idTypeUpper,      // type of instruciton2
     input wire [ADDR_WIDTH - 1:0] idPCTarLower,     // branch target of instruction1
@@ -49,14 +47,18 @@ module data #(
     // wire for predict
     input wire [ADDR_WIDTH - 1:0] ifPC,             // instruction pair used to predict
     /* 
-     * structure for data
+     * structure of data
      * addr     30      the target address of this instruction
      * type     2       the type of this instruction
      */
-    output wire                    ifExist,         // whether pair exists
+    output wire                    ifExistLower,    // whether instruction exists
+    output wire                    ifExistUpper,    // whether instruction exists
     output wire [ADDR_WIDTH - 1:0] ifDataLower,     // result data
     output wire [ADDR_WIDTH - 1:0] ifDataUpper      // result data
 );
+    assign idUsefulLower = idTypeLower[1] ^ idTypeLower[0];
+    assign idUsefulUpper = idTypeUpper[1] ^ idTypeUpper[0];
+
     wire [HASH_DEPTH - 1:0] idWaddr = idPC[HASH_DEPTH + 2:3];
     wire [HASH_DEPTH - 1:0] exRaddr = exPC[HASH_DEPTH + 2:3];
     wire [HASH_DEPTH - 1:0] ifRaddr = ifPC[HASH_DEPTH + 2:3];
@@ -178,9 +180,8 @@ module data #(
         .rdata1     (ifDataUpper)
     );
 
-    wire ifExistLower = vldLower[ifRaddr] & ifHitLower;
-    wire ifExistUpper = vldUpper[ifRaddr] & ifHitUpper;
-    assign ifExist = ifExistLower | ifExistUpper;
+    assign ifExistLower = vldLower[ifRaddr] & ifHitLower;
+    assign ifExistUpper = vldUpper[ifRaddr] & ifHitUpper;
 
 endmodule
 
@@ -213,11 +214,12 @@ module fact #(
     // wire for predict
     input wire [ADDR_WIDTH - 1:0] ifPC,             // instruction pair used to predict
     /* 
-     * structure for data
+     * structure of data
      * addr     30      the target address of this instruction
      * type     2       the type of this instruction
      */
-    output wire                    ifExist,         // whether pair exists
+    output wire                    ifExistLower,    // whether instruction exists
+    output wire                    ifExistUpper,    // whether instruction exists
     output wire              [1:0] ifSel,           // if exist, which block
     output wire [ADDR_WIDTH - 1:0] ifDataLower,     // result data
     output wire [ADDR_WIDTH - 1:0] ifDataUpper      // result data
@@ -382,7 +384,7 @@ module para #(
     // wire for prediction
     input wire [ADDR_WIDTH - 1:0] ifPC,
     /**
-     * para structure (from high to low):
+     * structure of para (from high to low):
      * name     bits    function
      * fact     2       the jump-or-not note
      * log      8       the experience for 11-10-01-00
@@ -487,7 +489,7 @@ module past #(
     input wire [ADDR_WIDTH - 1:0] pdPC,
     input wire              [1:0] pdSel,
     /**
-     * para structure (from high to low):
+     * structure of (from high to low):
      * name     bits    function
      * fact     2       the jump-or-not note
      * log      8       the experience for 11-10-01-00
