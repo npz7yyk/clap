@@ -372,8 +372,8 @@ module para #(
 
     input wire                    erEn,             // whether we need to erase
     input wire [ADDR_WIDTH - 1:0] erPC,             // erase place
-    input wire                    eraseLower,       // how to erase the pair
-    input wire                    eraseUpper,       // how to erase the pair
+    input wire                    erLower,          // how to erase the pair
+    input wire                    erUpper,          // how to erase the pair
 
     input wire                    bdEn,             // whether we need to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
@@ -390,6 +390,8 @@ module para #(
      * log      8       the experience for 11-10-01-00
      *                  each case has 2 bits
      */
+    output wire                    ifVldLower,
+    output wire                    ifVldUpper,
     output wire [PARA_WIDTH - 1:0] ifParaLower,
     output wire [PARA_WIDTH - 1:0] ifParaUpper
 );
@@ -403,12 +405,12 @@ module para #(
         if (rstn) vld <= 64'b0;
         else if (erEn) begin
             // erPC needs to be invalidated
-            if (eraseLower) begin
+            if (erLower) begin
                 vld[erAddrLower] <= 1'b0;
                 if (erAddrLower != bdAddr && bdEn)
                     vld[bdAddr] <= 1'b1;
             end
-            if (eraseUpper) begin
+            if (erUpper) begin
                 vld[erAddrUpper] <= 1'b0;
                 if (erAddrUpper != bdAddr && bdEn)
                     vld[bdAddr] <= 1'b1;
@@ -460,6 +462,8 @@ module para #(
 
     assign wdata_ex = vld[waddr_ex] ? update : init;
 
+    assign ifVldLower = vld[raddr_p1];
+    assign ifVldUpper = vld[raddr_p2];
     assign ifParaLower = rdata_p1;
     assign ifParaUpper = rdata_p2;
 
@@ -477,6 +481,8 @@ module past #(
     input wire                    erEn,             // whether we need to erase
     input wire              [1:0] erSel,            // which block to erase
     input wire [ADDR_WIDTH - 1:0] erPC,             // erase place
+    input wire                    erLower,          // how to erase the pair
+    input wire                    erUpper,          // how to erase the pair
 
     input wire                    bdEn,             // whether we need to update
     input wire              [1:0] bdSel,            // which block to update 
@@ -486,8 +492,8 @@ module past #(
     input wire                    bdBranch,         // whether a branch is needed
 
     // wire for prediction
-    input wire [ADDR_WIDTH - 1:0] pdPC,
-    input wire              [1:0] pdSel,
+    input wire [ADDR_WIDTH - 1:0] ifPC,
+    input wire              [1:0] ifSel,
     /**
      * structure of (from high to low):
      * name     bits    function
@@ -495,8 +501,10 @@ module past #(
      * log      8       the experience for 11-10-01-00
      *                  each case has 2 bits
      */
-    output wire [PARA_WIDTH - 1:0] p1Para,
-    output wire [PARA_WIDTH - 1:0] p2Para
+    output wire                    ifVldLower,
+    output wire                    ifVldUpper,
+    output wire [PARA_WIDTH - 1:0] ifParaLower,
+    output wire [PARA_WIDTH - 1:0] ifParaUpper
 );
     /*
     reg [(1 << HASH_DEPTH) - 1:0] vld;

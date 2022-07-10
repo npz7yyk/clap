@@ -51,7 +51,6 @@ module predict_unit #(
     output wire                    reason
 );
     // start of guess log part
-
     parameter GUESS_DEPTH = HASH_DEPTH;
     parameter GUESS_WIDTH = 4;
 
@@ -101,34 +100,17 @@ module predict_unit #(
             inGuess1 <= 32'b0;
             inGuess2 <= 32'b0;
         end
-        else if (en) begin
+        else if (en && ex_vld) begin
             if (ex_wrong) begin
                 inGuess1 <= 32'b0;
                 inGuess2 <= 32'b0;
-            end
-            else if (ex_vld) begin
-                // so somewhere will be set 0
-                if (ex_addr == guess_waddr) begin
-                    if (ex_pc[2]) begin
-                        inGuess1[guess_waddr] <= inGuess1_new;
-                        inGuess2[guess_waddr] <= 1'b0;
-                    end else begin
-                        inGuess1[guess_waddr] <= 1'b0;
-                        inGuess2[guess_waddr] <= inGuess2_new;
-                    end
-                end else begin
-                    inGuess1[guess_waddr] <= inGuess1_new;
-                    inGuess2[guess_waddr] <= inGuess2_new;
-                    if (ex_pc[2]) inGuess2[ex_addr] <= 1'b0;
-                    else inGuess1[ex_addr] <= 1'b0;
-                end
             end else begin
-                inGuess1[guess_waddr] <= inGuess1_new;
-                inGuess2[guess_waddr] <= inGuess2_new;
+                // always in guess until something is wrong
+                inGuess1[guess_waddr] <= inGuess1[guess_waddr] | inGuess1_new;
+                inGuess2[guess_waddr] <= inGuess1[guess_waddr] | inGuess2_new;
             end
         end
     end
-
     // end of guess log part
 
     wire [HASH_WIDTH - 1:0] key = pc_now[
