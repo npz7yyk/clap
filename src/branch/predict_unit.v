@@ -67,15 +67,15 @@ module predict_unit #(
      * guess2   2       log of guess about instruction2
      */
     single_port_memory #(
-        .DATA_DEPTH (GUESS_DEPTH),
+        .ADDR_WIDTH (GUESS_DEPTH),
         .DATA_WIDTH (GUESS_WIDTH)
     ) guess_log (
         .clk        (clk),
         .wt_en      (en),
-        .waddr      (guess_waddr),
-        .wdata      (guess_wdata),
-        .raddr      (guess_raddr),
-        .rdata      (guess_rdata)
+        .wtaddr     (guess_waddr),
+        .wtdata     (guess_wdata),
+        .raddr1     (guess_raddr),
+        .rdata1     (guess_rdata)
     );
 
     /*
