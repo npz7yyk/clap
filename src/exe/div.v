@@ -19,7 +19,8 @@ reg [5:0]i;
 reg [63:0]dividend;
 reg [63:0]divisor;
 reg [0:0]op;
-reg [0:0]sign;
+reg [0:0]dividend_sign;
+reg [0:0]divisor_sign;
 reg [4:0]addr;
 reg [31:0]qoucient;
 
@@ -28,9 +29,11 @@ wire [31:0]divisor_one_hot;
 wire [4:0]m;
 wire [4:0]n;
 
+assign a=div_sign?div_sr0[31]==1?~div_sr0+1:div_sr0:div_sr0;
+assign b=div_sign?div_sr1[31]==1?~div_sr1+1:div_sr1:div_sr1;
 
-assign dividend_one_hot=div_sr0&(~div_sr0+1);
-assign divisor_one_hot=div_sr1&(~div_sr1+1);
+assign dividend_one_hot=a&(~a+1);
+assign divisor_one_hot=b&(~b+1);
 
 assign m=dividend_one_hot== 32'b1000_0000_0000_0000_0000_0000_0000_0000 ?32:
         dividend_one_hot== 32'b0100_0000_0000_0000_0000_0000_0000_0000 ?31:
@@ -107,10 +110,11 @@ always @(posedge clk) begin
             div_en_out<=div_en_in;
         end else begin
             op<=div_op;
-            sign<=div_sign;
             addr<=div_addr_in;
-            dividend<=div_sr0;
-            divisor<=div_sr1<<m-n;
+            dividend<=a;
+            divisor<=b<<m-n;
+            dividend_sign<=div_sign?div_sr0[31]:0;
+            divisor_sign<=div_sign?div_sr1[31]:0;
             i=i+m-n+2;
             stall_because_div<=1;
             div_en_out<=0;
@@ -118,7 +122,7 @@ always @(posedge clk) begin
     end else if(i==1)begin
         i<=0;
         stall_because_div<=0;
-        div_result<=op?qoucient:dividend;
+        div_result<=op?(divisor_sign==dividend_sign?qoucient:~qoucient+1):(dividend_sign?~dividend+1:dividend);
         div_addr_out<=addr;
         div_en_out<=1;
     end else begin
