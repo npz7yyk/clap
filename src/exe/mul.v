@@ -31,6 +31,7 @@ module mul_0(
 
     assign mul_en_out=mul_en_in;
     assign mul_rd_out=mul_rd_in;
+    assign mul_sel_out=mul_sel_in;
 endmodule
 
 module mul_1 (
@@ -48,7 +49,7 @@ module mul_1 (
 );
     wire[71:0]result_full;
     assign result_full={mul_mid_sr0,36'b0}+{18'b0,mul_mid_sr1,18'b0}+{18'b0,mul_mid_sr2,18'b0}+{36'b0,mul_mid_sr3};
-    assign result=mul_sel?result[63:32]:result[31:0];
+    assign result=mul_sel?result_full[63:32]:result_full[31:0];
     assign mul_en_out=mul_en_in;
     assign mul_rd_out=mul_rd_in;
 endmodule
