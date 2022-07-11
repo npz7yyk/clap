@@ -42,10 +42,6 @@ module TagV #(
     else
       ram_data <= BRAM[addrb];
   end
-  
-  always @(posedge clka) begin
-      ram_data <= addra==addrb&&wea?dina:BRAM[addrb];
-  end
 
   assign doutb = ram_data;
 

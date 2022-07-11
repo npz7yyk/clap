@@ -8,6 +8,7 @@ module exe(
     input [4:0]eu0_rd_in,
     input [4:0]eu0_rj_in,
     input [4:0]eu0_rk_in,
+    input [31:0]eu0_imm_in,
     input [31:0]eu0_pc_in,
     input [31:0]eu0_pc_next_in,
     input [5:0]eu0_exp_in,
@@ -20,28 +21,175 @@ module exe(
     input [4:0]eu1_rk_in,
     input [31:0]data10,
     input [31:0]data11,
-    input [5:0]eu1_exp_in,
     //向exe2段后输出
+    output reg [0:0]en_out0,
+    output reg [0:0]en_out1,
     output reg [31:0]data_out0,
     output reg [4:0]addr_out0,
     output reg [31:0]data_out1,
     output reg [4:0]addr_out1,
+    output reg[5:0]exp_out,
     //向issue段输出
-    output reg [0:0]eu0_ready
-
+    output stall,
+    output flush,
+    //向分支预测输出
+    output branch_addr_calculated,
+    //向cache输出
+    output [0:0] valid,                 //    valid request
+    output [1:0] op,                    //    write: 1, read: 0
+    output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
+    output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
+    output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
+    output [ 3:0 ] write_type,          //    byte write enable
+    output [ 31:0 ] w_data_CPU,         //    write data
+    //从cache输入
+    input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
+    input data_valid,                   //    read: data has returned; write: data has been written in
+    input [ 31:0 ] r_data_CPU           //    read data to CPU
 );
 
-assign eu0_alu=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_ALU;
-assign eu0_mul=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MUL;
-assign eu0_div=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_DIV;
-assign eu0_br=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_BR;
-assign eu0_mem=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MEM;
+assign eu0_alu_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_ALU;
+assign eu0_mul_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MUL;
+assign eu0_div_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_DIV;
+assign eu0_br_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_BR;
+assign eu0_mem_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MEM;
+assign eu1_alu_en=eu1_en_in&eu1_uop_in[`UOP_TYPE]==`ITYPE_ALU;
+
+wire[31:0]eu0_sr0;
+wire[31:0]eu0_sr1;
+wire[31:0]eu1_sr0;
+wire[31:0]eu1_sr1;
+//exe0组合输出
+wire[31:0]br_rd_data_mid;
+wire[4:0]br_rd_addr_mid;
+wire[0:0]br_en_mid;
+wire[0:0]alu_en_mid;
+wire[0:0]alu_rd_mid;
+wire[0:0]alu_result_mid;
+wire[0:0]mul_en_mid;
+wire[4:0]mul_rd_mid;
+wire[0:0]mul_sel_mid;
+wire[35:0]mul_rs0_mid;
+wire[35:0]mul_rs1_mid;
+wire[35:0]mul_rs2_mid;
+wire[35:0]mul_rs3_mid;
+wire[5:0]mem_exp_mid;
+wire[4:0]mem_rd_mid;
+wire[0:0]mem_en_mid;
+wire[1:0]mem_width_mid;
+wire[0:0]eu1_alu_en_mid;
+wire[4:0]eu1_alu_rd_mid;
+wire[31:0]eu1_alu_result_mid;
+//中段寄存器
+reg[0:0]eu0_en_0;
+reg[0:0]eu1_en_0;
+reg[0:0]eu0_rd_0;
+reg[0:0]eu1_rd_0;
+reg[31:0]data_mid00;
+reg[31:0]data_mid10;
+reg[5:0]mem_exp_exe1;
+reg[4:0]mem_rd_exe1;
+reg[0:0]mem_en_exe1;
+reg[1:0]mem_width_exe1;
+reg[0:0]mul_sel_exe1;
+reg[35:0]mul_sr0_exe1;
+reg[35:0]mul_sr1_exe1;
+reg[35:0]mul_sr2_exe1;
+reg[35:0]mul_sr3_exe1;
+reg[5:0]exp_exe1;
+//exe1组合输出
+wire[4:0]mul_rd_out;
+wire[0:0]mul_en_out;
+wire[31:0]mul_result;
+wire[0:0]stall_because_cache;
+wire[0:0]stall_because_div;
+wire[5:0]mem_exp_out;
+wire[4:0]mem_rd_out;
+wire[31:0]mem_data_out;
+wire[0:0]mem_en_out;
+wire[0:0]div_en_out;
+wire[31:0]div_result;
+wire[4:0]div_addr_out;
+//中段寄存器更新
+always @(posedge clk) begin
+    if(!rstn)begin
+        eu0_en_0<=0;
+        eu1_en_0<=0;
+        eu0_rd_0<=0;
+        eu1_rd_0<=0;
+        data_mid00<=0;
+        data_mid10<=0;
+        mem_exp_exe1<=0;
+        mem_rd_exe1<=0;
+        mem_en_exe1<=0;
+        mem_width_exe1<=0;
+        mul_sel_exe1<=0;
+        mul_sr0_exe1<=0;
+        mul_sr1_exe1<=0;
+        mul_sr2_exe1<=0;
+        mul_sr3_exe1<=0;
+        exp_exe1<=0;
+    end else if(!stall)begin
+        eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
+        eu1_en_0<=eu1_alu_en_mid;
+        eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
+        eu1_rd_0<=eu1_alu_rd_mid;
+        data_mid00<=br_rd_data_mid|alu_result_mid;
+        data_mid10<=eu1_alu_result_mid;
+        mem_exp_exe1<=mem_exp_mid;
+        mem_rd_exe1<=mem_rd_mid;
+        mem_en_exe1<=mem_en_mid;
+        mem_width_exe1<=mem_width_mid;
+        mul_sel_exe1<=mul_sel_mid;
+        mul_sr0_exe1<=mul_rs0_mid;
+        mul_sr1_exe1<=mul_rs1_mid;
+        mul_sr2_exe1<=mul_rs2_mid;
+        mul_sr3_exe1<=mul_rs3_mid;
+        exp_exe1<=eu0_exp_in;
+    end
+end
+//末段寄存器更新
+always @(posedge clk) begin
+    if(!rstn)begin
+        en_out0<=0;
+        en_out1<=0;
+        data_out0<=0;
+        addr_out0<=0;
+        data_out1<=0;
+        addr_out1<=0;
+        exp_out<=0;
+    end else if(!stall_because_cache)begin
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
+        en_out1<=eu1_en_0;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
+        data_out1<=data_mid10;
+        addr_out1<=eu1_rd_0;
+        exp_out<=exp_exe1|mem_exp_out;
+    end
+end
+
+hazard  u_hazard (
+    .eu0_en_0                ( eu0_en_in              ),
+    .eu1_en_0                ( eu1_en_in              ),
+    .eu0_rj                  ( eu0_rj_in              ),
+    .eu0_rk                  ( eu0_rk_in              ),
+    .eu1_rj                  ( eu1_rj_in              ),
+    .eu1_rk                  ( eu1_rk_in              ),
+    .eu0_en_1                ( eu0_en_1              ),
+    .eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
+    .eu0_rd                  ( eu0_rd_in                ),
+    .stall_because_cache     ( stall_because_cache   ),
+    .stall_because_div       ( stall_because_div     ),
+
+    .stall                   ( stall                 )
+);
 
 forward  u_forward (
-    .eu0_rj                  ( eu0_rj           ),
-    .eu0_rk                  ( eu0_rk           ),
-    .eu1_rj                  ( eu1_rj           ),
-    .eu1_rk                  ( eu1_rk           ),
+    .eu0_rj                  ( eu0_rj_in           ),
+    .eu0_rk                  ( eu0_rk_in           ),
+    .eu1_rj                  ( eu1_rj_in           ),
+    .eu1_rk                  ( eu1_rk_in           ),
     .data00                  ( data00           ),
     .data01                  ( data01           ),
     .data10                  ( data10           ),
@@ -50,14 +198,14 @@ forward  u_forward (
     .eu1_en_0                ( eu1_en_0         ),
     .eu0_rd_0                ( eu0_rd_0         ),
     .eu1_rd_0                ( eu1_rd_0         ),
-    .data_forward00          ( data_forward00   ),
-    .data_forward10          ( data_forward10   ),
+    .data_forward00          ( data_mid00   ),
+    .data_forward10          ( data_mid10   ),
     .eu0_en_1                ( eu0_en_1         ),
     .eu1_en_1                ( eu1_en_1         ),
     .eu0_rd_1                ( eu0_rd_1         ),
     .eu1_rd_1                ( eu1_rd_1         ),
-    .data_forward01          ( data_forward01   ),
-    .data_forward11          ( data_forward11   ),
+    .data_forward01          ( data_out0   ),
+    .data_forward11          ( data_out1   ),
 
     .eu0_sr0                 ( eu0_sr0          ),
     .eu0_sr1                 ( eu0_sr1          ),
@@ -66,115 +214,141 @@ forward  u_forward (
 );
 
 branch #(
-    .JIRL ( 'b010011 ),
-    .B    ( 'b010100 ),
-    .BL   ( 'b010101 ),
-    .BEQ  ( 'b010110 ),
-    .BNE  ( 'b010111 ),
-    .BLT  ( 'b011000 ),
-    .BGE  ( 'b011001 ),
-    .BLTU ( 'b011010 ),
-    .BGEU ( 'b011011 ))
+    .JIRL ( 'b0011 ),
+    .B    ( 'b0100 ),
+    .BL   ( 'b0101 ),
+    .BEQ  ( 'b0110 ),
+    .BNE  ( 'b0111 ),
+    .BLT  ( 'b1000 ),
+    .BGE  ( 'b1001 ),
+    .BLTU ( 'b1010 ),
+    .BGEU ( 'b1011 ))
  u_branch (
-    .br_en_in                ( br_en_in                 ),
-    .pc                      ( pc                       ),
-    .pc_next                 ( pc_next                  ),
-    .branch_op               ( branch_op                ),
-    .br_rd_addr_in           ( br_rd_addr_in            ),
-    .branch_sr0              ( branch_sr0               ),
-    .branch_sr1              ( branch_sr1               ),
-    .branch_imm              ( branch_imm               ),
+    .br_en_in                ( eu0_br_en                ),
+    .pc                      ( eu0_pc_in                ),
+    .pc_next                 ( eu0_pc_next_in           ),
+    .branch_op               ( eu0_uop_in[`UOP_COND]    ),
+    .br_rd_addr_in           ( eu0_rd_in            ),
+    .branch_sr0              ( eu0_sr0               ),
+    .branch_sr1              ( eu0_sr1               ),
+    .branch_imm              ( eu0_imm_in               ),
 
-    .br_rd_data              ( br_rd_data               ),
-    .br_rd_addr_out          ( br_rd_addr_out           ),
-    .br_en_out               ( br_en_out                ),
+    .br_rd_data              ( br_rd_data_mid               ),
+    .br_rd_addr_out          ( br_rd_addr_mid           ),
+    .br_en_out               ( br_en_mid                ),
     .flush                   ( flush                    ),
     .branch_addr_calculated  ( branch_addr_calculated   )
 );
 
 alu  u_alu0 (
-    .alu_en_in               ( alu_en_in     ),
-    .alu_control             ( alu_control   ),
-    .alu_rd_in               ( alu_rd_in     ),
-    .alu_sr0                 ( alu_sr0       ),
-    .alu_sr1                 ( alu_sr1       ),
+    .alu_en_in               ( eu0_alu_en    ),
+    .alu_control             ( eu0_uop_in[`UOP_ALUOP]   ),
+    .alu_rd_in               ( eu0_rd_in     ),
+    .alu_sr0                 ( eu0_sr0       ),
+    .alu_sr1                 ( eu0_sr1       ),
 
-    .alu_en_out              ( alu_en_out    ),
-    .alu_rd_out              ( alu_rd_out    ),
-    .alu_result              ( alu_result    )
+    .alu_en_out              ( alu_en_mid    ),
+    .alu_rd_out              ( alu_rd_mid    ),
+    .alu_result              ( alu_result_mid    )
 );
 
 mul_0  u_mul_0 (
-    .mul_en_in               ( mul_en_in     ),
-    .mul_rd_in               ( mul_rd_in     ),
-    .mul_sel_in              ( mul_sel_in    ),
-    .mul_usign               ( mul_usign     ),
-    .mul_sr0                 ( mul_sr0       ),
-    .mul_sr1                 ( mul_sr1       ),
+    .mul_en_in               ( eu0_mul_en     ),
+    .mul_rd_in               ( eu0_rd_in     ),
+    .mul_sel_in              ( eu0_uop_in[`UOP_MD_SEL]    ),
+    .mul_usign               ( eu0_uop_in[`UOP_USIGN]     ),
+    .mul_sr0                 ( eu0_sr0       ),
+    .mul_sr1                 ( eu0_sr1       ),
 
-    .mul_en_out              ( mul_en_out    ),
-    .mul_rd_out              ( mul_rd_out    ),
-    .mul_sel_out             ( mul_sel_out   ),
-    .mul_mid_rs0             ( mul_mid_rs0   ),
-    .mul_mid_rs1             ( mul_mid_rs1   ),
-    .mul_mid_rs2             ( mul_mid_rs2   ),
-    .mul_mid_rs3             ( mul_mid_rs3   )
+    .mul_en_out              ( mul_en_mid    ),
+    .mul_rd_out              ( mul_rd_mid    ),
+    .mul_sel_out             ( mul_sel_mid   ),
+    .mul_mid_rs0             ( mul_rs0_mid   ),
+    .mul_mid_rs1             ( mul_rs1_mid   ),
+    .mul_mid_rs2             ( mul_rs2_mid   ),
+    .mul_mid_rs3             ( mul_rs3_mid   )
 );
 
 mul_1  u_mul_1 (
-    .mul_mid_sr0             ( mul_mid_sr0   ),
-    .mul_mid_sr1             ( mul_mid_sr1   ),
-    .mul_mid_sr2             ( mul_mid_sr2   ),
-    .mul_mid_sr3             ( mul_mid_sr3   ),
-    .mul_sel                 ( mul_sel       ),
-    .mul_en_in               ( mul_en_in     ),
-    .mul_rd_in               ( mul_rd_in     ),
+    .mul_mid_sr0             ( mul_sr0_exe1   ),
+    .mul_mid_sr1             ( mul_sr1_exe1   ),
+    .mul_mid_sr2             ( mul_sr2_exe1   ),
+    .mul_mid_sr3             ( mul_sr3_exe1   ),
+    .mul_sel                 ( mul_sel_exe1       ),
+    .mul_en_in               ( eu0_en_0     ),
+    .mul_rd_in               ( eu0_rd_0     ),
 
     .mul_rd_out              ( mul_rd_out    ),
     .mul_en_out              ( mul_en_out    ),
-    .result                  ( result        )
+    .result                  ( mul_result        )
 );
 
-mem  u_mem (
-    .clk                     ( clk              ),
-    .rstn                    ( rstn             ),
-    .stall                   ( stall            ),
-    .mem_rd_in               ( mem_rd_in        ),
-    .mem_data_in             ( mem_data_in      ),
-    .mem_en_in               ( mem_en_in        ),
-    .mem_sr                  ( mem_sr           ),
-    .mem_imm                 ( mem_imm          ),
-    .mem_write               ( mem_write        ),
-    .mem_width               ( mem_width        ),
-    .addr_valid              ( addr_valid       ),
-    .data_valid              ( data_valid       ),
-    .r_data_CPU              ( r_data_CPU       ),
 
-    .mem_exp                 ( mem_exp          ),
-    .mem_rd_out              ( mem_rd_out       ),
-    .mem_data_out            ( mem_data_out     ),
-    .mem_en_out              ( mem_en_out       ),
-    .mem_cache_lack          ( mem_cache_lack   ),
-    .valid                   ( valid            ),
-    .op                      ( op               ),
-    .index                   ( index            ),
-    .tag                     ( tag              ),
-    .offset                  ( offset           ),
-    .write_type              ( write_type       ),
-    .w_data_CPU              ( w_data_CPU       )
+mem0  u_mem0 (
+    .mem_rd_in               ( eu0_rd_in             ),
+    .mem_rk_in               ( eu0_rk_in             ),
+    .mem_data_in             ( eu0_sr0           ),
+    .mem_en_in               ( eu0_mem_en             ),
+    .mem_sr                  ( eu0_sr1                ),
+    .mem_imm                 ( eu0_imm_in               ),
+    .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
+    .mem_width_in               ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
+
+    .valid                   ( valid           ),
+    .op                      ( op              ),
+    .index                   ( index           ),
+    .tag                     ( tag             ),
+    .offset                  ( offset          ),
+    .write_type              ( write_type      ),
+    .w_data_CPU              ( w_data_CPU      ),
+    .mem_exp_out             ( mem_exp_mid     ),
+    .mem_rd_out              ( mem_rd_mid      ),
+    .mem_en_out              ( mem_en_mid      ),
+    .mem_width_out           ( mem_width_mid   )
 );
 
+mem1  u_mem1 (
+    .mem_exp_in              ( mem_exp_exe1            ),
+    .mem_rd_in               ( mem_rd_exe1             ),
+    .mem_en_in               ( mem_en_exe1             ),
+    .mem_width_in            ( mem_width_exe1          ),
+    .addr_valid              ( addr_valid            ),
+    .data_valid              ( data_valid            ),
+    .r_data_CPU              ( r_data_CPU            ),
+
+    .mem_exp_out             ( mem_exp_out           ),
+    .mem_rd_out              ( mem_rd_out            ),
+    .mem_data_out            ( mem_data_out          ),
+    .mem_en_out              ( mem_en_out            ),
+    .stall_because_cache     ( stall_because_cache   )
+);
+
+div  u_div (
+    .clk                     ( clk                      ),
+    .rstn                    ( rstn                     ),
+    .div_en_in               ( eu0_div_en                ),
+    .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
+    .div_sign                ( eu0_uop_in[`UOP_USIGN]                 ),
+    .div_sr0                 ( eu0_sr0                  ),
+    .div_sr1                 ( eu0_sr1                  ),
+    .div_addr_in             ( eu0_rd_in              ),
+
+    .div_en_out              ( div_en_out               ),
+    .stall_because_div       ( stall_because_div        ),
+    .div_result              ( div_result               ),
+    .div_addr_out            ( div_addr_out   )
+);
 
 alu  u_alu1 (
-    .alu_en_in               ( alu_en_in     ),
-    .alu_control             ( alu_control   ),
-    .alu_rd_in               ( alu_rd_in     ),
-    .alu_sr0                 ( alu_sr0       ),
-    .alu_sr1                 ( alu_sr1       ),
+    .alu_en_in               ( eu1_alu_en     ),
+    .alu_control             ( eu1_uop_in[`UOP_ALUOP]   ),
+    .alu_rd_in               ( eu1_rd_in     ),
+    .alu_sr0                 ( eu1_sr0       ),
+    .alu_sr1                 ( eu1_sr1       ),
 
-    .alu_en_out              ( alu_en_out    ),
-    .alu_rd_out              ( alu_rd_out    ),
-    .alu_result              ( alu_result    )
+    .alu_en_out              ( eu1_alu_en_out    ),
+    .alu_rd_out              ( eu1_alu_rd_out    ),
+    .alu_result              ( eu1_alu_result    )
 );
 
 endmodule 

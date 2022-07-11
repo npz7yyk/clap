@@ -3,7 +3,7 @@ module branch(
     input [0:0]br_en_in,
     input [ 31:0]pc,
     input [ 31:0]pc_next,
-    input [ 5:0 ]branch_op,
+    input [ 3:0 ]branch_op,
     input [4:0]br_rd_addr_in,
     input [ 31:0 ]branch_sr0,
     input [ 31:0 ]branch_sr1,
@@ -16,15 +16,15 @@ module branch(
     output[ 31:0 ]branch_addr_calculated
 );
 
-parameter  JIRL = 'b010011;
-parameter  B    = 'b010100;
-parameter  BL   = 'b010101;
-parameter  BEQ  = 'b010110;
-parameter  BNE  = 'b010111;
-parameter  BLT  = 'b011000;
-parameter  BGE  = 'b011001;
-parameter  BLTU = 'b011010;
-parameter  BGEU = 'b011011;
+parameter  JIRL = 'b0011;
+parameter  B    = 'b0100;
+parameter  BL   = 'b0101;
+parameter  BEQ  = 'b0110;
+parameter  BNE  = 'b0111;
+parameter  BLT  = 'b1000;
+parameter  BGE  = 'b1001;
+parameter  BLTU = 'b1010;
+parameter  BGEU = 'b1011;
 
 assign branch_status = branch_op == JIRL
                     ||branch_op == B

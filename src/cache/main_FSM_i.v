@@ -89,6 +89,7 @@ module main_FSM_i(
                 mem_en = lru_way_sel;
                 tagv_we = lru_way_sel;
                 data_valid = 1;
+                rbuf_we = 1;
             end
         end
         endcase

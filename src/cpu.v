@@ -55,24 +55,34 @@ module core_top(
 );
     wire data_valid;
     wire if_buf_full;
+    reg just_reset;
+    always @(posedge aclk)
+        if(~aresetn)just_reset<=1;
+        else just_reset<=0;
+    //stall信号与valid信号不同，
+    //在没有读请求时，i-cache的data_valid=0，但是PC不能在此时stall，否则待到data_valid=1时，相同的指令会被取出两次
+    // 这种情况只会发生在刚刚reset后，解决方法是令刚刚reset后的data_valid=1
+    wire pc_stall_n=data_valid | just_reset;
     
     reg [31:0] pc;
     wire [31:0] pc_next = pc+8;
     always @(posedge aclk)
         if(~aresetn)
             pc <= 0;
-        else if(data_valid) pc <= pc_next;
+        else if(pc_stall_n) pc <= pc_next;
 
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc,if_pc_next;
-    
     icache the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
         .valid          (~if_buf_full),
-        .addr           (pc),
+        .pc_in          (pc),
+        .pc_next_in     (pc_next),
         .data_valid     (data_valid),
         .r_data_CPU     (r_data_CPU),
+        .pc_out         (if_pc),
+        .pc_next_out    (if_pc_next),
         
         .r_req          (arvalid),
         .r_addr         (araddr),
@@ -82,10 +92,8 @@ module core_top(
         .r_data_ready   (rready),
         .r_data_AXI     (rdata)
     );
-    //reg [31:0] pc_icache_stage0,pc_icache_stage1;
-    //reg [31:0] pc_next_icache_stage0,pc_next_icache_stage1;
     
-    wire [2:0] id_read_en;
+    wire [1:0] id_read_en;
     wire [`WIDTH_UOP-1:0] id_uop0,id_uop1;
     wire [31:0] id_imm0,id_imm1;
     wire [4:0] id_rd0,id_rd1,id_rk0,id_rk1,id_rj0,id_rj1;
@@ -97,7 +105,9 @@ module core_top(
         .flush(0),
         .read_en(id_read_en),
         .full(if_buf_full),
-        .inst0(r_data_CPU[31:0]),.inst1(r_data_CPU[63:32]),
+        .input_valid(data_valid),
+        .inst0(r_data_CPU[31:0]),
+        .inst1(r_data_CPU[63:32]),
         .first_inst_jmp(0),
         
         .pc_in(if_pc),.pc_next_in(if_pc_next),
