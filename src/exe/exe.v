@@ -34,6 +34,8 @@ module exe(
     output flush,
     //向分支预测输出
     output branch_addr_calculated,
+    output branch_status,
+    output branch_valid,
     //向cache输出
     output [0:0] valid,                 //    valid request
     output [1:0] op,                    //    write: 1, read: 0
@@ -237,7 +239,9 @@ branch #(
     .br_rd_addr_out          ( br_rd_addr_mid           ),
     .br_en_out               ( br_en_mid                ),
     .flush                   ( flush                    ),
-    .branch_addr_calculated  ( branch_addr_calculated   )
+    .branch_addr_calculated  ( branch_addr_calculated   ),
+    .branch_valid            (branch_valid),
+    .branch_status           (branch_status)
 );
 
 alu  u_alu0 (
