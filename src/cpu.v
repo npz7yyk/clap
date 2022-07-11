@@ -58,14 +58,14 @@ module core_top(
     reg just_reset;
     always @(posedge aclk)
         if(~aresetn)just_reset<=1;
-        else just_reset<=0;
+        else just_reset<=if_buf_full;
     //stall信号与valid信号不同，
     //在没有读请求时，i-cache的data_valid=0，但是PC不能在此时stall，否则待到data_valid=1时，相同的指令会被取出两次
     // 这种情况只会发生在刚刚reset后，解决方法是令刚刚reset后的data_valid=1
-    wire pc_stall_n=data_valid | just_reset;
+    wire pc_stall_n=(data_valid|just_reset) & ~if_buf_full;
     
     reg [31:0] pc;
-    wire [31:0] pc_next = pc+8;
+    wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback;
     reg [7:0] pc_exception;
@@ -82,19 +82,52 @@ module core_top(
             else
                 pc <= pc_next;
         end
+    
+    wire id_feedback_valid;
+    wire [31:0] pc_for_predict;
+    wire [31:0] id_jmpdist0,id_jmpdist1;
+    wire [1:0] id_categroy0,id_categroy1;
+    wire ex_feedback_valid,ex_did_jump;
+    wire pred_known;
+    wire pd_branch,pd_reason;
+    branch_unit the_branch_predict
+    (
+        .clk(aclk),.rstn(aresetn),
+
+        .ifVld(pc_stall_n),.ifPC(pc),
+
+        .idVld(id_feedback_valid),
+        .idPC(pc_for_predict),
+        .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
+        .idType1(id_categroy0), .idType2(id_categroy1),
+        
+        .exVld(ex_feedback_valid),
+        //.exPC(),
+        .exPCTar(pc_executer),
+        //.exType(),
+        .exBranch(ex_did_jump),
+        .exWrong(set_pc_by_executer),
+
+        .pdPC(pc_next),
+        .pdKnown(pred_known),
+        .pdBranch(pd_branch),
+        .pdReason(pd_reason)
+    );
 
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc,if_pc_next;
-    icache the_icache (
+    wire if_known;
+    wire first_inst_jmp;
+    icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
         .valid          (~if_buf_full),
         .pc_in          (pc),
-        .pc_next_in     (pc_next),
+        .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
+        .cookie_out     ({first_inst_jmp,if_known,if_pc_next}),
         .data_valid     (data_valid),
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc),
-        .pc_next_out    (if_pc_next),
         
         .r_req          (arvalid),
         .r_addr         (araddr),
@@ -121,7 +154,8 @@ module core_top(
         .input_valid(data_valid),
         .inst0(r_data_CPU[31:0]),
         .inst1(r_data_CPU[63:32]),
-        .first_inst_jmp(0),
+        .unknown0(~if_known),.unknown1(~if_known),
+        .first_inst_jmp(first_inst_jmp),
         
         .uop0(id_uop0),.uop1(id_uop1),
         .imm0(id_imm0),.imm1(id_imm1),
@@ -135,24 +169,24 @@ module core_top(
         .exception_in(0),
         .exception0_out(id_exception0),.exception1_out(id_exception1),
        
-        //.feedback_valid(),
-        //.pc_for_predict0(),pc_for_predict1(),
-        //.jmpdist0(),.jmpdist1(),
-        //.categroy0(),.categroy1(),
+        .feedback_valid(id_feedback_valid),
+        .pc_for_predict(pc_for_predict),
+        .jmpdist0(id_jmpdist0),.jmpdist1(id_jmpdist1),
+        .categroy0(id_categroy0),.categroy1(id_categroy1),
 
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)
 
     );
     wire  ex_stall;
-    wire is_eu0_en,is_eu1_en;
-    wire [`WIDTH_UOP-1:0] is_eu0_uop,is_eu1_uop;
-    wire [4:0] is_eu0_rd,is_eu0_rj,is_eu0_rk;
-    wire [4:0] is_eu1_rd,is_eu1_rj,is_eu1_rk;
-    wire [31:0] is_eu0_imm,is_eu1_imm;
-    wire [31:0] is_eu0_pc,is_eu0_pc_next;
-    wire [31:0] is_eu1_pc,is_eu1_pc_next;
-    wire is_eu0_exception,is_eu1_exception;
+    wire is_eu0_en_3qW1U3J0hMn,is_eu1_en_3qW1U3J0hMn;
+    wire [`WIDTH_UOP-1:0] is_eu0_uop_3qW1U3J0hMn,is_eu1_uop_3qW1U3J0hMn;
+    wire [4:0] is_eu0_rd_3qW1U3J0hMn,is_eu0_rj_3qW1U3J0hMn,is_eu0_rk_3qW1U3J0hMn;
+    wire [4:0] is_eu1_rd_3qW1U3J0hMn,is_eu1_rj_3qW1U3J0hMn,is_eu1_rk_3qW1U3J0hMn;
+    wire [31:0] is_eu0_imm_3qW1U3J0hMn,is_eu1_imm_3qW1U3J0hMn;
+    wire [31:0] is_eu0_pc_3qW1U3J0hMn,is_eu0_pc_next_3qW1U3J0hMn;
+    wire [31:0] is_eu1_pc_3qW1U3J0hMn,is_eu1_pc_next_3qW1U3J0hMn;
+    wire [6:0] is_eu0_exception_3qW1U3J0hMn,is_eu1_exception_3qW1U3J0hMn;
     is_stage the_issue (
         .clk(aclk),.rstn(aresetn),
         .num_read(id_read_en),
@@ -165,29 +199,68 @@ module core_top(
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
         
-        .eu0_en(is_eu0_en),
+        .eu0_en(is_eu0_en_3qW1U3J0hMn),
         .eu0_ready(~ex_stall),
         .eu0_finish(1),
-        .eu0_uop(is_eu0_uop),
-        .eu0_rd(is_eu0_rd),
-        .eu0_rj(is_eu0_rj),
-        .eu0_rk(is_eu0_rk),
-        .eu0_imm(is_eu0_imm),
-        .eu0_pc(is_eu0_pc),
-        .eu0_pc_next(is_eu0_pc_next),
-        .eu0_invalid(is_eu0_exception),
+        .eu0_uop(is_eu0_uop_3qW1U3J0hMn),
+        .eu0_rd(is_eu0_rd_3qW1U3J0hMn),
+        .eu0_rj(is_eu0_rj_3qW1U3J0hMn),
+        .eu0_rk(is_eu0_rk_3qW1U3J0hMn),
+        .eu0_imm(is_eu0_imm_3qW1U3J0hMn),
+        .eu0_pc(is_eu0_pc_3qW1U3J0hMn),
+        .eu0_pc_next(is_eu0_pc_next_3qW1U3J0hMn),
+        .eu0_exception(is_eu0_exception_3qW1U3J0hMn),
         
-        .eu1_en(is_eu1_en),
+        .eu1_en(is_eu1_en_3qW1U3J0hMn),
         .eu1_ready(~ex_stall),
         .eu1_finish(1),
-        .eu1_uop(is_eu1_uop),
-        .eu1_rd(is_eu1_rd),
-        .eu1_rj(is_eu1_rj),
-        .eu1_rk(is_eu1_rk),
-        .eu1_imm(is_eu1_imm),
-        .eu1_pc(is_eu1_pc),
-        .eu1_pc_next(is_eu1_pc_next),
-        .eu1_invalid(is_eu1_exception)
+        .eu1_uop(is_eu1_uop_3qW1U3J0hMn),
+        .eu1_rd(is_eu1_rd_3qW1U3J0hMn),
+        .eu1_rj(is_eu1_rj_3qW1U3J0hMn),
+        .eu1_rk(is_eu1_rk_3qW1U3J0hMn),
+        .eu1_imm(is_eu1_imm_3qW1U3J0hMn),
+        .eu1_pc(is_eu1_pc_3qW1U3J0hMn),
+        .eu1_pc_next(is_eu1_pc_next_3qW1U3J0hMn),
+        .eu1_exception(is_eu1_exception_3qW1U3J0hMn)
+    );
+
+    wire is_eu0_en,is_eu1_en;
+    wire [`WIDTH_UOP-1:0] is_eu0_uop,is_eu1_uop;
+    wire [4:0] is_eu0_rd,is_eu0_rj,is_eu0_rk;
+    wire [4:0] is_eu1_rd,is_eu1_rj,is_eu1_rk;
+    wire [31:0] is_eu0_imm,is_eu1_imm;
+    wire [31:0] is_eu0_pc,is_eu0_pc_next;
+    wire [31:0] is_eu1_pc,is_eu1_pc_next;
+    wire [6:0] is_eu0_exception,is_eu1_exception;
+
+    execute_unit_input_reg euir0
+    (
+        .clk(aclk),.rstn(aresetn),.flush(ex_flush),.stall(ex_stall),
+        
+        .en_in(is_eu0_en_3qW1U3J0hMn),.en_out(is_eu0_en),
+        .uop_in(is_eu0_uop_3qW1U3J0hMn),.uop_out(is_eu0_uop),
+        .rd_in(is_eu0_rd_3qW1U3J0hMn),.rd_out(is_eu0_rd),
+        .rj_in(is_eu0_rj_3qW1U3J0hMn),.rj_out(is_eu0_rj),
+        .rk_in(is_eu0_rk_3qW1U3J0hMn),.rk_out(is_eu0_rk),
+        .imm_in(is_eu0_imm_3qW1U3J0hMn),.imm_out(is_eu0_imm),
+        .pc_in(is_eu0_pc_3qW1U3J0hMn),.pc_out(is_eu0_pc),
+        .pc_next_in(is_eu0_pc_next_3qW1U3J0hMn),.pc_next_out(is_eu0_pc_next),
+        .exception_in(is_eu0_exception_3qW1U3J0hMn),.exception_out(is_eu0_exception)
+    );
+
+    execute_unit_input_reg euir1
+    (
+        .clk(aclk),.rstn(aresetn),.flush(ex_flush),.stall(ex_stall),
+        
+        .en_in(is_eu1_en_3qW1U3J0hMn),.en_out(is_eu1_en),
+        .uop_in(is_eu1_uop_3qW1U3J0hMn),.uop_out(is_eu1_uop),
+        .rd_in(is_eu1_rd_3qW1U3J0hMn),.rd_out(is_eu1_rd),
+        .rj_in(is_eu1_rj_3qW1U3J0hMn),.rj_out(is_eu1_rj),
+        .rk_in(is_eu1_rk_3qW1U3J0hMn),.rk_out(is_eu1_rk),
+        .imm_in(is_eu1_imm_3qW1U3J0hMn),.imm_out(is_eu1_imm),
+        .pc_in(is_eu1_pc_3qW1U3J0hMn),.pc_out(is_eu1_pc),
+        .pc_next_in(is_eu1_pc_next_3qW1U3J0hMn),.pc_next_out(is_eu1_pc_next),
+        .exception_in(is_eu1_exception_3qW1U3J0hMn),.exception_out(is_eu1_exception)
     );
 
     reg [63:0] stable_counter;
@@ -205,7 +278,7 @@ module core_top(
     wire  [5:0]  rf_eu0_exp,rf_eu1_exp;
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
-    wire  [31:0]  eu0_imm_out;
+    wire  [31:0]  rf_eu0_imm;
 
     register_file  the_register (
         .clk                     ( aclk              ),
@@ -263,7 +336,7 @@ module core_top(
         .eu0_rd_in     (rf_eu0_rd     ), .eu1_rd_in (rf_eu1_rd ),
         .eu0_rj_in     (rf_eu0_rj     ), .eu1_rj_in (rf_eu1_rj ),
         .eu0_rk_in     (rf_eu0_rk     ), .eu1_rk_in (rf_eu1_rk ),
-        .eu0_imm_in    (rf_eu_imm     ),
+        .eu0_imm_in    (rf_eu0_imm     ),
         .eu0_pc_in     (rf_eu0_pc     ),
         .eu0_pc_next_in(rf_eu0_pc_next),
         .eu0_exp_in    (rf_eu0_exp    ), //.eu1_exp_in    ( rf_eu1_exp    ),
@@ -278,6 +351,8 @@ module core_top(
 
         .stall                   ( ex_stall              ),
         .flush                   ( ex_flush              ),
+        .branch_status           ( ex_did_jump ),
+        .branch_valid            ( ex_feedback_valid ),
         .branch_addr_calculated  ( pc_executer   )//,
 
         //TODO

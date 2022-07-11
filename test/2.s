@@ -27,17 +27,17 @@ _start:
     srli.w $r28,$r29,3
     sra.w $r31,$r1,$r2
     srai.w $r31,$r1,8
-    mul.w $r3,$r4,$r5       #错误！！
-    mulh.w $r6,$r7,$r8      #错误！！
-    mulh.wu $r9,$r10,$r11   #错误！！
-    div.w $r12,$r13,$r14    #错误！！
-    mod.w $r15,$r16,$r17    #错误！！
-    div.wu $r18,$r19,$r20   #错误！！
-    mod.wu $r21,$r22,$r23   #错误！！
-    break 1926              #区分break和syscall
-    syscall 817             #区分break和syscall
+    mul.w $r3,$r4,$r5       # 错误！！
+    mulh.w $r6,$r7,$r8      # 错误！！
+    mulh.wu $r9,$r10,$r11   # 错误！！
+    div.w $r12,$r13,$r14    # 错误！！
+    mod.w $r15,$r16,$r17    # 错误！！
+    div.wu $r18,$r19,$r20   # 错误！！
+    mod.wu $r21,$r22,$r23   # 错误！！
+    break 1926              # 区分break和syscall
+    syscall 817             # 区分break和syscall
     ertn
-    idle 3454               #错误！！
+    idle 3454               # 错误！！
     lu12i.w $r24,-5241
     lu12i.w $r25,262143
     pcaddu12i $r26,-5242
@@ -51,10 +51,10 @@ _start:
     ld.w $r9,$r10,100
     st.b $r11,$r12,-12
     st.w $r13,$r14,14
-    preld 0,$r15,-15        #TODO: 表明preld
-    dbar 0                  #TODO: 区分dbar和ibar
+    preld 0,$r15,-15        # TODO: 表明preld
+    dbar 0                  # TODO: 区分dbar和ibar
     ibar 0
-    jirl $r16,$r17,340      #最好处理jilr/b/bl
+    jirl $r16,$r17,340      # 最好处理jilr/b/bl
     jirl $r16,$r17,-340
     b 1220
     b -1220

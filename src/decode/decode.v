@@ -58,7 +58,7 @@ module id_stage
     ////反馈信号////
     //给预测器
     output feedback_valid,
-    output [31:0] pc_for_predict0,pc_for_predict1,
+    output [31:0] pc_for_predict,
     output [31:0] jmpdist0,jmpdist1,//跳转目标
     output [1:0] categroy0,categroy1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
     //给PC
@@ -72,8 +72,7 @@ module id_stage
     wire [31:0] pc_offset0,pc_offset1;
     pre_decoder pre_decoder0 (.inst(inst0),.categroy(categroy0),.pc_offset(pc_offset0));
     pre_decoder pre_decoder1 (.inst(inst1),.categroy(categroy1),.pc_offset(pc_offset1));
-    assign pc_for_predict0 = pc_in;
-    assign pc_for_predict1 = pc_in+4;
+    assign pc_for_predict = pc_in;
     assign jmpdist0 = pc_in + pc_offset0;
     assign jmpdist1 = pc_in+4 + pc_offset1;
     assign feedback_valid = input_valid;
@@ -176,7 +175,7 @@ module id_stage
         end
     
     wire invalid0,invalid1;
-    wire [7:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
+    wire [6:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
     decoder decoder0
     (
         .pcnext_pc_inst(pop_sel==0?
@@ -184,7 +183,7 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
-        .except(exception0_ICQlsmuv),
+        .exception(exception0_ICQlsmuv),
         .invalid(invalid0)
     );
     assign exception0_out = exception0_ICQlsmuv==0? (invalid0?`EXP_INE:0):exception0_ICQlsmuv;
@@ -195,7 +194,7 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
-        .except(exception1_ICQlsmuv),
+        .exception(exception1_ICQlsmuv),
         .invalid(invalid1)
     );
     assign exception1_out = exception1_ICQlsmuv==0? (invalid1?`EXP_INE:0):exception1_ICQlsmuv;
@@ -206,7 +205,8 @@ endmodule
 module decoder
 (
     input [102:0] pcnext_pc_inst,
-    output [31:0] pc,pc_next,exception,//从pcnext_pc_inst拆解出的pc和pc_next
+    output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
+    output [6:0] exception,
     output invalid,
     output [`WIDTH_UOP-1:0] uop,
     output [31:0] imm,

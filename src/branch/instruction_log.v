@@ -377,7 +377,7 @@ module para #(
 
     input wire                    bdEn,             // whether we need to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
-    input wire [ADDR_WIDTH - 1:0] bdBack,           // instruction branch direction
+    input wire                    bdBack,           // instruction branch direction
     input wire              [1:0] bdType,           // instruction type
     input wire                    bdBranch,         // whether a branch is needed
 
