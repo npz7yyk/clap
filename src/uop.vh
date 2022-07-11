@@ -27,12 +27,11 @@
 `define UOP_ALUOP 19:16
 `define UOP_MD_SEL 16:16
 `define UOP_MEM_WIDTH 17:16
-//`define UOP_MEM_EN 18:18
-`define UOP_MEM_WRITE 19:19
+`define UOP_MEM_WRITE 18:18
 `define UOP_COND 19:16
-`define UOP_USIGN 21:21
-`define UOP_MEM_ATM 22:22
-`define WIDTH_UOP 23
+`define UOP_USIGN 20:20
+`define UOP_MEM_ATM 21:21
+`define WIDTH_UOP 22
 
 `define ITYPE_ALU   12'b000000000001
 `define ITYPE_MUL   12'b000000000010

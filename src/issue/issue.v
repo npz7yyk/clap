@@ -27,7 +27,7 @@ module is_stage
     input [`WIDTH_UOP-1:0] uop0, uop1,
     input [4:0] rd0,rj0,rk0,rd1,rj1,rk1,
     input [31:0] imm0,imm1,
-    input invalid0,invalid1,
+    input [6:0] exception0,exception1,
     input [31:0] pc0,pc_next0,
     input [31:0] pc1,pc_next1,
     ////输出信号////
@@ -39,7 +39,7 @@ module is_stage
     output [4:0] eu0_rd,eu0_rj,eu0_rk,
     output [31:0] eu0_imm,
     output [31:0] eu0_pc,eu0_pc_next,
-    output eu0_invalid,
+    output [6:0] eu0_exception,
     //execute unit #1 //ALU only
     output reg eu1_en,
     input eu1_ready,
@@ -48,18 +48,18 @@ module is_stage
     output [4:0] eu1_rd,eu1_rj,eu1_rk,
     output [31:0] eu1_imm,
     output [31:0] eu1_pc,eu1_pc_next,
-    output eu1_invalid
+    output [6:0] eu1_exception
 );
     localparam RST_VAL = {32'd4,32'd0,1'd0,32'd0,15'd0,`INST_NOP};
     //pc_next,pc,invalid,imm,rd,rk,rj,uop
-    reg [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
+    reg [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
     
-    wire first_nop = uop0[`UOP_TYPE] == 0 && !invalid0;
-    wire second_nop = uop1[`UOP_TYPE] == 0 && !invalid1;
+    wire first_nop = uop0[`UOP_TYPE] == 0 && exception0==0;
+    wire second_nop = uop1[`UOP_TYPE] == 0 && exception1==0;
     
-    wire [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] input0 = {pc_next0,pc0,invalid0,imm0,rd0,rk0,rj0,uop0};
-    wire [32+32+1+32+5+5+5+`WIDTH_UOP-1:0] input1 = {pc_next1,pc1,invalid1,imm1,rd1,rk1,rj1,uop1};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = {pc_next0,pc0,exception0,imm0,rd0,rk0,rj0,uop0};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = {pc_next1,pc1,exception1,imm1,rd1,rk1,rj1,uop1};
     
     reg [4:0] size_after_out;
     reg [1:0] size_out;
@@ -136,8 +136,8 @@ module is_stage
     //当FIFO[0]的指令是ALU指令时，把FIFO[0]发射到执行单元 #1
     wire swap_fifo0_fifo1 = fifo0[`ITYPE_IDX_ALU];
 
-    assign {eu0_pc_next,eu0_pc,eu0_invalid,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = swap_fifo0_fifo1?fifo1:fifo0;
-    assign {eu1_pc_next,eu1_pc,eu1_invalid,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = swap_fifo0_fifo1?fifo0:fifo1;
+    assign {eu0_pc_next,eu0_pc,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = swap_fifo0_fifo1?fifo1:fifo0;
+    assign {eu1_pc_next,eu1_pc,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = swap_fifo0_fifo1?fifo0:fifo1;
     
     always @(posedge clk)
         if(~rstn || flush)

@@ -23,6 +23,7 @@
 
 `timescale 1ns / 1ps
 `include "../uop.vh"
+`include "../exception.vh"
 
 // 指令译码器: 将指令转换为微操作
 // 输入缓冲: FIFO
@@ -47,8 +48,9 @@ module id_stage
     output [4:0] rd0,rd1,       //微操作的rd段
     output [4:0] rj0,rj1,       //微操作的rj段
     output [4:0] rk0,rk1,       //微操作的rk段
-    output invalid0,invalid1,   //指令无效（此时保证uop.TYPE=0）
     ////传递信号////
+    input [6:0]  exception_in,
+    output [6:0] exception0_out,exception1_out,   //指令无效（此时保证uop.TYPE=0）
     input [31:0] pc_in,         //第一条指令的PC，当PC不是8的倍数时，认为第二条指令无效
     input [31:0] pc_next_in,    //下一条指令的PC
     output [31:0] pc0_out,pc1_out,
@@ -132,8 +134,8 @@ module id_stage
     wire [31:0] real_pc_next0 = first_inst_jmp||pc_in[2]?pc_next_in:pc_in+4;
     wire [31:0] real_pc_next1 = pc_next_in;
     
-    wire [95:0] real_0_concat = {real_pc_next0,real_pc0,real_inst0};
-    wire [95:0] real_1_concat = {real_pc_next1,real_pc1,real_inst1};
+    wire [102:0] real_0_concat = {exception_in,real_pc_next0,real_pc0,real_inst0};
+    wire [102:0] real_1_concat = {exception_in,real_pc_next1,real_pc1,real_inst1};
     
     //fetch_buffer0需要进行push操作
     wire push0 = valid_both || push_sel==0&&valid_either;
@@ -173,6 +175,8 @@ module id_stage
             if((pop0&~empty0)^(pop1&~empty1))pop_sel<=~pop_sel;
         end
     
+    wire invalid0,invalid1;
+    wire [7:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
     decoder decoder0
     (
         .pcnext_pc_inst(pop_sel==0?
@@ -180,10 +184,10 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
+        .except(exception0_ICQlsmuv),
         .invalid(invalid0)
     );
-    assign pc_for_predict0 = pc0_out;
-    assign feedback_valid0 = uop0!=0;
+    assign exception0_out = exception0_ICQlsmuv==0? (invalid0?`EXP_INE:0):exception0_ICQlsmuv;
     decoder decoder1
     (
         .pcnext_pc_inst(pop_sel==1?
@@ -191,17 +195,18 @@ module id_stage
             empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
+        .except(exception1_ICQlsmuv),
         .invalid(invalid1)
     );
-    
+    assign exception1_out = exception1_ICQlsmuv==0? (invalid1?`EXP_INE:0):exception1_ICQlsmuv;
 endmodule
 
 //纯组合逻辑，译码器
 //【注意】load、br指令的原本位于rd段的源数据被放到了rk，而rd=0，这样可以保证读取寄存器堆时只需要读rk和rj
 module decoder
 (
-    input [95:0] pcnext_pc_inst,
-    output [31:0] pc,pc_next,//从pcnext_pc_inst拆解出的pc和pc_next
+    input [102:0] pcnext_pc_inst,
+    output [31:0] pc,pc_next,exception,//从pcnext_pc_inst拆解出的pc和pc_next
     output invalid,
     output [`WIDTH_UOP-1:0] uop,
     output [31:0] imm,
@@ -212,6 +217,7 @@ module decoder
     wire [31:0] inst = pcnext_pc_inst[31:0];
     assign pc=pcnext_pc_inst[63:32];
     assign pc_next=pcnext_pc_inst[95:64];
+    assign exception=pcnext_pc_inst[102:96];
     /////////////////////////////
     //鉴别指令类型
     wire [`UOP_TYPE] type;
@@ -252,7 +258,7 @@ module decoder
         else src1=`CTRL_SRC1_RF;
     end
     always @* begin
-        if(is_alu_imm||is_alu_sfti)src2=`CTRL_SRC2_IMM;
+        if(is_alu_imm||is_alu_sfti||is_lui||is_pcadd)src2=`CTRL_SRC2_IMM;
         else if(is_time) begin
             if(inst[10]==0&&inst[4:0]!=0)
                 src2=`CTRL_SRC2_CNTL;
@@ -341,7 +347,7 @@ module decoder
         {4{type[`ITYPE_IDX_ALU]}}&alu_op |
         {3'b0,(type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&inst[15]} |
         //inst[27]==1时是保留取字和条件存字，宽度是32位
-        {4{type[`ITYPE_IDX_MEM]}}&{inst[24],1'b1,inst[27]?2'b10:inst[23:22]}|
+        {4{type[`ITYPE_IDX_MEM]}}&{1'b0,inst[24],inst[27]?inst[23:22]:2'b10}|
         {4{type[`ITYPE_IDX_BR]}}&cond;
     ////////////////////////////////////
     
@@ -368,10 +374,11 @@ module decoder
         type[`ITYPE_IDX_CACHE]||
         type[`ITYPE_IDX_TLB]||
         type[`ITYPE_IDX_IDLE]||
+        type[`ITYPE_IDX_CSR]||
         is_preload||
-        type[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE]||
-        //b
-        inst[30:26]=='b10100)?0:
+        type[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE]&&!uop[`UOP_MEM_ATM]||
+        //除了jilr和bl之外的分支
+        type[`ITYPE_IDX_BR]&&!is_jilr&&!inst[29:26]!='b0101)?0:
             //bl 向r1写PC+4
             inst[30:26]==('b10101)?1:
             inst[4:0];
@@ -389,7 +396,8 @@ module decoder
     assign rk = 
         (is_alu || is_sra ||
         type[`ITYPE_IDX_MUL] ||
-        type[`ITYPE_IDX_DIV])? inst[14:10]: 0;
+        type[`ITYPE_IDX_DIV])? inst[14:10]: 
+            (type[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE] || type[`ITYPE_IDX_BR]&&!(is_b_or_bl||is_jilr))? inst[4:0]:0;
     /////////////////////////////////////
     
     ////////////////////////////////////////////

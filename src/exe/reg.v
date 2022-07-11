@@ -1,5 +1,5 @@
 `include "../uop.vh"
-module register(
+module register_file(
     input [0:0]clk,
     //从exe2段后输入
     input [0:0]write_en_0,
