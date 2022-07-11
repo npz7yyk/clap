@@ -39,7 +39,7 @@ module register(
     output reg  [5:0]eu0_exp_out,
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
-    output [31:0]eu0_imm_out,
+    output reg [31:0]eu0_imm_out,
 
     output reg [0:0]eu1_en_out,
     output reg [`WIDTH_UOP-1:0]eu1_uop_out,
@@ -53,7 +53,7 @@ module register(
     output reg [31:0]read_data11
 );
 
-assign eu0_imm_out=eu0_imm_in;
+
 
 reg[31:0]register_file[31:0];
 
@@ -68,12 +68,15 @@ always @(posedge clk) begin
     end
 
     if(eu0_en_in)begin
+        eu0_en_out<=eu0_en_in;
+        eu0_uop_out<=eu0_uop_in;
         eu0_rd_out<=eu0_rd_in;
         eu0_rj_out<=eu0_rj_in;
         eu0_rk_out<=eu0_rk_in;
         eu0_pc_out<=eu0_pc_in;
         eu0_pc_next_out<=eu0_pc_next_in;
         eu0_exp_out<=eu0_exp_in;
+        eu0_imm_out<=eu0_imm_in;
 
         if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
             case (eu0_uop_in[`UOP_SRC1])
@@ -140,6 +143,8 @@ always @(posedge clk) begin
     end
 
     if(eu1_en_in)begin
+        eu1_en_out<=eu1_en_in;
+        eu1_uop_out<=eu1_uop_in;
         eu1_rd_out<=eu1_rd_in;
         eu1_rj_out<=eu1_rj_in;
         eu1_rk_out<=eu1_rk_in;
