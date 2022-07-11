@@ -33,7 +33,8 @@ module exe(
     output stall,
     output flush,
     //向分支预测输出
-    output branch_addr_calculated,
+    output [31:0]branch_pc,
+    output [31:0]branch_addr_calculated,
     output branch_status,
     output branch_valid,
     //向cache输出
@@ -49,7 +50,7 @@ module exe(
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU           //    read data to CPU
 );
-
+assign branch_pc=eu0_pc_in;
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_ALU;
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MUL;
 assign eu0_div_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_DIV;

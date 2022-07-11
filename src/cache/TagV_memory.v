@@ -28,7 +28,6 @@ module TagV_memory(
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[0]),
         .addrb  (index),
-        .clkb   (clk),
         .doutb  ({vld_0, tag_0})
     );
     TagV way1_TagV(
@@ -37,7 +36,6 @@ module TagV_memory(
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[1]),
         .addrb  (index),
-        .clkb   (clk),
         .doutb  ({vld_1, tag_1})
     );
     TagV way2_TagV(
@@ -46,7 +44,6 @@ module TagV_memory(
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[2]),
         .addrb  (index),
-        .clkb   (clk),
         .doutb  ({vld_2, tag_2})
     );
     TagV way3_TagV(
@@ -55,7 +52,6 @@ module TagV_memory(
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[3]),
         .addrb  (index),
-        .clkb   (clk),
         .doutb  ({vld_3, tag_3})
     );
 

@@ -1,12 +1,16 @@
 `timescale 1ns / 1ps
-module icache(
+module icache
+#(COOKIE_WIDHT = 32)(
     input clk, rstn,
     /* for CPU */
     input valid,                // valid request
-    input [31:0] addr,
+    input [31:0] pc_in,
+    input [COOKIE_WIDHT-1:0] cookie_in,
     //output addr_valid,         // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
     output [63:0] r_data_CPU,   // read data to CPU
+    output [31:0] pc_out,
+    output [COOKIE_WIDHT-1:0] cookie_out,
     /* for AXI */
     // read
     output r_req,               // send read request
@@ -18,7 +22,7 @@ module icache(
     input ret_last,             // the last returned data
     input [31:0] r_data_AXI     // read data from AXI
     );
-    wire[31:0] addr_rbuf;
+    wire[31+COOKIE_WIDHT:0] addr_rbuf; //{pc_next,pc}
     wire[3:0] hit, mem_en, tagv_we;
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
@@ -28,13 +32,13 @@ module icache(
     wire cache_hit, rbuf_we;
     wire way_sel_en;
 
-    assign r_type = 3'd4;
-    assign r_addr = addr_rbuf;
-    register#(32) req_buf(
+    assign r_addr = addr_rbuf[31:0];
+    assign {cookie_out,pc_out} = addr_rbuf;
+    register#(32+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (rbuf_we),
-        .din    (addr),
+        .din    ({cookie_in,pc_in}),
         .dout   (addr_rbuf)
     );
     ret_buf_i ret_buf(
@@ -54,16 +58,16 @@ module icache(
     );
     TagV_memory tagv_mem(
         .clk        (clk),
-        .r_addr     (addr),
-        .w_addr     (addr_rbuf),
+        .r_addr     (pc_in),
+        .w_addr     (addr_rbuf[31:0]),
         .we         (tagv_we),
         .hit        (hit),
         .cache_hit  (cache_hit)
     );
     memory cache_memory(
         .clk        (clk),
-        .r_addr     (addr),
-        .w_addr     (addr_rbuf),
+        .r_addr     (pc_in),
+        .w_addr     (addr_rbuf[31:0]),
         .mem_din    (mem_din),
         .mem_we     (mem_we),
         .mem_en     (mem_en),
@@ -76,7 +80,7 @@ module icache(
         .lru_way_sel    (way_replace)
     );
     mem_rd_ctrl_i rd_ctrl(
-        .addr_rbuf      (addr_rbuf),
+        .addr_rbuf      (addr_rbuf[31:0]),
         .r_way_sel      (hit),
         .mem_dout       (mem_dout),
         .r_data_AXI     (mem_din),

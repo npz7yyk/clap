@@ -1,3 +1,4 @@
+// -*- Verilog -*-
 //[5:0] Ecode, [6:6] EsubCode
 `define EXP_INT     7'h40   //中断
 `define EXP_PIL     7'h01   //load操作页无效例外

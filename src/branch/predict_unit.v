@@ -48,11 +48,12 @@ module predict_unit #(
 
     output wire [ADDR_WIDTH - 1:0] pc_new,
     output wire                    branch,
-    output wire                    reason
+    output wire                    reason,
+    output wire                    known
 );
     // start of guess log part
-    parameter GUESS_DEPTH = HASH_DEPTH;
-    parameter GUESS_WIDTH = 4;
+    localparam GUESS_DEPTH = HASH_DEPTH;
+    localparam GUESS_WIDTH = 4;
 
     wire [GUESS_DEPTH - 1:0] guess_waddr = pc_now[GUESS_DEPTH + 2:3];
     wire [GUESS_DEPTH - 1:0] guess_raddr = pc_now[GUESS_DEPTH + 2:3];
@@ -196,5 +197,7 @@ module predict_unit #(
     assign pc_new = branch ?
         {pc_choose, 2'b00} :
         {pc_now[ADDR_WIDTH - 1:3] + 1, 3'b000};
+
+    assign known = exist1 | exist2;
 
 endmodule

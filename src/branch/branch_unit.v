@@ -47,7 +47,8 @@ module branch_unit #(
 
     output wire [ADDR_WIDTH - 1:0] pdPC,            // pc predicted
     output wire                    pdBranch,        // whether a branch is predicted
-    output wire                    pdReason         // if branch, which inst causes this
+    output wire                    pdReason,        // if branch, which inst causes this
+    output wire                    pdKnown
 );
     // start of instruction fact part
     wire [1:0] erFactSel, exFactSel, ifFactSel;
@@ -83,8 +84,8 @@ module branch_unit #(
     // end of instruction fact part
 
     // start of past log part
-    parameter PAST_DEPTH = HASH_DEPTH + 1;
-    parameter PAST_WIDTH = 10;
+    localparam PAST_DEPTH = HASH_DEPTH + 1;
+    localparam PAST_WIDTH = 10;
 
     assign erFactLower = idFactIsPair ? 
         1'b1 : 
@@ -158,7 +159,8 @@ module branch_unit #(
 
         .pc_new     (pdPC),
         .branch     (pdBranch),
-        .reason     (pdReason)
+        .reason     (pdReason),
+        .known      (pdKnown)
     );
     // end of prediction part
 

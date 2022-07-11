@@ -1,3 +1,4 @@
+// -*- Verilog -*-
 // SPDX-License-Identifier: Apache-2.0
 // uop.vh: 微操作格式
 
