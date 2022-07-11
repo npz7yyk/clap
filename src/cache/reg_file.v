@@ -13,6 +13,12 @@ module reg_file(
     parameter WAY1 = 4'b0010;
     parameter WAY2 = 4'b0100;
     parameter WAY3 = 4'b1000;
+    integer i;
+    initial begin
+        for(i = 0; i < 64; i = i + 1) begin
+            regs[i] = 4'b0000;
+        end
+    end
     //write
     always@(posedge clk)begin
         case(we)

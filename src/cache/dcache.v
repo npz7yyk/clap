@@ -23,55 +23,74 @@ module dcache(
     input [31:0] r_data_AXI,    // read data from AXI
     // write
     output w_req,               // send write request
-    output [2:0] w_type,        // write type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output w_data_req,
+    output w_last,
+    output b_ready,
+    //output [2:0] w_type,        // write type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
     output [31:0] w_addr,       // start location of write
     output [3:0] w_strb,        // byte mask, valid when type is 0, 1, 2
     output [31:0] w_data_AXI,   // write data
-    input w_rdy                 // AXI signal, means "shake hands success"
+    input w_rdy,                 // AXI signal, means "shake hands success"
+    input w_data_ready,
+    input b_valid
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
-    wire wbuf_AXI_we, fill_finish, way_sel_en, mbuf_we, dirty_data;
-    wire w_dirty_data;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we;
-    wire [31:0] addr_rbuf, w_data_CPU_rbuf;
+    wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
+    wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
+    wire vld, vld_mbuf;
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf;
+    wire [19:0] replace_tag;
+    wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
-    wire [511:0] r_line_AXI, w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
+    wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
 
+    assign r_addr = addr_rbuf;
+    //assign w_strb = write_type_rbuf;
+
     /* request buffer*/
-    // addr, w_data_CPU, op
-    register#(65) req_buf(
+    // addr, w_data_CPU, op, write_type
+    register#(69) req_buf(
         .clk        (clk),
         .rstn       (rstn),
-        .we         (valid),
-        .din        ({addr, w_data_CPU, op}),
-        .dout       ({addr_rbuf, w_data_CPU_rbuf, op_rbuf})
+        .we         (rbuf_we),
+        .din        ({addr, w_data_CPU, op, write_type}),
+        .dout       ({addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf})
     );
 
     /* write buffer AXI */
-    register#(512) wrt_buf_AXI(
-        .clk        (clk),
-        .rstn       (rstn),
-        .we         (wbuf_AXI_we),
-        .din        (miss_sel_data),
-        .dout       (w_line_to_AXI)
+    wrt_buffer_AXI wbuf(
+        .clk                (clk),
+        .rstn               (rstn),
+        .w_buf_we           (wbuf_AXI_we),
+        .wready             (w_data_ready),
+        .bvalid             (b_valid),
+        .awvalid            (w_req),
+        .awready            (w_rdy),
+        .wrt_reset          (wbuf_AXI_reset),
+        .w_line_mem         (miss_sel_data),
+        .wvalid             (w_data_req),
+        .wlast              (w_last),
+        .bready             (b_ready),
+        .w_data_AXI         (w_data_AXI),
+        .wrt_AXI_finish     (wrt_AXI_finish)
     );
 
     /* miss buffer */
-    // way to be replaced, dirty data
-    register#(4) miss_buf(
+    // addr to be write, way to be replaced, dirty_data, vld
+    register#(38) miss_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        (way_replace),
-        .dout       (way_replace_mbuf)
+        .din        ({replace_tag, addr_rbuf[11:0], way_replace, dirty_data, vld}),
+        .dout       ({w_addr, way_replace_mbuf, dirty_data_mbuf, vld_mbuf})
     );
 
     /* return buffer */
     ret_buf_d ret_buf(
         .clk                (clk),
         .addr_rbuf          (addr_rbuf),
-        .wrt_type           (write_type),
+        .wrt_type           (write_type_rbuf),
         .op_rbuf            (op_rbuf),
         .r_data_AXI         (r_data_AXI),
         .w_data_CPU_rbuf    (w_data_CPU_rbuf),
@@ -93,13 +112,16 @@ module dcache(
     );
     
     /* TagV list */
-    TagV_memory tagv_mem(
+    TagV_memory_d tagv_mem(
         .clk            (clk),
         .r_addr         (addr),
         .w_addr         (addr_rbuf),
         .we             (tagv_we),
+        .way_sel        (way_replace),
         .hit            (hit),
-        .cache_hit      (cache_hit)
+        .cache_hit      (cache_hit),
+        .replace_tag    (replace_tag),
+        .replace_vld    (vld)
     );
 
     /* dirty table */
@@ -129,8 +151,9 @@ module dcache(
         .mem_din            (mem_din),
 
         .addr_rbuf          (addr_rbuf),
-        .wrt_type           (write_type),
-        .mem_we_normal      (mem_we_normal)
+        .wrt_type           (write_type_rbuf),
+        .mem_we_normal      (mem_we_normal),
+        .AXI_we             (w_strb)
     );
 
     /* mem read control */
@@ -138,10 +161,9 @@ module dcache(
         .addr_rbuf      (addr_rbuf),
         .r_way_sel      (hit),
         .mem_dout       (mem_dout),
-        .r_data_AXI     (r_line_AXI),
+        .r_data_AXI     (w_line_AXI),
         .r_data_sel     (r_data_sel),
         .miss_way_sel   (way_replace),
-        .way_data       (r_way_data),
         .miss_sel_data  (miss_sel_data),
         .r_data         (r_data_CPU)
     );
@@ -156,17 +178,27 @@ module dcache(
         .r_rdy_AXI          (r_rdy),
         .w_rdy_AXI          (w_rdy),
         .fill_finish        (fill_finish),
+        .dirty_data         (dirty_data),
+        .dirty_data_mbuf    (dirty_data_mbuf),
+        .vld                (vld),
+        .vld_mbuf           (vld_mbuf),
+        .wrt_AXI_finish     (wrt_AXI_finish),
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),
         .mem_we_normal      (mem_we_normal),
+
         .mbuf_we            (mbuf_we),
+        .rbuf_we            (rbuf_we),
         .wbuf_AXI_we        (wbuf_AXI_we),
+        .wbuf_AXI_reset     (wbuf_AXI_reset),
+        .dirty_we           (dirty_we),
         .way_sel_en         (way_sel_en),
         .rdata_sel          (r_data_sel),
         .wrt_data_sel       (wrt_data_sel),
         .mem_we             (mem_we),
         .mem_en             (mem_en),
         .tagv_we            (tagv_we),
+        .w_dirty_data       (w_dirty_data),
         .r_req              (r_req),
         .w_req              (w_req),
         .r_data_ready       (r_data_ready),

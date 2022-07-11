@@ -21,7 +21,7 @@ module mux3_1#(
     input [WIDTH-1:0] din1,
     input [WIDTH-1:0] din2,
     input [WIDTH-1:0] din3,
-    input [2:0] sel,
+    input [3:0] sel,
     output reg [WIDTH-1:0] dout
     );
     always @(*) begin

@@ -9,12 +9,18 @@ module main_FSM_d(
     input w_rdy_AXI,
     input fill_finish,
     input dirty_data,
+    input dirty_data_mbuf,
+    input vld,
+    input vld_mbuf,
+    input wrt_AXI_finish,
     input [3:0] lru_way_sel,
     input [3:0] hit,
     input [63:0] mem_we_normal,
 
     output reg mbuf_we,
+    output reg rbuf_we,
     output reg wbuf_AXI_we,
+    output reg wbuf_AXI_reset,
     output reg way_sel_en,
     output reg rdata_sel,
     output reg wrt_data_sel,
@@ -33,6 +39,7 @@ module main_FSM_d(
     parameter MISS = 3'd2;
     parameter REPLACE = 3'd3;
     parameter REFILL = 3'd4;
+    parameter WAIT_WRITE = 3'd5;
 
     parameter READ = 1'd0;
     parameter WRITE = 1'd1;
@@ -54,7 +61,7 @@ module main_FSM_d(
             if(valid && cache_hit) nxt = LOOKUP;
             else if(!valid && cache_hit) nxt = IDLE;
             else begin
-                if(dirty_data) nxt = MISS;
+                if(op == WRITE && dirty_data && vld) nxt = MISS;
                 else nxt = REPLACE;
             end
         end
@@ -68,10 +75,16 @@ module main_FSM_d(
         end
         REFILL: begin
             if(fill_finish) begin
-                if(valid) nxt = IDLE;
-                else nxt = LOOKUP;
+                nxt = WAIT_WRITE;
             end
             else nxt = REFILL;
+        end
+        WAIT_WRITE: begin
+            if(wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf) begin
+                if(valid) nxt = LOOKUP;
+                else nxt = IDLE;
+            end
+            else nxt = WAIT_WRITE;
         end
         default: nxt = IDLE;
         endcase
@@ -80,8 +93,12 @@ module main_FSM_d(
         mbuf_we = 0; wbuf_AXI_we = 0; mem_we = 0; mem_en = 0;
         rdata_sel = 0; wrt_data_sel = 0; tagv_we = 0;
         r_req = 0; w_req = 0; data_valid = 0; dirty_we = 0; 
-        w_dirty_data = 0; r_data_ready = 0;
+        w_dirty_data = 0; r_data_ready = 0; rbuf_we = 0;
+        way_sel_en = 0; wbuf_AXI_reset = 0;
         case(crt)
+        IDLE: begin
+            rbuf_we = 1;
+        end
         LOOKUP: begin
             rdata_sel = 1;
             wrt_data_sel = 1;
@@ -92,6 +109,7 @@ module main_FSM_d(
             end
             else begin
                 data_valid = 1;
+                rbuf_we = 1;
                 if(op == WRITE)begin
                     mem_en = hit;
                     mem_we = mem_we_normal;
@@ -112,9 +130,15 @@ module main_FSM_d(
                 mem_we = {64{1'b1}};
                 mem_en = lru_way_sel;
                 tagv_we = lru_way_sel;
-                data_valid = 1;
                 dirty_we = lru_way_sel;
-                w_dirty_data = 0;
+                w_dirty_data = (op == READ ? 1'b0 : 1'b1);
+            end
+        end
+        WAIT_WRITE: begin
+            if(wrt_AXI_finish || op == READ || !dirty_data_mbuf|| !vld_mbuf)begin
+                data_valid = 1;
+                rbuf_we = 1;
+                wbuf_AXI_reset = 1;
             end
         end
         endcase

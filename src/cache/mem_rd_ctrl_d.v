@@ -3,7 +3,7 @@ module mem_rd_ctrl_d(
     input [31:0] addr_rbuf,
     input [3:0] r_way_sel,
     input [2047:0] mem_dout,
-    input [512:0] r_data_AXI,
+    input [511:0] r_data_AXI,
     input r_data_sel,
     input [3:0] miss_way_sel,
     output reg [511:0] miss_sel_data,
@@ -81,6 +81,7 @@ module mem_rd_ctrl_d(
         M_SEL1: miss_sel_data = mem_dout[1023:512];
         M_SEL2: miss_sel_data = mem_dout[1535:1024];
         M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
+        default: miss_sel_data = 0;
         endcase
 
     end

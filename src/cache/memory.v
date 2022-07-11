@@ -24,6 +24,7 @@ module memory(
         .ena    (mem_en[0]),
         .wea    (mem_we),
         .addrb  (r_index),
+        .clkb   (clk),
         .doutb  (mem_dout0)
     );
     cache_memory way1(
@@ -33,6 +34,7 @@ module memory(
         .ena    (mem_en[1]),
         .wea    (mem_we),
         .addrb  (r_index),
+        .clkb   (clk),
         .doutb  (mem_dout1)
     );
     cache_memory way2(
@@ -42,6 +44,7 @@ module memory(
         .ena    (mem_en[2]),
         .wea    (mem_we),
         .addrb  (r_index),
+        .clkb   (clk),
         .doutb  (mem_dout2)
     );
     cache_memory way3(
@@ -51,6 +54,7 @@ module memory(
         .ena    (mem_en[3]),
         .wea    (mem_we),
         .addrb  (r_index),
+        .clkb   (clk),
         .doutb  (mem_dout3)
     );
     // cache_memory way4(
