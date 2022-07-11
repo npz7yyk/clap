@@ -5,6 +5,7 @@ module mem_rd_ctrl_d(
     input [2047:0] mem_dout,
     input [511:0] r_data_AXI,
     input r_data_sel,
+    input [3:0] read_type_rbuf,
     input [3:0] miss_way_sel,
     output reg [511:0] miss_sel_data,
     output reg [31:0] r_data
@@ -13,12 +14,20 @@ module mem_rd_ctrl_d(
     parameter HIT1 = 4'b0010;
     parameter HIT2 = 4'b0100;
     parameter HIT3 = 4'b1000;
+
     parameter M_SEL0 = 4'b0001;
     parameter M_SEL1 = 4'b0010;
     parameter M_SEL2 = 4'b0100;
     parameter M_SEL3 = 4'b1000;
+
+    parameter BYTE = 4'b0001;
+    parameter HALF = 4'b0011;
+    parameter WORD = 4'b1111;
+
     reg [31:0] r_data_mem, r_word_AXI;
     reg [511:0] way_data;
+
+    reg [31:0] r_data_CPU;
 
     always @(*)begin
         case(r_way_sel)
@@ -69,10 +78,33 @@ module mem_rd_ctrl_d(
         4'd15: r_word_AXI = r_data_AXI[511:480];
         endcase
     end
-    always @(*)begin
+
+    always @(*) begin
         case(r_data_sel)
-        1'b0: r_data = r_word_AXI;
-        1'b1: r_data = r_data_mem;
+        1'b0: r_data_CPU = r_word_AXI;
+        1'b1: r_data_CPU = r_data_mem;
+        endcase
+    end
+
+    always @(*) begin
+        case(read_type_rbuf)
+        BYTE: begin
+            case(addr_rbuf[1:0])
+            2'd0: r_data = {{24{r_data_CPU[7]}}, r_data_CPU[7:0]};
+            2'd1: r_data = {{24{r_data_CPU[15]}}, r_data_CPU[15:8]};
+            2'd2: r_data = {{24{r_data_CPU[23]}}, r_data_CPU[23:16]};
+            2'd3: r_data = {{24{r_data_CPU[31]}}, r_data_CPU[31:24]};
+            endcase
+        end
+        HALF: begin
+            case(addr_rbuf[1:0])
+            2'd0: r_data = {{16{r_data_CPU[15]}}, r_data_CPU[15:0]};
+            2'd2: r_data = {{16{r_data_CPU[31]}}, r_data_CPU[31:16]};
+            default: r_data = 0;
+            endcase
+        end
+        WORD: r_data = r_data_CPU;
+        default: r_data = 0;
         endcase
     end
     always @(*) begin
@@ -83,6 +115,5 @@ module mem_rd_ctrl_d(
         M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
         default: miss_sel_data = 0;
         endcase
-
     end
 endmodule

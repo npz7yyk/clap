@@ -6,6 +6,7 @@ module dcache(
     input valid,                // valid request
     input op,                   // write: 1, read: 0
     input [31:0] addr,
+    input [3:0] read_type,
     input [3:0] write_type,     // byte write enable
     input [31:0] w_data_CPU,    // write data
     //output addr_valid,          // read: addr has been accepted; write: addr and data have been accepted
