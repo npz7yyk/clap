@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 2022/06/10 23:16:13
+// Create Date: 2022/07/10 23:16:13
 // Design Name: 
 // Module Name: branch_unit
 // Project Name: 
@@ -110,7 +110,7 @@ module branch_unit #(
         .erLower        (erFactLower),
         .erUpper        (erFactUpper),
 
-        .bdEn           (exVld),
+        .bdEn           (exVld & exFactExist),
         .bdSel          (exFactSel),
         .bdPC           (exPC),
         .bdPCTar        (exPCTar),
