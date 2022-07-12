@@ -11,7 +11,6 @@ module way_sel_lru(
         for(i = 0; i < 4; i = i + 1)begin
             hold_time[i] = 3 - i;
         end
-
     end
     // update hold time
     always @(posedge clk) begin
@@ -40,4 +39,6 @@ module way_sel_lru(
         else if(&gre_mat[2]) lru_way_sel = 4'b0100;
         else lru_way_sel = 4'b1000;
     end
+
+
 endmodule
