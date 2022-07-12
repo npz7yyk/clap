@@ -84,9 +84,9 @@ module core_top(
         end
     
     wire id_feedback_valid;
-    wire [31:0] pc_for_predict;
+    wire [31:0] id_pc_for_predict,ex_branch_pc;
     wire [31:0] id_jmpdist0,id_jmpdist1;
-    wire [1:0] id_category0,id_category1;
+    wire [1:0] id_category0,id_category1,ex_br_category;
     wire ex_feedback_valid,ex_did_jump;
     wire pred_known;
     wire pd_branch,pd_reason;
@@ -97,14 +97,14 @@ module core_top(
         .ifVld(pc_stall_n),.ifPC(pc),
 
         .idVld(id_feedback_valid),
-        .idPC(pc_for_predict),
+        .idPC(id_pc_for_predict),
         .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
         .idType1(id_category0), .idType2(id_category1),
         
         .exVld(ex_feedback_valid),
-        //.exPC(),
+        .exPC(ex_branch_pc),
         .exPCTar(pc_executer),
-        //.exType(),
+        .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
 
@@ -170,7 +170,7 @@ module core_top(
         .exception0_out(id_exception0),.exception1_out(id_exception1),
        
         .feedback_valid(id_feedback_valid),
-        .pc_for_predict(pc_for_predict),
+        .pc_for_predict(id_pc_for_predict),
         .jmpdist0(id_jmpdist0),.jmpdist1(id_jmpdist1),
         .category0(id_category0),.category1(id_category1),
 
@@ -280,6 +280,13 @@ module core_top(
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm;
 
+    wire rf_wen0;
+    wire rf_wen1;
+    wire [31:0]rf_waddr0;
+    wire [31:0]rf_waddr1;
+    wire [31:0]rf_wdata0;
+    wire [31:0]rf_wdata1;
+
     register_file  the_register (
         .clk                     ( aclk              ),
         
@@ -306,27 +313,26 @@ module core_top(
         .read_data01    (rf_eu0_read_datak), .read_data11    (rf_eu1_read_datak),
         .eu0_imm_out    (rf_eu0_imm       ),  
 
-        .write_en_0   (write_en_0  ),
-        .write_en_1   (write_en_1  ),
-        .write_addr_0 (write_addr_0),
-        .write_addr_1 (write_addr_1),
-        .write_data_0 (write_data_0),
-        .write_data_1 (write_data_1)
+        .write_en_0   (rf_wen0  ),
+        .write_en_1   (rf_wen1  ),
+        .write_addr_0 (rf_waddr0),
+        .write_addr_1 (rf_waddr1),
+        .write_data_0 (rf_wdata0),
+        .write_data_1 (rf_wdata1)
     );
 
-    wire  [0:0]  ex_eu0_en, ex_eu1_en;
+    wire  ex_eu0_en, ex_eu1_en;
     wire  [31:0]  ex_eu0_data,ex_eu1_data;
     wire  [4:0]  ex_eu0_rd,ex_eu1_rd;
-    wire  [5:0] ex_eu0_exp,ex_eu1_exp;
+    wire  [5:0] ex_eu0_exp;
+    wire  [31:0] ex_eu0_pc;
     
-    // wire  branch_addr_calculated;
-    // wire  [0:0]  valid;
-    // wire  [1:0]  op;
-    // wire  [ 5:0 ]  index;
-    // wire  [ 19:0 ]  tag;
-    // wire  [ 5:0 ]  offset;
-    // wire  [ 3:0 ]  write_type;
-    // wire  [ 31:0 ]  w_data_CPU;
+    wire  ex_mem_valid;
+    wire  [1:0]  ex_mem_op;
+    wire  [ 5:0 ]  ex_mem_addr;
+    wire  [ 3:0 ]  ex_mem_write_type;
+    wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
+    wire ex_mem_data_valid;
 
     exe  the_exe (
         .clk           (aclk          ),
@@ -348,24 +354,57 @@ module core_top(
         .data_out0(ex_eu0_data), .data_out1(ex_eu1_data),
         .addr_out0(ex_eu0_rd  ), .addr_out1(ex_eu1_rd  ),
         .exp_out  (ex_eu0_exp ), //.exp_out  (ex_eu1_exp ),
+        .eu0_pc_out(ex_eu0_pc),
 
         .stall                   ( ex_stall              ),
         .flush                   ( ex_flush              ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),
-        .branch_addr_calculated  ( pc_executer   )//,
+        .branch_pc               ( ex_branch_pc ),
+        .category_out            ( ex_br_category ),
+        .branch_addr_calculated  ( pc_executer   ),
 
-        //TODO
-        // .valid                   ( valid                    ),
-        // .op                      ( op                       ),
-        // .index                   ( index                    ),
-        // .tag                     ( tag                      ),
-        // .offset                  ( offset                   ),
-        // .write_type              ( write_type               ),
-        // .w_data_CPU              ( w_data_CPU               ),
-        // .addr_valid(addr_valid),
-        // .data_valid(data_valid),
-        // .r_data_CPU(r_data_CPU)
+        .valid                   ( ex_mem_valid                    ),
+        .op                      ( ex_mem_op                       ),
+        //????
+        // .index                   ( ex_mem_index                    ),
+        // .tag                     ( ex_mem_tag                      ),
+        // .offset                  ( ex_mem_offset                   ),
+        .write_type              ( ex_mem_write_type               ),
+        .w_data_CPU              ( ex_mem_w_data_CPU               ),
+        //.addr_valid             (addr_valid),
+        .data_valid             ( ex_mem_data_valid),
+        .r_data_CPU             ( ex_mem_r_data_CPU)
     );
+
+    //TODO: connect it
+    dcache the_decache
+    (
+        .clk(aclk),.rstn(aresetn),
+        .valid(ex_mem_valid),
+        .op(ex_mem_op),
+        .addr(ex_mem_addr), //TODO: connect it to exe
+        .read_type(ex_mem_write_type),//TODO: write type in exe equals to read type in dcache???
+        .data_valid(ex_mem_data_valid),
+        .r_data_CPU(ex_mem_r_data_CPU),
+        .w_data_CPU(ex_mem_w_data_CPU)
+    );
+
     assign set_pc_by_executer = ex_flush;
+
+    writeback the_writeback
+    (
+        .eu0_valid(ex_eu0_en), .eu1_valid(ex_eu1_en),
+        .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
+        .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
+        .eu0_pc(ex_eu0_pc),
+        .eu0_exception(ex_eu0_exp),
+
+        .wen0(rf_wen0),.wen1(rf_wen1),
+        .waddr0(rf_waddr0),.waddr1(rf_waddr1),
+        .wdata0(rf_wdata0),.wdata1(rf_wdata1),
+
+        .set_pc(set_pc_by_writeback),
+        .pc(pc_writeback)
+    );
 endmodule 

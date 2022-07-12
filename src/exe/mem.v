@@ -40,7 +40,7 @@ module mem1 (
     input [0:0]mem_en_in,
     input [1:0]mem_width_in,
     //从cache输入
-    input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
+    //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
     //向exe2后输出

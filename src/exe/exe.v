@@ -49,7 +49,7 @@ module exe(
     output [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ] w_data_CPU,         //    write data
     //从cache输入
-    input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
+    //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU           //    read data to CPU
 );
@@ -328,7 +328,7 @@ mem1  u_mem1 (
     .mem_rd_in               ( mem_rd_exe1             ),
     .mem_en_in               ( mem_en_exe1             ),
     .mem_width_in            ( mem_width_exe1          ),
-    .addr_valid              ( addr_valid            ),
+    //.addr_valid              ( addr_valid            ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
 

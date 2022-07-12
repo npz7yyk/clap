@@ -133,8 +133,10 @@ module is_stage
     reg [31:0] register_valid_next;
     reg [4:0] rd_of_instruction_executing_in_eu0,rd_of_instruction_executing_in_eu1;
 
-    //当FIFO[0]的指令是ALU指令时，把FIFO[0]发射到执行单元 #1
-    wire swap_fifo0_fifo1 = fifo0[`ITYPE_IDX_ALU];
+    // //当FIFO[0]的指令是ALU指令时，把FIFO[0]发射到执行单元 #1
+    // wire swap_fifo0_fifo1 = fifo0[`ITYPE_IDX_ALU];
+    //exe段不支持把FIFO[0]发射到eu1
+    wire swap_fifo0_fifo1 = 0;
 
     assign {eu0_pc_next,eu0_pc,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = swap_fifo0_fifo1?fifo1:fifo0;
     assign {eu1_pc_next,eu1_pc,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = swap_fifo0_fifo1?fifo0:fifo1;
