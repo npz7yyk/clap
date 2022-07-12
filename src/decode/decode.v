@@ -60,7 +60,7 @@ module id_stage
     output feedback_valid,
     output [31:0] pc_for_predict,
     output [31:0] jmpdist0,jmpdist1,//跳转目标
-    output [1:0] categroy0,categroy1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
+    output [1:0] category0,category1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
     //给PC
     output reg [31:0] probably_right_destination,
     output wire set_pc
@@ -70,14 +70,14 @@ module id_stage
 
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
-    pre_decoder pre_decoder0 (.inst(inst0),.categroy(categroy0),.pc_offset(pc_offset0));
-    pre_decoder pre_decoder1 (.inst(inst1),.categroy(categroy1),.pc_offset(pc_offset1));
+    pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0));
+    pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
     assign pc_for_predict = pc_in;
     assign jmpdist0 = pc_in + pc_offset0;
     assign jmpdist1 = pc_in+4 + pc_offset1;
     assign feedback_valid = input_valid;
-    wire should_jmp0 = categroy0=='b10 || categroy0=='b01&&pc_offset0[31];
-    wire should_jmp1 = categroy1=='b10 || categroy1=='b01&&pc_offset1[31];
+    wire should_jmp0 = category0=='b10 || category0=='b01&&pc_offset0[31];
+    wire should_jmp1 = category1=='b10 || category1=='b01&&pc_offset1[31];
     reg set_pc_due_to_inst0,set_pc_due_to_inst1;
     assign set_pc = set_pc_due_to_inst0|set_pc_due_to_inst1;
     always @* begin
@@ -437,13 +437,13 @@ endmodule
 module pre_decoder
 (
     input [31:0] inst,
-    output [1:0] categroy,
+    output [1:0] category,
     output reg [31:0] pc_offset
 );
-    assign categroy[1]=inst[30:27]=='b1010|inst[30:26]=='b10011;
-    assign categroy[0]=inst[30]&~(inst[29:27]=='b010);
+    assign category[1]=inst[30:27]=='b1010|inst[30:26]=='b10011;
+    assign category[0]=inst[30]&~(inst[29:27]=='b010);
     always @*
-        case(categroy)
+        case(category)
             2'b00,2'b11: pc_offset = 4;
             2'b01:       pc_offset = {{14{inst[25]}},inst[25:10],2'b00};
             2'b10:       pc_offset = {{4{inst[25]}},inst[9:0],inst[25:10],2'b00};
