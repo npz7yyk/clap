@@ -41,7 +41,7 @@ module dcache(
     wire vld, vld_mbuf;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf;
     wire [19:0] replace_tag;
-    wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_mbuf;
+    wire [31:0] addr_rbuf, w_data_CPU_rbuf;
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
