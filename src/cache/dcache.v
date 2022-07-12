@@ -159,14 +159,15 @@ module dcache(
 
     /* mem read control */
     mem_rd_ctrl_d mem_rd_ctrl(
-        .addr_rbuf      (addr_rbuf),
-        .r_way_sel      (hit),
-        .mem_dout       (mem_dout),
-        .r_data_AXI     (w_line_AXI),
-        .r_data_sel     (r_data_sel),
-        .miss_way_sel   (way_replace),
-        .miss_sel_data  (miss_sel_data),
-        .r_data         (r_data_CPU)
+        .addr_rbuf          (addr_rbuf),
+        .r_way_sel          (hit),
+        .read_type_rbuf     (write_type_rbuf),
+        .mem_dout           (mem_dout),
+        .r_data_AXI         (w_line_AXI),
+        .r_data_sel         (r_data_sel),
+        .miss_way_sel       (way_replace),
+        .miss_sel_data      (miss_sel_data),
+        .r_data             (r_data_CPU)
     );
 
     /* main FSM */

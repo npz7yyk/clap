@@ -10,6 +10,7 @@ module mem_rd_ctrl_d(
     output reg [511:0] miss_sel_data,
     output reg [31:0] r_data
     );
+    
     parameter HIT0 = 4'b0001;
     parameter HIT1 = 4'b0010;
     parameter HIT2 = 4'b0100;
