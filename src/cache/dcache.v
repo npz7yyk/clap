@@ -137,11 +137,18 @@ module dcache(
     );
 
     /* miss way sel */
-    way_sel_lru way_sel(
+    // way_sel_lru way_sel(
+    //     .clk            (clk),
+    //     .en             (way_sel_en),
+    //     .visit          (hit),
+    //     .lru_way_sel    (way_replace)
+    // );
+    miss_way_sel_lru way_sel(
         .clk            (clk),
-        .en             (way_sel_en),
+        .addr_rbuf      (addr_rbuf),
         .visit          (hit),
-        .lru_way_sel    (way_replace)
+        .en             (way_sel_en),
+        .way_sel        (way_replace)
     );
 
     /* mem write control */
