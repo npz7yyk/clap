@@ -56,8 +56,8 @@ module data #(
     output wire [ADDR_WIDTH - 1:0] ifDataLower,     // result data
     output wire [ADDR_WIDTH - 1:0] ifDataUpper      // result data
 );
-    assign idUsefulLower = idTypeLower[1] ^ idTypeLower[0];
-    assign idUsefulUpper = idTypeUpper[1] ^ idTypeUpper[0];
+    assign idUsefulLower = ^idTypeLower;
+    assign idUsefulUpper = ^idTypeUpper;
 
     wire [HASH_DEPTH - 1:0] idWaddr = idPC[HASH_DEPTH + 2:3];
     wire [HASH_DEPTH - 1:0] exRaddr = exPC[HASH_DEPTH + 2:3];
@@ -88,7 +88,7 @@ module data #(
 
     assign idIsPair = vldLower[idWaddr] & vldUpper[idWaddr] & ifTagLower == ifTagUpper;
 
-    always @(posedge clk or negedge rstn) begin
+    always @(posedge clk) begin
         if (!rstn) begin
             vldLower <= 32'b0;
             vldUpper <= 32'b0;
@@ -202,14 +202,15 @@ module fact #(
     input wire [ADDR_WIDTH - 1:0] idPCTarLower,     // branch target of instruction1
     input wire [ADDR_WIDTH - 1:0] idPCTarUpper,     // branch target of instrustion2
 
-    output wire             [1:0] erSel,            // which block to erase
+    output reg              [3:0] erSel,            // which block to erase
     output wire                   erLower,          // whether past needs to be erased
     output wire                   erUpper,          // whether past needs to be erased
 
     // wire for check tag
+    input wire                    exVld,            // whether we update queue
     input wire [ADDR_WIDTH - 1:0] exPC,             // used for update
     output wire                   exExist,          // whether this pair exist
-    output wire             [1:0] exSel,            // if exist, which block
+    output reg              [3:0] exSel,            // if exist, which block
 
     // wire for predict
     input wire [ADDR_WIDTH - 1:0] ifPC,             // instruction pair used to predict
@@ -218,77 +219,204 @@ module fact #(
      * addr     30      the target address of this instruction
      * type     2       the type of this instruction
      */
-    output wire                    ifExistLower,    // whether instruction exists
-    output wire                    ifExistUpper,    // whether instruction exists
-    output wire              [1:0] ifSel,           // if exist, which block
-    output wire [ADDR_WIDTH - 1:0] ifDataLower,     // result data
-    output wire [ADDR_WIDTH - 1:0] ifDataUpper      // result data
+    output wire                   ifExistLower,     // whether instruction exists
+    output wire                   ifExistUpper,     // whether instruction exists
+    output reg              [1:0] ifSel,            // if exist, which block
+    output reg [ADDR_WIDTH - 1:0] ifDataLower,      // result data
+    output reg [ADDR_WIDTH - 1:0] ifDataUpper       // result data
 );
-    /*
-    wire [ADDR_DEPTH - 1:0] wtaddr = bPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] r1addr = uPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] r2addr = pPC[ADDR_DEPTH + 2:3];
+    wire [ADDR_WIDTH - 1:0] ifDataLower1, ifDataLower2,
+        ifDataLower3, ifDataLower4, ifDataUpper1, 
+        ifDataUpper2, ifDataUpper3, ifDataUpper4;
 
-    reg [(1 << ADDR_DEPTH) - 1:0] vld;
-    initial vld <= 32'b0;
+    data #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .HASH_WIDTH (HASH_WIDTH)
+    ) way1 (
+        .clk            (clk),
+        .rstn           (rstn),
 
-    always @(posedge clk or negedge rstn) begin
-        if (!rstn) vld <= 32'b0;
-        else if (en) vld[wtaddr] <= 1'b1;
+        .idEn           (erSel[0]),
+        .idPC           (idPC),
+        .idTypeLower    (idTypeLower),
+        .idTypeUpper    (idTypeUpper),
+        .idPCTarLower   (idPCTarLower),
+        .idPCTarUpper   (idPCTarUpper),
+
+        .idIsPair       (idIsPair1),
+        .idExist        (idExist1),
+        .idInsert       (idInsert1),
+
+        .exPC           (exPC),
+        .exExist        (exExist1),
+
+        .ifPC           (ifPC),
+        .ifExistLower   (ifExistLower1),
+        .ifExistUpper   (ifExistUpper1),
+        .ifDataLower    (ifDataLower1),
+        .ifDataUpper    (ifDataUpper1)
+    );
+
+    data #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .HASH_WIDTH (HASH_WIDTH)
+    ) way2 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .idEn           (erSel[1]),
+        .idPC           (idPC),
+        .idTypeLower    (idTypeLower),
+        .idTypeUpper    (idTypeUpper),
+        .idPCTarLower   (idPCTarLower),
+        .idPCTarUpper   (idPCTarUpper),
+
+        .idIsPair       (idIsPair2),
+        .idExist        (idExist2),
+        .idInsert       (idInsert2),
+
+        .exPC           (exPC),
+        .exExist        (exExist2),
+
+        .ifPC           (ifPC),
+        .ifExistLower   (ifExistLower2),
+        .ifExistUpper   (ifExistUpper2),
+        .ifDataLower    (ifDataLower2),
+        .ifDataUpper    (ifDataUpper2)
+    );
+
+    data #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .HASH_WIDTH (HASH_WIDTH)
+    ) way3 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .idEn           (erSel[2]),
+        .idPC           (idPC),
+        .idTypeLower    (idTypeLower),
+        .idTypeUpper    (idTypeUpper),
+        .idPCTarLower   (idPCTarLower),
+        .idPCTarUpper   (idPCTarUpper),
+
+        .idIsPair       (idIsPair3),
+        .idExist        (idExist3),
+        .idInsert       (idInsert3),
+
+        .exPC           (exPC),
+        .exExist        (exExist3),
+
+        .ifPC           (ifPC),
+        .ifExistLower   (ifExistLower3),
+        .ifExistUpper   (ifExistUpper3),
+        .ifDataLower    (ifDataLower3),
+        .ifDataUpper    (ifDataUpper3)
+    );
+
+    data #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .HASH_WIDTH (HASH_WIDTH)
+    ) way4 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .idEn           (erSel[3]),
+        .idPC           (idPC),
+        .idTypeLower    (idTypeLower),
+        .idTypeUpper    (idTypeUpper),
+        .idPCTarLower   (idPCTarLower),
+        .idPCTarUpper   (idPCTarUpper),
+
+        .idIsPair       (idIsPair4),
+        .idExist        (idExist4),
+        .idInsert       (idInsert4),
+
+        .exPC           (exPC),
+        .exExist        (exExist4),
+
+        .ifPC           (ifPC),
+        .ifExistLower   (ifExistLower4),
+        .ifExistUpper   (ifExistUpper4),
+        .ifDataLower    (ifDataLower4),
+        .ifDataUpper    (ifDataUpper4)
+    );
+
+    wire [3:0] visit = {exExist4, exExist3, exExist2, exExist1};
+    // erase or not decided by numbers
+    wire [3:0] select;
+    way_select #(
+        .HASH_DEPTH (HASH_DEPTH)
+    ) way_select (
+        .clk    (clk),
+        .rstn   (rstn),
+        .en     (exVld & &visit),
+        .waddr  (exPC[HASH_DEPTH + 2:3]),
+        .visit  (visit),
+        .raddr  (idPC[HASH_DEPTH + 2:3]),
+        .select (select)
+    );
+
+    // this "always" deals with idEn1 ~ 4
+    assign dataExist = idExist1 | idExist2 | idExist3 | idExist4;
+    always @(*) begin
+        if (!idEn | dataExist) erSel = 4'b0000;
+        else if (idInsert1) erSel = 4'b0001;
+        else if (idInsert2) erSel = 4'b0010;
+        else if (idInsert3) erSel = 4'b0100;
+        else if (idInsert4) erSel = 4'b1000;
+        else erSel = select;
     end
 
-    wire [ADDR_DEPTH - 1:0] hash_wtaddr = bPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] hash_r1addr = uPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] hash_r2addr = pPC[ADDR_DEPTH + 2:3];
-    wire [HASH_WIDTH - 1:0] hash_wtdata = 
-        bPC[HASH_WIDTH + ADDR_DEPTH + 2:ADDR_DEPTH + 3];
-    wire [HASH_WIDTH - 1:0] hash_r1data;
-    wire [HASH_WIDTH - 1:0] hash_r2data;
-    double_port_memory #(
-        .DATA_DEPTH     (ADDR_DEPTH),
-        .DATA_WIDTH     (HASH_WIDTH)
-    ) hash (
-        .clk        (clk),
-        .write_en   (en),
-        .wtaddr     (hash_wtaddr),
-        .wtdata     (hash_wtdata),
-        .r1addr     (hash_r1addr),
-        .r1data     (hash_r1data),
-        .r2addr     (hash_r2addr),
-        .r2data     (hash_r2data)
-    );
+    wire isPair = erSel[0] & idIsPair1 
+                | erSel[1] & idIsPair2
+                | erSel[2] & idIsPair3
+                | erSel[3] & idIsPair4;
+    
+    assign erLower = isPair ? 1'b1 : ^idTypeLower;
+    assign erUpper = isPair ? 1'b1 : ^idTypeUpper;
 
-    parameter DATA_WIDTH = ADDR_WIDTH * 2;
-    wire [ADDR_DEPTH - 1:0] data_wtaddr = bPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] data_r1addr = uPC[ADDR_DEPTH + 2:3];
-    wire [ADDR_DEPTH - 1:0] data_r2addr = pPC[ADDR_DEPTH + 2:3];
-    wire [DATA_WIDTH - 1:0] data_wtdata = {
-        bPCTar1[ADDR_WIDTH - 1:2], bType1,
-        bPCTar2[ADDR_WIDTH - 1:2], bType2
-    };
-    wire [DATA_WIDTH - 1:0] data_r1data;
-    wire [DATA_WIDTH - 1:0] data_r2data;
-    double_port_memory #(
-        .DATA_DEPTH     (ADDR_DEPTH),
-        .DATA_WIDTH     (DATA_WIDTH)
-    ) data (
-        .clk        (clk),
-        .write_en   (en),
-        .wtaddr     (data_wtaddr),
-        .wtdata     (data_wtdata),
-        .r1addr     (data_r1addr),
-        .r1data     (data_r1data),
-        .r2addr     (data_r2addr),
-        .r2data     (data_r2data)
-    );
+    always @(*) begin
+        if      (exExist1) exSel = {3'b0, exVld};
+        else if (exExist2) exSel = {2'b0, exVld, 1'b0};
+        else if (exExist3) exSel = {1'b0, exVld, 2'b0};
+        else if (exExist4) exSel = {exVld, 3'b0};
+        else               exSel = 4'b0000;
+    end
 
-    assign uVld = vld[hash_r1addr];
-    assign pVld = vld[hash_r2addr];
-    assign uHit = hash_r1data == uPC[HASH_WIDTH + 2:3];
-    assign pHit = hash_r2data == pPC[HASH_WIDTH + 2:3];
-    assign uData = data_r1data;
-    assign pData = data_r2data;
-    */
+    assign exExist = exExist1 | exExist2 | exExist3 | exExist4;
+
+    always @(*) begin
+        if (ifExistLower1 | ifExistUpper1) begin
+            ifSel = 2'b00;
+            ifDataLower = ifDataLower1;
+            ifDataUpper = ifDataUpper1;
+        end
+        else if (ifExistLower2 | ifExistUpper2) begin
+            ifSel = 2'b01;
+            ifDataLower = ifDataLower2;
+            ifDataUpper = ifDataUpper2;
+        end
+        else if (ifExistLower3 | ifExistUpper3) begin
+            ifSel = 2'b10;
+            ifDataLower = ifDataLower3;
+            ifDataUpper = ifDataUpper3;
+        end
+        else begin
+            ifSel = 2'b11;
+            ifDataLower = ifDataLower4;
+            ifDataUpper = ifDataUpper4;
+        end
+    end
+
+    assign ifExistLower = 
+        ifExistLower1 | ifExistLower2 | ifExistLower3 | ifExistLower4;
+    assign ifExistUpper = 
+        ifExistUpper1 | ifExistUpper2 | ifExistUpper3 | ifExistUpper4;
+
 endmodule
 
 
@@ -377,7 +505,7 @@ module para #(
 
     input wire                    bdEn,             // whether we need to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
-    input wire [ADDR_WIDTH - 1:0] bdBack,           // instruction branch direction
+    input wire                    bdBack,           // instruction branch direction
     input wire              [1:0] bdType,           // instruction type
     input wire                    bdBranch,         // whether a branch is needed
 
@@ -401,8 +529,8 @@ module para #(
 
     reg [(1 << HASH_DEPTH) - 1:0] vld;
     initial vld <= 64'b0;
-    always @(posedge clk or negedge rstn) begin
-        if (rstn) vld <= 64'b0;
+    always @(posedge clk) begin
+        if (!rstn) vld <= 64'b0;
         else if (erEn) begin
             // erPC needs to be invalidated
             if (erLower) begin
@@ -478,16 +606,14 @@ module past #(
     input wire                    clk,
     input wire                    rstn,
 
-    input wire                    erEn,             // whether we need to erase
-    input wire              [1:0] erSel,            // which block to erase
+    input wire              [3:0] erSel,            // which block to erase
     input wire [ADDR_WIDTH - 1:0] erPC,             // erase place
     input wire                    erLower,          // how to erase the pair
     input wire                    erUpper,          // how to erase the pair
 
-    input wire                    bdEn,             // whether we need to update
-    input wire              [1:0] bdSel,            // which block to update 
+    input wire              [3:0] bdSel,            // which block to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
-    input wire [ADDR_WIDTH - 1:0] bdPCTar,          // instruction branch target
+    input wire                    bdBack,           // instruction branch target
     input wire              [1:0] bdType,           // instruction type
     input wire                    bdBranch,         // whether a branch is needed
 
@@ -501,79 +627,146 @@ module past #(
      * log      8       the experience for 11-10-01-00
      *                  each case has 2 bits
      */
-    output wire                    ifVldLower,
-    output wire                    ifVldUpper,
-    output wire [PARA_WIDTH - 1:0] ifParaLower,
-    output wire [PARA_WIDTH - 1:0] ifParaUpper
+    output reg                    ifVldLower,
+    output reg                    ifVldUpper,
+    output reg [PARA_WIDTH - 1:0] ifParaLower,
+    output reg [PARA_WIDTH - 1:0] ifParaUpper
 );
-    /*
-    reg [(1 << HASH_DEPTH) - 1:0] vld;
-    initial vld <= 64'b0;
-    always @(posedge clk or negedge rstn) begin
-        if (erEn) begin
-            // erPC needs to be invalidated for sure
-            vld[{erPC[HASH_DEPTH + 1:3], 1'b0}] <= 1'b0;
-            vld[{erPC[HASH_DEPTH + 1:3], 1'b1}] <= 1'b0;
-            if (erPC[ADDR_WIDTH - 1:3] != bdPC[ADDR_WIDTH - 1:3] && bdEn)
-                vld[bdPC[HASH_DEPTH + 1:2]] <= 1'b1;
-        end else if (erPC[ADDR_WIDTH - 1:3] != bdPC[ADDR_WIDTH - 1:3] && bdEn)
-                vld[bdPC[HASH_DEPTH + 1:2]] <= 1'b1;
+    wire [PARA_WIDTH - 1:0] ifParaLower1, ifParaLower2,
+        ifParaLower3, ifParaLower4, ifParaUpper1,
+        ifParaUpper2, ifParaUpper3, ifParaUpper4;
+    
+    para #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .PARA_WIDTH (PARA_WIDTH)
+    ) way1 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .erEn           (erSel[0]),
+        .erPC           (erPC),
+        .erLower        (erLower),
+        .erUpper        (erUpper),
+
+        .bdEn           (bdSel[0]),
+        .bdPC           (bdPC),
+        .bdBack         (bdBack),
+        .bdType         (bdType),
+        .bdBranch       (bdBranch),
+
+        .ifPC           (ifPC),
+        .ifVldLower     (ifVldLower1),
+        .ifVldUpper     (ifVldUpper1),
+        .ifParaLower    (ifParaLower1),
+        .ifParaUpper    (ifParaUpper1)
+    );
+
+    para #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .PARA_WIDTH (PARA_WIDTH)
+    ) way2 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .erEn           (erSel[1]),
+        .erPC           (erPC),
+        .erLower        (erLower),
+        .erUpper        (erUpper),
+
+        .bdEn           (bdSel[1]),
+        .bdPC           (bdPC),
+        .bdBack         (bdBack),
+        .bdType         (bdType),
+        .bdBranch       (bdBranch),
+
+        .ifPC           (ifPC),
+        .ifVldLower     (ifVldLower2),
+        .ifVldUpper     (ifVldUpper2),
+        .ifParaLower    (ifParaLower2),
+        .ifParaUpper    (ifParaUpper2)
+    );
+
+    para #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .PARA_WIDTH (PARA_WIDTH)
+    ) way3 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .erEn           (erSel[2]),
+        .erPC           (erPC),
+        .erLower        (erLower),
+        .erUpper        (erUpper),
+
+        .bdEn           (bdSel[2]),
+        .bdPC           (bdPC),
+        .bdBack         (bdBack),
+        .bdType         (bdType),
+        .bdBranch       (bdBranch),
+
+        .ifPC           (ifPC),
+        .ifVldLower     (ifVldLower3),
+        .ifVldUpper     (ifVldUpper3),
+        .ifParaLower    (ifParaLower3),
+        .ifParaUpper    (ifParaUpper3)
+    );
+
+    para #(
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .HASH_DEPTH (HASH_DEPTH),
+        .PARA_WIDTH (PARA_WIDTH)
+    ) way4 (
+        .clk            (clk),
+        .rstn           (rstn),
+
+        .erEn           (erSel[3]),
+        .erPC           (erPC),
+        .erLower        (erLower),
+        .erUpper        (erUpper),
+
+        .bdEn           (bdSel[3]),
+        .bdPC           (bdPC),
+        .bdBack         (bdBack),
+        .bdType         (bdType),
+        .bdBranch       (bdBranch),
+
+        .ifPC           (ifPC),
+        .ifVldLower     (ifVldLower4),
+        .ifVldUpper     (ifVldUpper4),
+        .ifParaLower    (ifParaLower4),
+        .ifParaUpper    (ifParaUpper4)
+    );
+
+    always @(*) begin
+        case (ifSel)
+        2'b00: begin
+            ifVldLower = ifVldLower1;
+            ifVldUpper = ifVldUpper1;
+            ifParaLower = ifParaLower1;
+            ifParaUpper = ifParaUpper1;
+        end
+        2'b01: begin
+            ifVldLower = ifVldLower2;
+            ifVldUpper = ifVldUpper2;
+            ifParaLower = ifParaLower2;
+            ifParaUpper = ifParaUpper2;
+        end
+        2'b10: begin
+            ifVldLower = ifVldLower3;
+            ifVldUpper = ifVldUpper3;
+            ifParaLower = ifParaLower3;
+            ifParaUpper = ifParaUpper3;
+        end
+        2'b11: begin
+            ifVldLower = ifVldLower4;
+            ifVldUpper = ifVldUpper4;
+            ifParaLower = ifParaLower4;
+            ifParaUpper = ifParaUpper4;
+        end
+        endcase
     end
 
-    wire [HASH_DEPTH - 1:0] waddr_ex = bdPC[HASH_DEPTH + 1:2];
-    wire [HASH_DEPTH - 1:0] raddr_ex = bdPC[HASH_DEPTH + 1:2];
-    wire [HASH_DEPTH - 1:0] raddr_p1 = {pdPC[HASH_DEPTH + 1:3], 1'b0};
-    wire [HASH_DEPTH - 1:0] raddr_p2 = {pdPC[HASH_DEPTH + 1:3], 1'b1};
-
-    wire [PARA_WIDTH - 1:0] wdata_ex;
-    wire [PARA_WIDTH - 1:0] rdata_ex;
-    wire [PARA_WIDTH - 1:0] rdata_p1 = p1Para;
-    wire [PARA_WIDTH - 1:0] rdata_p2 = p2Para;
-
-    triple_port_memory #(
-        .DATA_DEPTH     (HASH_DEPTH),
-        .DATA_WIDTH     (PARA_WIDTH)
-    ) inst_para (
-        .clk        (clk),
-        .write_en   (en),
-        .waddr      (waddr_ex),
-        .wdata      (wdata_ex),
-        .raddr1     (raddr_ex),
-        .rdata1     (rdata_ex),
-        .raddr2     (raddr_p1),
-        .rdata2     (rdata_p1),
-        .raddr3     (raddr_p2),
-        .rdata3     (rdata_p2)
-    );
-
-    wire [PARA_WIDTH - 1:0] init;
-    wire back = bdPCTar[ADDR_WIDTH - 1:2] < bdPC[ADDR_WIDTH - 1:2];
-    log_init log_init(
-        .branch (branch),
-        .back   (back),
-        .type   (type),
-        .log    (init)
-    );
-
-    wire [9:0] update;
-    log_update log_update(
-        .branch (branch),
-        .old    (rdata_ex),
-        .new    (update)
-    );
-
-    assign wdata_ex = vld[waddr_ex] ? update : init;
-
-    single_port_memory #(
-        .ADDR_DEPTH (HASH_DEPTH),
-        .ADDR_WIDTH (ADDR_WIDTH)
-    ) para (
-        .clk        (clk),
-        .write_en   (en),
-        .wtaddr     (data_wtaddr),
-        .wtdata     (data_wtdata),
-        .r1addr     (data_r1addr),
-        .r1data     (data_r1data)
-    );
-    */
 endmodule
