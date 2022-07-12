@@ -51,7 +51,8 @@ module branch_unit #(
     output wire                    pdKnown
 );
     // start of instruction fact part
-    wire [1:0] erFactSel, exFactSel, ifFactSel;
+    wire [3:0] erFactSel, exFactSel;
+    wire [1:0] ifFactSel;
     wire [ADDR_WIDTH - 1:0] ifFactData1, ifFactData2;
     data #(
         .ADDR_WIDTH (ADDR_WIDTH),
@@ -72,6 +73,7 @@ module branch_unit #(
         .idInsert       (idFactInsert),
         .idIsPair       (idFactIsPair),
 
+        .exVld          (exVld),
         .exPC           (exPC),
         .exExist        (exFactExist),
 
@@ -87,13 +89,7 @@ module branch_unit #(
     localparam PAST_DEPTH = HASH_DEPTH + 1;
     localparam PAST_WIDTH = 10;
 
-    assign erFactLower = idFactIsPair ? 
-        1'b1 : 
-        idFactInsert ? 1'b0 : idType1[1] & idType1[0];
-    assign erFactUpper = idFactIsPair ? 
-        1'b1 : 
-        idFactInsert ? 1'b0 : idType2[1] & idType2[0];
-    assign exBack = exPCTar[ADDR_WIDTH - 1:2] < exPC[ADDR_WIDTH - 1:2];
+    wire exBack = exPCTar[ADDR_WIDTH - 1:2] < exPC[ADDR_WIDTH - 1:2];
 
     /**
      * fact log data structure (from high to low):
@@ -111,12 +107,12 @@ module branch_unit #(
         .clk            (clk),
         .rstn           (rstn),
 
-        .erEn           (idVld & ~idFactExist),
+        .erSel          (erFactSel),
         .erPC           (idPC),
         .erLower        (erFactLower),
         .erUpper        (erFactUpper),
 
-        .bdEn           (exVld & exFactExist),
+        .bdSel          (exFactSel),
         .bdPC           (exPC),
         .bdBack         (exBack),
         .bdType         (exType),
