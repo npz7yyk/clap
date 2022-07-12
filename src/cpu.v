@@ -53,7 +53,150 @@ module core_top(
     output [31:0] debug0_wb_rf_wdata,
     output [31:0] debug0_wb_inst
 );
-    
+    wire [3:0]  i_axi_awid;         wire [3:0]  d_axi_awid;
+    wire [31:0] i_axi_awaddr;       wire [31:0] d_axi_awaddr;
+    wire [7:0]  i_axi_awlen;        wire [7:0]  d_axi_awlen;
+    wire [2:0]  i_axi_awsize;       wire [2:0]  d_axi_awsize;
+    wire [1:0]  i_axi_awburst;      wire [1:0]  d_axi_awburst;
+    wire [0:0]  i_axi_awlock;       wire [0:0]  d_axi_awlock;
+    wire [3:0]  i_axi_awcache;      wire [3:0]  d_axi_awcache;
+    wire [2:0]  i_axi_awprot;       wire [2:0]  d_axi_awprot;
+    wire [3:0]  i_axi_awqos;        wire [3:0]  d_axi_awqos;
+    wire [3:0]  i_axi_awregion;     wire [3:0]  d_axi_awregion;
+    wire [0:0]  i_axi_awvalid;      wire [0:0]  d_axi_awvalid;
+    wire [0:0]  i_axi_awready;      wire [0:0]  d_axi_awready;
+    wire [31:0] i_axi_wdata;        wire [31:0] d_axi_wdata;
+    wire [3:0]  i_axi_wstrb;        wire [3:0]  d_axi_wstrb;
+    wire [0:0]  i_axi_wlast;        wire [0:0]  d_axi_wlast;
+    wire [0:0]  i_axi_wvalid;       wire [0:0]  d_axi_wvalid;
+    wire [0:0]  i_axi_wready;       wire [0:0]  d_axi_wready;
+    wire [3:0]  i_axi_bid;          wire [3:0]  d_axi_bid;
+    wire [1:0]  i_axi_bresp;        wire [1:0]  d_axi_bresp;
+    wire [0:0]  i_axi_bvalid;       wire [0:0]  d_axi_bvalid;
+    wire [0:0]  i_axi_bready;       wire [0:0]  d_axi_bready;
+    wire [3:0]  i_axi_arid;         wire [3:0]  d_axi_arid;
+    wire [31:0] i_axi_araddr;       wire [31:0] d_axi_araddr;
+    wire [7:0]  i_axi_arlen;        wire [7:0]  d_axi_arlen;
+    wire [2:0]  i_axi_arsize;       wire [2:0]  d_axi_arsize;
+    wire [1:0]  i_axi_arburst;      wire [1:0]  d_axi_arburst;
+    wire [0:0]  i_axi_arlock;       wire [0:0]  d_axi_arlock;
+    wire [3:0]  i_axi_arcache;      wire [3:0]  d_axi_arcache;
+    wire [2:0]  i_axi_arprot;       wire [2:0]  d_axi_arprot;
+    wire [3:0]  i_axi_arqos;        wire [3:0]  d_axi_arqos;
+    wire [3:0]  i_axi_arregion;     wire [3:0]  d_axi_arregion;
+    wire [0:0]  i_axi_arvalid;      wire [0:0]  d_axi_arvalid;
+    wire [0:0]  i_axi_arready;      wire [0:0]  d_axi_arready;
+    wire [3:0]  i_axi_rid;          wire [3:0]  d_axi_rid;
+    wire [31:0] i_axi_rdata;        wire [31:0] d_axi_rdata;
+    wire [1:0]  i_axi_rresp;        wire [1:0]  d_axi_rresp;
+    wire [0:0]  i_axi_rlast;        wire [0:0]  d_axi_rlast;
+    wire [0:0]  i_axi_rvalid;       wire [0:0]  d_axi_rvalid;
+    wire [0:0]  i_axi_rready;       wire [0:0]  d_axi_rready;
+    //CPU是slave，RAM才是master
+    axi_crossbar #(
+        .S_COUNT(2),
+        .M_COUNT(1),
+        .S_ID_WIDTH(4),
+        .M_ID_WIDTH(4)
+    ) the_axi_crossbar(
+        .clk(aclk),.rst(~aresetn),
+
+        //master
+        .m_axi_awid(awid),
+        .m_axi_awaddr(awaddr),
+        .m_axi_awlen(awlen),
+        .m_axi_awsize(awsize),
+        .m_axi_awburst(arburst),
+        .m_axi_awlock(awlock),
+        .m_axi_awcache(awcache),
+        .m_axi_awprot(awprot),
+        //https://developer.arm.com/documentation/ihi0022/e/AMBA-AXI3-and-AXI4-Protocol-Specification/AXI4-Additional-Signaling/QoS-signaling/QoS-interface-signals?lang=en
+        // .m_axi_awqos(),
+        // .m_axi_awregion(),
+        // .m_axi_awuser(),
+        .m_axi_awvalid(awvalid),
+        .m_axi_awready(awready),
+
+        //wid was removed in AXI4
+        .m_axi_wdata(wdata),
+        .m_axi_wstrb(wstrb),
+        .m_axi_wlast(wlast),
+        // .m_axi_wuser(),
+        .m_axi_wvalid(wvalid),
+        .m_axi_wready(wready),
+
+        .m_axi_bid(bid),
+        .m_axi_bresp(bresp),
+        .m_axi_buser(0),
+        .m_axi_bvalid(bvalid),
+        .m_axi_bready(bready),
+
+        .m_axi_arid(arid),
+        .m_axi_araddr(araddr),
+        .m_axi_arlen(arlen),
+        .m_axi_arsize(arsize),
+        .m_axi_arburst(arburst),
+        .m_axi_arlock(arlock),
+        .m_axi_arcache(arcache),
+        .m_axi_arprot(arprot),
+        // .m_axi_arqos(),
+        // .m_axi_arregion(),
+        // .m_axi_aruser(),
+        .m_axi_arvalid(arvalid),
+        .m_axi_arready(arready),
+
+        .m_axi_rid(rid),
+        .m_axi_rdata(rdata),
+        .m_axi_rresp(rresp),
+        .m_axi_rlast(rlast),
+        .m_axi_ruser(0),
+        .m_axi_rvalid(rvalid),
+        .m_axi_rready(rready),
+
+        //slave
+        .s_axi_awid     ({ i_axi_awid     ,  d_axi_awid     }),
+        .s_axi_awaddr   ({ i_axi_awaddr   ,  d_axi_awaddr   }),
+        .s_axi_awlen    ({ i_axi_awlen    ,  d_axi_awlen    }),
+        .s_axi_awsize   ({ i_axi_awsize   ,  d_axi_awsize   }),
+        .s_axi_awburst  ({ i_axi_awburst  ,  d_axi_awburst  }),
+        .s_axi_awlock   ({ i_axi_awlock   ,  d_axi_awlock   }),
+        .s_axi_awcache  ({ i_axi_awcache  ,  d_axi_awcache  }),
+        .s_axi_awprot   ({ i_axi_awprot   ,  d_axi_awprot   }),
+        .s_axi_awqos    (0),
+        .s_axi_awuser   (0),
+        .s_axi_awvalid  ({ i_axi_awvalid  ,  d_axi_awvalid  }),
+        .s_axi_awready  ({ i_axi_awready  ,  d_axi_awready  }),
+        .s_axi_wdata    ({ i_axi_wdata    ,  d_axi_wdata    }),
+        .s_axi_wstrb    ({ i_axi_wstrb    ,  d_axi_wstrb    }),
+        .s_axi_wlast    ({ i_axi_wlast    ,  d_axi_wlast    }),
+        .s_axi_wuser    (0),
+        .s_axi_wvalid   ({ i_axi_wvalid   ,  d_axi_wvalid   }),
+        .s_axi_wready   ({ i_axi_wready   ,  d_axi_wready   }),
+        .s_axi_bid      ({ i_axi_bid      ,  d_axi_bid      }),
+        .s_axi_bresp    ({ i_axi_bresp    ,  d_axi_bresp    }),
+        // .s_axi_buser    (),
+        .s_axi_bvalid   ({ i_axi_bvalid   ,  d_axi_bvalid   }),
+        .s_axi_bready   ({ i_axi_bready   ,  d_axi_bready   }),
+        .s_axi_arid     ({ i_axi_arid     ,  d_axi_arid     }),
+        .s_axi_araddr   ({ i_axi_araddr   ,  d_axi_araddr   }),
+        .s_axi_arlen    ({ i_axi_arlen    ,  d_axi_arlen    }),
+        .s_axi_arsize   ({ i_axi_arsize   ,  d_axi_arsize   }),
+        .s_axi_arburst  ({ i_axi_arburst  ,  d_axi_arburst  }),
+        .s_axi_arlock   ({ i_axi_arlock   ,  d_axi_arlock   }),
+        .s_axi_arcache  ({ i_axi_arcache  ,  d_axi_arcache  }),
+        .s_axi_arprot   ({ i_axi_arprot   ,  d_axi_arprot   }),
+        .s_axi_arqos    (0),
+        .s_axi_aruser   (0),
+        .s_axi_arvalid  ({ i_axi_arvalid  ,  d_axi_arvalid  }),
+        .s_axi_arready  ({ i_axi_arready  ,  d_axi_arready  }),
+        .s_axi_rid      ({ i_axi_rid      ,  d_axi_rid      }),
+        .s_axi_rdata    ({ i_axi_rdata    ,  d_axi_rdata    }),
+        .s_axi_rresp    ({ i_axi_rresp    ,  d_axi_rresp    }),
+        .s_axi_rlast    ({ i_axi_rlast    ,  d_axi_rlast    }),
+        // .s_axi_ruser    (),
+        .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
+        .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
+    );
     
     wire data_valid;
     wire if_buf_full;
@@ -131,13 +274,13 @@ module core_top(
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc),
         
-        .r_req          (arvalid),
-        .r_addr         (araddr),
-        .r_rdy          (arready),
-        .ret_valid      (rvalid),
-        .ret_last       (rlast),
-        .r_data_ready   (rready),
-        .r_data_AXI     (rdata)
+        .r_req          (i_axi_arvalid),
+        .r_addr         (i_axi_araddr),
+        .r_rdy          (i_axi_arready),
+        .ret_valid      (i_axi_rvalid),
+        .ret_last       (i_axi_rlast),
+        .r_data_ready   (i_axi_rready),
+        .r_data_AXI     (i_axi_rdata)
     );
     
     wire  ex_flush;
@@ -392,7 +535,26 @@ module core_top(
         .read_type(ex_mem_write_type),//TODO: write type in exe equals to read type in dcache???
         .data_valid(ex_mem_data_valid),
         .r_data_CPU(ex_mem_r_data_CPU),
-        .w_data_CPU(ex_mem_w_data_CPU)
+        .w_data_CPU(ex_mem_w_data_CPU),
+
+        .r_req(d_axi_arvalid),
+        .r_data_ready(d_axi_rready),
+        //.r_type(),
+        .r_addr(d_axi_araddr),
+        .r_rdy(d_axi_arready),
+        .ret_valid(d_axi_rvalid),
+        .ret_last(d_axi_rlast),
+
+        .w_req(d_axi_awvalid),
+        .w_data_req(d_axi_wvalid),
+        .w_last(d_axi_wlast),
+        .b_ready(d_axi_bready),
+        //.w_type(),
+        .w_addr(d_axi_awaddr),
+        .w_strb(d_axi_wstrb),
+        .w_data_AXI(d_axi_wdata),
+        .w_rdy(d_axi_awready),
+        .b_valid(d_axi_bvalid)
     );
 
     assign set_pc_by_executer = ex_flush;
