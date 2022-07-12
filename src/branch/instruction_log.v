@@ -402,7 +402,7 @@ module para #(
     reg [(1 << HASH_DEPTH) - 1:0] vld;
     initial vld <= 64'b0;
     always @(posedge clk or negedge rstn) begin
-        if (rstn) vld <= 64'b0;
+        if (!rstn) vld <= 64'b0;
         else if (erEn) begin
             // erPC needs to be invalidated
             if (erLower) begin
