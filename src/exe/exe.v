@@ -11,7 +11,8 @@ module exe(
     input [31:0]eu0_imm_in,
     input [31:0]eu0_pc_in,
     input [31:0]eu0_pc_next_in,
-    input [5:0]eu0_exp_in,
+    input [6:0]eu0_exp_in,
+    input[1:0]category_in,
     input [31:0]data00,
     input [31:0]data01,
     input [0:0]eu1_en_in,
@@ -28,7 +29,8 @@ module exe(
     output reg [4:0]addr_out0,
     output reg [31:0]data_out1,
     output reg [4:0]addr_out1,
-    output reg[5:0]exp_out,
+    output reg[6:0]exp_out,
+    output reg [31:0]eu0_pc_out,
     //向issue段输出
     output stall,
     output flush,
@@ -37,6 +39,7 @@ module exe(
     output [31:0]branch_addr_calculated,
     output branch_status,
     output branch_valid,
+    output [1:0]category_out,
     //向cache输出
     output [0:0] valid,                 //    valid request
     output [1:0] op,                    //    write: 1, read: 0
@@ -76,7 +79,7 @@ wire[35:0]mul_rs0_mid;
 wire[35:0]mul_rs1_mid;
 wire[35:0]mul_rs2_mid;
 wire[35:0]mul_rs3_mid;
-wire[5:0]mem_exp_mid;
+wire[6:0]mem_exp_mid;
 wire[4:0]mem_rd_mid;
 wire[0:0]mem_en_mid;
 wire[1:0]mem_width_mid;
@@ -90,7 +93,7 @@ reg[0:0]eu0_rd_0;
 reg[0:0]eu1_rd_0;
 reg[31:0]data_mid00;
 reg[31:0]data_mid10;
-reg[5:0]mem_exp_exe1;
+reg[6:0]mem_exp_exe1;
 reg[4:0]mem_rd_exe1;
 reg[0:0]mem_en_exe1;
 reg[1:0]mem_width_exe1;
@@ -99,14 +102,15 @@ reg[35:0]mul_sr0_exe1;
 reg[35:0]mul_sr1_exe1;
 reg[35:0]mul_sr2_exe1;
 reg[35:0]mul_sr3_exe1;
-reg[5:0]exp_exe1;
+reg[6:0]exp_exe1;
+reg[31:0]eu0_pc_exe1;
 //exe1组合输出
 wire[4:0]mul_rd_out;
 wire[0:0]mul_en_out;
 wire[31:0]mul_result;
 wire[0:0]stall_because_cache;
 wire[0:0]stall_because_div;
-wire[5:0]mem_exp_out;
+wire[6:0]mem_exp_out;
 wire[4:0]mem_rd_out;
 wire[31:0]mem_data_out;
 wire[0:0]mem_en_out;
@@ -132,6 +136,7 @@ always @(posedge clk) begin
         mul_sr2_exe1<=0;
         mul_sr3_exe1<=0;
         exp_exe1<=0;
+        eu0_pc_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
         eu1_en_0<=eu1_alu_en_mid;
@@ -149,6 +154,7 @@ always @(posedge clk) begin
         mul_sr2_exe1<=mul_rs2_mid;
         mul_sr3_exe1<=mul_rs3_mid;
         exp_exe1<=eu0_exp_in;
+        eu0_pc_exe1<=eu0_pc_in;
     end
 end
 //末段寄存器更新
@@ -161,6 +167,7 @@ always @(posedge clk) begin
         data_out1<=0;
         addr_out1<=0;
         exp_out<=0;
+        eu0_pc_out<=0;
     end else if(!stall_because_cache)begin
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
         en_out1<=eu1_en_0;
@@ -169,6 +176,7 @@ always @(posedge clk) begin
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
         exp_out<=exp_exe1|mem_exp_out;
+        eu0_pc_out<=eu0_pc_exe1;
     end
 end
 
@@ -235,6 +243,7 @@ branch #(
     .branch_sr0              ( eu0_sr0               ),
     .branch_sr1              ( eu0_sr1               ),
     .branch_imm              ( eu0_imm_in               ),
+    .category_in(category_in),
 
     .br_rd_data              ( br_rd_data_mid               ),
     .br_rd_addr_out          ( br_rd_addr_mid           ),
@@ -242,7 +251,8 @@ branch #(
     .flush                   ( flush                    ),
     .branch_addr_calculated  ( branch_addr_calculated   ),
     .branch_valid            (branch_valid),
-    .branch_status           (branch_status)
+    .branch_status           (branch_status),
+    .category_out(category_out)
 );
 
 alu  u_alu0 (
@@ -298,6 +308,7 @@ mem0  u_mem0 (
     .mem_imm                 ( eu0_imm_in               ),
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
     .mem_width_in               ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
+    .mem_exp_in               (eu0_exp_in),
 
     .valid                   ( valid           ),
     .op                      ( op              ),

@@ -26,7 +26,7 @@ module register_file(
     input [4:0]eu1_rk_in,
     input[31:0]eu1_pc_in,
     input[31:0]eu1_pc_next_in,
-    input [5:0]eu1_exp_in,
+    input [6:0]eu1_exp_in,
     input[31:0]eu1_imm_in,
     //向rf段后输出
     output reg [0:0]eu0_en_out,
@@ -36,7 +36,7 @@ module register_file(
     output reg  [4:0]eu0_rk_out,
     output reg [31:0]eu0_pc_out,
     output reg [31:0]eu0_pc_next_out,
-    output reg  [5:0]eu0_exp_out,
+    output reg  [6:0]eu0_exp_out,
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]eu0_imm_out,
