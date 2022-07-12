@@ -53,6 +53,8 @@ module core_top(
     output [31:0] debug0_wb_rf_wdata,
     output [31:0] debug0_wb_inst
 );
+    
+    
     wire data_valid;
     wire if_buf_full;
     reg just_reset;
@@ -68,7 +70,7 @@ module core_top(
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback;
-    reg [7:0] pc_exception;
+    reg [6:0] pc_exception;
     always @(posedge aclk)
         if(~aresetn)
             pc <= 0;
@@ -166,7 +168,7 @@ module core_top(
         .pc_in(if_pc),.pc_next_in(if_pc_next),
         .pc0_out(id_pc0),.pc1_out(id_pc1),
         .pc_next0_out(id_pc_next0),.pc_next1_out(id_pc_next1),
-        .exception_in(0),
+        .exception_in(0),//TODO: 处理icache阶段的exception
         .exception0_out(id_exception0),.exception1_out(id_exception1),
        
         .feedback_valid(id_feedback_valid),
@@ -334,6 +336,8 @@ module core_top(
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
     wire ex_mem_data_valid;
 
+    assign ex_stall=0;
+
     exe  the_exe (
         .clk           (aclk          ),
         .rstn          (aresetn       ),
@@ -356,7 +360,8 @@ module core_top(
         .exp_out  (ex_eu0_exp ), //.exp_out  (ex_eu1_exp ),
         .eu0_pc_out(ex_eu0_pc),
 
-        .stall                   ( ex_stall              ),
+        //TODO
+        //.stall                   ( ex_stall              ),
         .flush                   ( ex_flush              ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),

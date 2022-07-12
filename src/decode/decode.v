@@ -104,7 +104,7 @@ module id_stage
     
     //用交叠法实现伪双端口循环队列，浪费25%的空间，以简化push/pop逻辑
     //[31:0] 指令; [63:32] pc；[95:64] pc_next
-    reg [95:0] fetch_buffer0[0:3],fetch_buffer1[0:3];
+    reg [102:0] fetch_buffer0[0:3],fetch_buffer1[0:3];
     reg [1:0] head0,head1;      //队头指针
     reg [1:0] tail0,tail1;      //队尾指针
     reg push_sel;   //进行push操作时，inst0被push到fetch_buffer0还是fetch_buffer1
