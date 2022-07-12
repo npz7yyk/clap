@@ -86,7 +86,7 @@ module core_top(
     wire id_feedback_valid;
     wire [31:0] pc_for_predict;
     wire [31:0] id_jmpdist0,id_jmpdist1;
-    wire [1:0] id_categroy0,id_categroy1;
+    wire [1:0] id_category0,id_category1;
     wire ex_feedback_valid,ex_did_jump;
     wire pred_known;
     wire pd_branch,pd_reason;
@@ -99,7 +99,7 @@ module core_top(
         .idVld(id_feedback_valid),
         .idPC(pc_for_predict),
         .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
-        .idType1(id_categroy0), .idType2(id_categroy1),
+        .idType1(id_category0), .idType2(id_category1),
         
         .exVld(ex_feedback_valid),
         //.exPC(),
@@ -172,7 +172,7 @@ module core_top(
         .feedback_valid(id_feedback_valid),
         .pc_for_predict(pc_for_predict),
         .jmpdist0(id_jmpdist0),.jmpdist1(id_jmpdist1),
-        .categroy0(id_categroy0),.categroy1(id_categroy1),
+        .category0(id_category0),.category1(id_category1),
 
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)
