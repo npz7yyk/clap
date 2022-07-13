@@ -24,7 +24,6 @@ module way_select #(
     parameter HASH_DEPTH = 5 
 )(
     input                         clk,
-    input                         rstn,
     input                         en,
     input wire [HASH_DEPTH - 1:0] waddr,
     input wire              [3:0] visit,

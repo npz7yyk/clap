@@ -352,7 +352,6 @@ module fact #(
         .HASH_DEPTH (HASH_DEPTH)
     ) way_select (
         .clk    (clk),
-        .rstn   (rstn),
         .en     (exVld & &visit),
         .waddr  (exPC[HASH_DEPTH + 2:3]),
         .visit  (visit),
