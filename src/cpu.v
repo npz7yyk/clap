@@ -482,7 +482,7 @@ module core_top(
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
     wire ex_mem_data_valid;
 
-    assign ex_stall=0;
+    //assign ex_stall=0;
 
     exe  the_exe (
         .clk           (aclk          ),
@@ -507,7 +507,7 @@ module core_top(
         .eu0_pc_out(ex_eu0_pc),
 
         //TODO
-        //.stall                   ( ex_stall              ),
+        .stall                   ( ex_stall              ),
         .flush                   ( ex_flush              ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),

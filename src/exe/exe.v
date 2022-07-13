@@ -12,7 +12,6 @@ module exe(
     input [31:0]eu0_pc_in,
     input [31:0]eu0_pc_next_in,
     input [6:0]eu0_exp_in,
-    input[1:0]category_in,
     input [31:0]data00,
     input [31:0]data01,
     input [0:0]eu1_en_in,
@@ -245,7 +244,7 @@ branch #(
     .branch_sr0              ( eu0_sr0               ),
     .branch_sr1              ( eu0_sr1               ),
     .branch_imm              ( eu0_imm_in               ),
-    .category_in(category_in),
+    
 
     .br_rd_data              ( br_rd_data_mid               ),
     .br_rd_addr_out          ( br_rd_addr_mid           ),

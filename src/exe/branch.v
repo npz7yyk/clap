@@ -8,7 +8,6 @@ module branch(
     input [ 31:0 ]branch_sr0,
     input [ 31:0 ]branch_sr1,
     input [ 31:0 ]branch_imm,
-    input [1:0]category_in,
     
     output[31:0]br_rd_data,
     output[4:0]br_rd_addr_out,
@@ -40,7 +39,6 @@ assign branch_status = branch_op == JIRL
                      ||branch_op == BLTU&&branch_sr0<branch_sr1
                      ||branch_op == BGEU&&branch_sr0>= branch_sr1;
 
-assign category_out=category_in;
 assign br_en_out=br_en_in&&(branch_op == JIRL||branch_op == BL);
 assign br_rd_addr_out=branch_op==JIRL?br_rd_addr_in:branch_op==BL?1:0;
 assign br_rd_data=pc+4;
@@ -49,5 +47,9 @@ assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr1+ (bran
 
 assign flush=br_en_in&&(branch_addr_calculated!=pc_next);
 assign branch_valid=br_en_in;
+
+assign category_out=branch_op==JIRL?11:
+                    branch_op==B?10:
+                    branch_op==BL?10:01;
 
 endmodule
