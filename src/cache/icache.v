@@ -45,7 +45,7 @@ module icache
     );
 
     cache_excption_i exp_cope(
-        .adddr_rbuf     (addr_rbuf),
+        .addr_rbuf     (addr_rbuf),
         .exception      (exception)
     );
     
