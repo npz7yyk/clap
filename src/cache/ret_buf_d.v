@@ -19,6 +19,7 @@ module ret_buf_d(
     reg [3:0] count;
     initial begin
         count = 0;
+        w_data_AXI = 0;
     end
     always @(posedge clk) begin
         if(ret_valid)begin

@@ -35,20 +35,20 @@ module TagV #(
     end
   endgenerate
 
-  always @(posedge clka)
-      if (wea) begin
-        BRAM[addra] <= dina;
-        ram_data_a <= dina;
-      end else
+    always @(posedge clka)
+        if (wea) begin
+          BRAM[addra] <= dina;
+          ram_data_a <= dina;
+        end else
         ram_data_a <= BRAM[addra];
 
-  always @(posedge clka)
+    always @(posedge clka)
         ram_data_b <= BRAM[addrb];
 
-  reg last_addr_eq;
-  always @(posedge clka)
-    last_addr_eq <= addra==addrb;
-  assign doutb = last_addr_eq?ram_data_a:ram_data_b;
+    reg last_addr_eq;
+    always @(posedge clka)
+        last_addr_eq <= addra==addrb;
+    assign doutb = last_addr_eq?ram_data_a:ram_data_b;
 
 
   //  The following function calculates the address width based on specified RAM depth

@@ -6,7 +6,9 @@ module main_FSM_i(
     input r_rdy_AXI,
     input fill_finish,
     input [3:0] lru_way_sel,
+    input [3:0] hit,
 
+    output reg [3:0] way_visit,
     output reg mbuf_we,
     output reg rdata_sel,
     output reg rbuf_we,
@@ -66,17 +68,19 @@ module main_FSM_i(
         data_valid = 0;
         way_sel_en = 0;
         r_data_ready = 0;
+        way_visit = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
         end
         LOOKUP: begin
             rdata_sel = 1;
-            way_sel_en = 1;
             if(!cache_hit) mbuf_we = 1;
             else begin
                 data_valid = 1;
                 rbuf_we = 1;
+                way_visit = hit;
+                way_sel_en = 1;
             end
         end
         REPLACE: begin
@@ -90,6 +94,8 @@ module main_FSM_i(
                 tagv_we = lru_way_sel;
                 data_valid = 1;
                 rbuf_we = 1;
+                way_visit = lru_way_sel;
+                way_sel_en = 1;
             end
         end
         endcase

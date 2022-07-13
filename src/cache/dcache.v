@@ -35,7 +35,7 @@ module dcache(
     input w_data_ready,
     input b_valid,
 
-    output exception
+    output [6:0] exception
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
