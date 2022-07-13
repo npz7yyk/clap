@@ -302,7 +302,6 @@ mul_1  u_mul_1 (
 
 mem0  u_mem0 (
     .mem_rd_in               ( eu0_rd_in             ),
-    .mem_rk_in               ( eu0_rk_in             ),
     .mem_data_in             ( eu0_sr0           ),
     .mem_en_in               ( eu0_mem_en             ),
     .mem_sr                  ( eu0_sr1                ),

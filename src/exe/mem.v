@@ -1,7 +1,6 @@
 module mem0 (
     //从exe1段输入
     input [4:0]mem_rd_in,
-    input [4:0 ]mem_rk_in,
     input [31:0]mem_data_in,
     input [ 0:0 ]mem_en_in,
     input [ 31:0 ]mem_sr,
