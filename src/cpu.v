@@ -114,9 +114,9 @@ module core_top(
         .m_axi_awcache(awcache),
         .m_axi_awprot(awprot),
         //https://developer.arm.com/documentation/ihi0022/e/AMBA-AXI3-and-AXI4-Protocol-Specification/AXI4-Additional-Signaling/QoS-signaling/QoS-interface-signals?lang=en
-        // .m_axi_awqos(),
-        // .m_axi_awregion(),
-        // .m_axi_awuser(),
+        .m_axi_awqos(),
+        .m_axi_awregion(),
+        .m_axi_awuser(),
         .m_axi_awvalid(awvalid),
         .m_axi_awready(awready),
 
@@ -124,7 +124,7 @@ module core_top(
         .m_axi_wdata(wdata),
         .m_axi_wstrb(wstrb),
         .m_axi_wlast(wlast),
-        // .m_axi_wuser(),
+        .m_axi_wuser(),
         .m_axi_wvalid(wvalid),
         .m_axi_wready(wready),
 
@@ -142,9 +142,9 @@ module core_top(
         .m_axi_arlock(arlock[0]),
         .m_axi_arcache(arcache),
         .m_axi_arprot(arprot),
-        // .m_axi_arqos(),
-        // .m_axi_arregion(),
-        // .m_axi_aruser(),
+        .m_axi_arqos(),
+        .m_axi_arregion(),
+        .m_axi_aruser(),
         .m_axi_arvalid(arvalid),
         .m_axi_arready(arready),
 
@@ -177,7 +177,7 @@ module core_top(
         .s_axi_wready   ({ i_axi_wready   ,  d_axi_wready   }),
         .s_axi_bid      ({ i_axi_bid[1:0] ,  d_axi_bid[1:0] }),
         .s_axi_bresp    ({ i_axi_bresp    ,  d_axi_bresp    }),
-        // .s_axi_buser    (),
+        .s_axi_buser    (),
         .s_axi_bvalid   ({ i_axi_bvalid   ,  d_axi_bvalid   }),
         .s_axi_bready   ({ i_axi_bready   ,  d_axi_bready   }),
         .s_axi_arid     ({ i_axi_arid[1:0],  d_axi_arid[1:0]}),
@@ -196,7 +196,7 @@ module core_top(
         .s_axi_rdata    ({ i_axi_rdata    ,  d_axi_rdata    }),
         .s_axi_rresp    ({ i_axi_rresp    ,  d_axi_rresp    }),
         .s_axi_rlast    ({ i_axi_rlast    ,  d_axi_rlast    }),
-        // .s_axi_ruser    (),
+        .s_axi_ruser    (),
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
