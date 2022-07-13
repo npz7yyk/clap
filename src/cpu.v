@@ -109,7 +109,7 @@ module core_top(
         .m_axi_awaddr(awaddr),
         .m_axi_awlen(awlen),
         .m_axi_awsize(awsize),
-        .m_axi_awburst(arburst),
+        .m_axi_awburst(awburst),
         .m_axi_awlock(awlock[0]),
         .m_axi_awcache(awcache),
         .m_axi_awprot(awprot),
