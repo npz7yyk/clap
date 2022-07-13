@@ -49,11 +49,14 @@ module miss_way_sel_lru(
             end
             4'b0100: begin
                 rank[addr_rbuf][1:0] <= rank[addr_rbuf][5:4];
-                rank[addr_rbuf][5:4] <= rank[addr_rbuf][1:0];
+                rank[addr_rbuf][3:2] <= rank[addr_rbuf][1:0];
+                rank[addr_rbuf][5:4] <= rank[addr_rbuf][3:2];
             end
             4'b1000: begin
                 rank[addr_rbuf][1:0] <= rank[addr_rbuf][7:6];
-                rank[addr_rbuf][5:4] <= rank[addr_rbuf][1:0];
+                rank[addr_rbuf][3:2] <= rank[addr_rbuf][1:0];
+                rank[addr_rbuf][5:4] <= rank[addr_rbuf][3:2];
+                rank[addr_rbuf][7:6] <= rank[addr_rbuf][5:4];
             end
             endcase
         end
