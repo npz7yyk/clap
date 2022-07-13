@@ -54,7 +54,7 @@ module branch_unit #(
     wire [3:0] erFactSel, exFactSel;
     wire [1:0] ifFactSel;
     wire [ADDR_WIDTH - 1:0] ifFactData1, ifFactData2;
-    data #(
+    fact #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
         .HASH_WIDTH (HASH_WIDTH)
@@ -69,17 +69,19 @@ module branch_unit #(
         .idPCTarLower   (idPCTar1),
         .idPCTarUpper   (idPCTar2),
 
-        .idExist        (idFactExist),
-        .idInsert       (idFactInsert),
-        .idIsPair       (idFactIsPair),
+        .erSel          (erFactSel),
+        .erLower        (erFactLower),
+        .erUpper        (erFactUpper),
 
         .exVld          (exVld),
         .exPC           (exPC),
         .exExist        (exFactExist),
+        .exSel          (exFactSel),
 
         .ifPC           (ifPC),
         .ifExistLower   (ifFactExist1),
         .ifExistUpper   (ifFactExist2),
+        .ifSel          (ifFactSel),
         .ifDataLower    (ifFactData1),
         .ifDataUpper    (ifFactData2)
     );
@@ -99,7 +101,7 @@ module branch_unit #(
      *                  each case has 2 bits
      */
     wire [PAST_WIDTH - 1:0] ifPastPara1, ifPastPara2;
-    para #(
+    past #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (PAST_DEPTH),
         .PARA_WIDTH (PAST_WIDTH)
@@ -119,6 +121,7 @@ module branch_unit #(
         .bdBranch       (exBranch),
 
         .ifPC           (ifPC),
+        .ifSel          (ifFactSel),
         .ifVldLower     (ifPastVld1),
         .ifVldUpper     (ifPastVld2),
         .ifParaLower    (ifPastPara1),
