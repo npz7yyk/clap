@@ -33,7 +33,9 @@ module dcache(
     output [31:0] w_data_AXI,   // write data
     input w_rdy,                 // AXI signal, means "shake hands success"
     input w_data_ready,
-    input b_valid
+    input b_valid,
+
+    output exception
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -47,7 +49,13 @@ module dcache(
     wire [2047:0] mem_dout;
 
     assign r_addr = addr_rbuf;
-    //assign w_strb = write_type_rbuf;
+    
+    /* exception */
+    cache_exception_d exp(
+        .addr_rbuf      (addr_rbuf),
+        .type           (write_type_rbuf),
+        .exception      (exception)
+    );
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type

@@ -20,7 +20,9 @@ module icache
     input r_rdy,                // AXI signal, means "shake hands success"
     input ret_valid,            // return data is valid
     input ret_last,             // the last returned data
-    input [31:0] r_data_AXI     // read data from AXI
+    input [31:0] r_data_AXI,     // read data from AXI
+
+    output [6:0] exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf; //{pc_next,pc}
     wire[3:0] hit, mem_en, tagv_we;
@@ -41,6 +43,12 @@ module icache
         .din    ({cookie_in,pc_in}),
         .dout   (addr_rbuf)
     );
+
+    cache_excption_i exp_cope(
+        .adddr_rbuf     (addr_rbuf),
+        .exception      (exception)
+    );
+    
     ret_buf_i ret_buf(
         .clk            (clk),
         .r_data_AXI     (r_data_AXI),
