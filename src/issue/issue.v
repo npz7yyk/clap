@@ -50,7 +50,7 @@ module is_stage
     output [31:0] eu1_pc,eu1_pc_next,
     output [6:0] eu1_exception
 );
-    localparam RST_VAL = {32'd4,32'd0,1'd0,32'd0,15'd0,`INST_NOP};
+    localparam RST_VAL = {32'd4,32'd0,7'd0,32'd0,15'd0,{`WIDTH_UOP{1'b0}}};
     //pc_next,pc,invalid,imm,rd,rk,rj,uop
     reg [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
@@ -79,9 +79,9 @@ module is_stage
         end
         endcase
     always @*
-        if(size_after_out==16)
+        if(size_after_out==2)
             num_read = 2'b00;
-        else if(size_after_out==15)
+        else if(size_after_out==1)
             num_read = 2'b01;
         else num_read = 2'b11;
 
@@ -102,11 +102,7 @@ module is_stage
             fifo1 <= RST_VAL;
         else case({eu1_en,eu0_en})
             2'b10,2'b01: begin//一输出
-                if(fifo_size==2)
-                    fifo1 <= input0;
-                else if(fifo_size<=1)
-                    fifo1 <= input1;
-                else fifo1 <= RST_VAL;
+                fifo1 <= fifo_size<=1?input1:input0;
             end
             2'b11://两输出
                 fifo1 <= input1;

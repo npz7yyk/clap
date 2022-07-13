@@ -15,12 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Revisions:
-// 2022-05-13: Create module.
-// 2022-05-17: fetch buffer and instruction decoder (without privileged instructions decoding)
-// 2022-05-28: decoder: immediate number generator, signals used by branch prediction unit
-// 2022-07-10: use predecoder module to generate feedback signals for branch prediction unit
-
 `timescale 1ns / 1ps
 `include "../uop.vh"
 `include "../exception.vh"
@@ -32,7 +26,9 @@ module decoder
     input [102:0] pcnext_pc_inst,
     output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
     output [6:0] exception,
-    output invalid,
+    output invalid_instruction,
+    output is_syscall,
+    output is_break,
     output [`WIDTH_UOP-1:0] uop,
     output [31:0] imm,
     output [4:0] rd,
@@ -64,8 +60,10 @@ module decoder
     assign type[`ITYPE_IDX_TLB] = tlb_invalid||
         inst[30:13]=='b000011001001000001&&inst[12:10]!='b110;
     assign type[`ITYPE_IDX_ECALL] = inst[30:17]=='b00000000010101&&inst[15]=='b0;
+    assign is_syscall = type[`ITYPE_IDX_ECALL]&inst[16];
+    assign is_break = type[`ITYPE_IDX_ECALL]&~inst[16];
+    assign type[`ITYPE_IDX_MUL] = inst[30:17]=='b00000000001110;
     assign type[`ITYPE_IDX_DIV] = inst[30:17]=='b00000000010000;
-    assign type[`ITYPE_IDX_MUL] = inst[30:17]=='b00000000010000;
     wire is_alu_sfti = inst[30:20]=='b00000000100&&inst[17:15]=='b001;
     wire is_sra = inst[30:15]=='b0000000000110000;
     wire is_time = inst[30:11]=='b00000000000000001100;
@@ -157,7 +155,7 @@ module decoder
     end
     
     //为NOP指令分配专门的UOP_TYPE，方便后续处理
-    assign uop[`UOP_TYPE]=(inst==`INST_NOP||invalid)?0:type;
+    assign uop[`UOP_TYPE]=(inst==`INST_NOP||invalid_instruction)?0:type;
     assign uop[`UOP_SRC1]=src1;
     assign uop[`UOP_SRC2]=src2;
     assign uop[`UOP_MEM_ATM]= ~inst[27];
@@ -189,7 +187,7 @@ module decoder
     wire [0:0] tmp_and3 = tmp_or2[0]&tmp_or2[1];
     wire type_invalid = tmp_and0!=0||tmp_and1!=0||tmp_and2!=0||tmp_and3!=0||type==0;
     
-    assign invalid=alu_op_invalid||type_invalid||br_invalid||inst[31];
+    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31];
     //////////////////////////////////////
     
     /////////////////////////////////////
