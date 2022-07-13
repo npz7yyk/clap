@@ -286,6 +286,29 @@ module core_top(
         .r_data_AXI     (i_axi_rdata)
     );
     
+    assign i_axi_awid = 0;
+    assign i_axi_awaddr = 0;
+    assign i_axi_awlen = 0;
+    assign i_axi_awsize = 0;
+    assign i_axi_arburst = 2'b01;
+    assign i_axi_awlock = 0;
+    assign i_axi_awcache = 0;
+    assign i_axi_awprot = 0;
+    assign i_axi_awvalid = 0;
+    assign i_axi_wdata = 0;
+    assign i_axi_wstrb = 0;
+    assign i_axi_wlast = 0;
+    assign i_axi_wvalid = 0;
+    assign i_axi_bid = 0;
+    assign i_axi_bready = 0;
+    assign i_axi_bresp = 0;
+    assign i_axi_arid = 0;
+    assign i_axi_arlen = 0;
+    assign i_axi_arsize = 0;
+    assign i_axi_arlock = 0;
+    assign i_axi_arcache = 0;
+    assign i_axi_arprot = 0;
+    
     wire  ex_flush;
     wire [1:0] id_read_en;
     wire [`WIDTH_UOP-1:0] id_uop0,id_uop1;
@@ -482,8 +505,6 @@ module core_top(
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
     wire ex_mem_data_valid;
 
-    //assign ex_stall=0;
-
     exe  the_exe (
         .clk           (aclk          ),
         .rstn          (aresetn       ),
@@ -506,7 +527,6 @@ module core_top(
         .exp_out  (ex_eu0_exp ), //.exp_out  (ex_eu1_exp ),
         .eu0_pc_out(ex_eu0_pc),
 
-        //TODO
         .stall                   ( ex_stall              ),
         .flush                   ( ex_flush              ),
         .branch_status           ( ex_did_jump ),
@@ -517,14 +537,9 @@ module core_top(
 
         .valid                   ( ex_mem_valid                    ),
         .op                      ( ex_mem_op                       ),
-        //????
         .addr(ex_mem_addr),
-        // .index                   ( ex_mem_index                    ),
-        // .tag                     ( ex_mem_tag                      ),
-        // .offset                  ( ex_mem_offset                   ),
         .write_type              ( ex_mem_write_type               ),
         .w_data_CPU              ( ex_mem_w_data_CPU               ),
-        //.addr_valid             (addr_valid),
         .data_valid             ( ex_mem_data_valid),
         .r_data_CPU             ( ex_mem_r_data_CPU)
     );
@@ -535,8 +550,7 @@ module core_top(
         .clk(aclk),.rstn(aresetn),
         .valid(ex_mem_valid),
         .op(ex_mem_op),
-        .addr(ex_mem_addr), //TODO: connect it to exe
-        //.read_type(ex_mem_write_type),//TODO: write type in exe equals to read type in dcache???
+        .addr(ex_mem_addr),
         .write_type(ex_mem_write_type),
         .data_valid(ex_mem_data_valid),
         .r_data_CPU(ex_mem_r_data_CPU),
@@ -544,7 +558,6 @@ module core_top(
 
         .r_req(d_axi_arvalid),
         .r_data_ready(d_axi_rready),
-        //.r_type(),
         .r_addr(d_axi_araddr),
         .r_rdy(d_axi_arready),
         .ret_valid(d_axi_rvalid),
@@ -556,13 +569,27 @@ module core_top(
         .w_data_req(d_axi_wvalid),
         .w_last(d_axi_wlast),
         .b_ready(d_axi_bready),
-        //.w_type(),
         .w_addr(d_axi_awaddr),
         .w_strb(d_axi_wstrb),
         .w_data_AXI(d_axi_wdata),
         .w_rdy(d_axi_awready),
         .b_valid(d_axi_bvalid)
     );
+    assign d_axi_awid = 0;
+    assign d_axi_awlen = 0;
+    assign d_axi_awsize = 0;
+    assign d_axi_arburst = 2'b01;
+    assign d_axi_awlock = 0;
+    assign d_axi_awcache = 0;
+    assign d_axi_awprot = 0;
+    assign d_axi_bid = 0;
+    assign d_axi_bresp = 0;
+    assign d_axi_arid = 0;
+    assign d_axi_arlen = 0;
+    assign d_axi_arsize = 0;
+    assign d_axi_arlock = 0;
+    assign d_axi_arcache = 0;
+    assign d_axi_arprot = 0;
 
     assign set_pc_by_executer = ex_flush;
 
