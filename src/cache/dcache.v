@@ -41,7 +41,7 @@ module dcache(
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
     wire vld, vld_mbuf;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf;
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf;
     wire [63:0] mem_we, mem_we_normal;
@@ -154,7 +154,7 @@ module dcache(
     miss_way_sel_lru way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf),
-        .visit          (hit),
+        .visit          (way_visit),
         .en             (way_sel_en),
         .way_sel        (way_replace)
     );
@@ -204,6 +204,7 @@ module dcache(
         .hit                (hit),
         .mem_we_normal      (mem_we_normal),
 
+        .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),
         .rbuf_we            (rbuf_we),
         .wbuf_AXI_we        (wbuf_AXI_we),

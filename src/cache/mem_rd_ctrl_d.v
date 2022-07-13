@@ -101,11 +101,11 @@ module mem_rd_ctrl_d(
             case(addr_rbuf[1:0])
             2'd0: r_data = {{16{r_data_CPU[15]}}, r_data_CPU[15:0]};
             2'd2: r_data = {{16{r_data_CPU[31]}}, r_data_CPU[31:16]};
-            default: r_data = 0;
+            default: r_data = 1;
             endcase
         end
         WORD: r_data = r_data_CPU;
-        default: r_data = 0;
+        default: r_data = 1;
         endcase
     end
     always @(*) begin

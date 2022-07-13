@@ -81,12 +81,6 @@ module icache
         .mem_en     (mem_en),
         .mem_dout   (mem_dout)
     );
-    // way_sel_lru way_sel(
-    //     .clk            (clk),
-    //     .en             (way_sel_en),
-    //     .visit          (hit),
-    //     .lru_way_sel    (way_replace)
-    // );
     miss_way_sel_lru way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf[31:0]),

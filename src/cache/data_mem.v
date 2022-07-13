@@ -9,7 +9,8 @@ module data_mem(
     input [31:0] w_data_CPU,
     input [3:0] write_type,
     output data_valid,
-    output [31:0] r_data_CPU
+    output [31:0] r_data_CPU,
+    output [6:0] exp
     );
     wire r_req, r_rdy, ret_valid, ret_last, rready;
     wire [3:0] rid;
@@ -52,7 +53,9 @@ module data_mem(
         .w_data_AXI     (w_data_AXI),
         .w_rdy          (w_rdy),
         .w_data_ready   (w_data_ready),
-        .b_valid        (b_valid) 
+        .b_valid        (b_valid),
+
+        .exception      (exp)
     );
     AXI_memory main_mem(
         .s_aclk             (clk),

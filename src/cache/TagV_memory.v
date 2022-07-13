@@ -14,7 +14,7 @@ module TagV_memory(
     wire vld_0, vld_1, vld_2, vld_3;
 
     assign index = r_addr[11:6];
-    assign tag = r_addr[31:12];
+    assign tag = w_addr[31:12];
 
     assign hit[0] = (tag == tag_0) && vld_0;
     assign hit[1] = (tag == tag_1) && vld_1;

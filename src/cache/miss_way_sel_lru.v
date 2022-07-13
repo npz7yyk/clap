@@ -22,7 +22,7 @@ module miss_way_sel_lru(
     integer i;
     initial begin
         for(i = 0; i < 64; i = i + 1)begin
-            rank[i] = 8'b11100100;
+            rank[i] = 8'b00011011;
         end
     end
     // encoder
@@ -35,35 +35,35 @@ module miss_way_sel_lru(
         default: visit_num = 0;
         endcase
     end
-    assign cmp_result[0] = (visit_num == rank[addr_rbuf][1:0]);
-    assign cmp_result[1] = (visit_num == rank[addr_rbuf][3:2]);
-    assign cmp_result[2] = (visit_num == rank[addr_rbuf][5:4]);
-    assign cmp_result[3] = (visit_num == rank[addr_rbuf][7:6]);
+    assign cmp_result[0] = (visit_num == rank[index][1:0]);
+    assign cmp_result[1] = (visit_num == rank[index][3:2]);
+    assign cmp_result[2] = (visit_num == rank[index][5:4]);
+    assign cmp_result[3] = (visit_num == rank[index][7:6]);
 
     always @(posedge clk) begin
         if(en)begin
             case(cmp_result)
             4'b0010: begin
-                rank[addr_rbuf][1:0] <= rank[addr_rbuf][3:2];
-                rank[addr_rbuf][3:2] <= rank[addr_rbuf][1:0];
+                rank[index][1:0] <= rank[index][3:2];
+                rank[index][3:2] <= rank[index][1:0];
             end
             4'b0100: begin
-                rank[addr_rbuf][1:0] <= rank[addr_rbuf][5:4];
-                rank[addr_rbuf][3:2] <= rank[addr_rbuf][1:0];
-                rank[addr_rbuf][5:4] <= rank[addr_rbuf][3:2];
+                rank[index][1:0] <= rank[index][5:4];
+                rank[index][3:2] <= rank[index][1:0];
+                rank[index][5:4] <= rank[index][3:2];
             end
             4'b1000: begin
-                rank[addr_rbuf][1:0] <= rank[addr_rbuf][7:6];
-                rank[addr_rbuf][3:2] <= rank[addr_rbuf][1:0];
-                rank[addr_rbuf][5:4] <= rank[addr_rbuf][3:2];
-                rank[addr_rbuf][7:6] <= rank[addr_rbuf][5:4];
+                rank[index][1:0] <= rank[index][7:6];
+                rank[index][3:2] <= rank[index][1:0];
+                rank[index][5:4] <= rank[index][3:2];
+                rank[index][7:6] <= rank[index][5:4];
             end
             endcase
         end
     end
 
     always @(*) begin
-        case(rank[addr_rbuf][7:6])
+        case(rank[index][7:6])
         2'd0: way_sel = 4'b0001;
         2'd1: way_sel = 4'b0010;
         2'd2: way_sel = 4'b0100;
