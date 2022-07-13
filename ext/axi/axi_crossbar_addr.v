@@ -109,12 +109,12 @@ module axi_crossbar_addr #
     input  wire                       s_cpl_valid
 );
 
-parameter CL_S_COUNT = $clog2(S_COUNT);
-parameter CL_M_COUNT = $clog2(M_COUNT);
+localparam CL_S_COUNT = $clog2(S_COUNT);
+localparam CL_M_COUNT = $clog2(M_COUNT);
 
-parameter S_INT_THREADS = S_THREADS > S_ACCEPT ? S_ACCEPT : S_THREADS;
-parameter CL_S_INT_THREADS = $clog2(S_INT_THREADS);
-parameter CL_S_ACCEPT = $clog2(S_ACCEPT);
+localparam S_INT_THREADS = S_THREADS > S_ACCEPT ? S_ACCEPT : S_THREADS;
+localparam CL_S_INT_THREADS = $clog2(S_INT_THREADS);
+localparam CL_S_ACCEPT = $clog2(S_ACCEPT);
 
 // default address computation
 function [M_COUNT*M_REGIONS*ADDR_WIDTH-1:0] calcBaseAddrs(input [31:0] dummy);
@@ -141,7 +141,7 @@ function [M_COUNT*M_REGIONS*ADDR_WIDTH-1:0] calcBaseAddrs(input [31:0] dummy);
     end
 endfunction
 
-parameter M_BASE_ADDR_INT = M_BASE_ADDR ? M_BASE_ADDR : calcBaseAddrs(0);
+localparam M_BASE_ADDR_INT = M_BASE_ADDR ? M_BASE_ADDR : calcBaseAddrs(0);
 
 integer i, j;
 
