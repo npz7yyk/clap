@@ -17,7 +17,7 @@ module register_file(
     input [4:0]eu0_rk_in,
     input[31:0]eu0_pc_in,
     input[31:0]eu0_pc_next_in,
-    input [5:0]eu0_exp_in,//TODO: 7bits
+    input [6:0]eu0_exp_in,
     input[31:0]eu0_imm_in,
     input[0:0]eu1_en_in,
     input[`WIDTH_UOP-1:0]eu1_uop_in,
@@ -48,7 +48,7 @@ module register_file(
     output reg  [4:0]eu1_rk_out,
     output reg [31:0]eu1_pc_out,
     output reg [31:0]eu1_pc_next_out,
-    output reg  [5:0]eu1_exp_out,
+    output reg  [6:0]eu1_exp_out,
     output reg [31:0]read_data10,
     output reg [31:0]read_data11
 );
