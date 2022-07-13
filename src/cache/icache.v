@@ -81,7 +81,7 @@ module icache
     // );
     miss_way_sel_lru way_sel(
         .clk            (clk),
-        .addr_rbuf      (addr_rbuf),
+        .addr_rbuf      (addr_rbuf[31:0]),
         .visit          (hit),
         .en             (way_sel_en),
         .way_sel        (way_replace)

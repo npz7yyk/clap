@@ -53,6 +53,9 @@ module core_top(
     output [31:0] debug0_wb_rf_wdata,
     output [31:0] debug0_wb_inst
 );
+    assign wid = awid;
+    assign arlock[1] = 0;
+    assign awlock[1] = 0;
     wire [3:0]  i_axi_awid;         wire [3:0]  d_axi_awid;
     wire [31:0] i_axi_awaddr;       wire [31:0] d_axi_awaddr;
     wire [7:0]  i_axi_awlen;        wire [7:0]  d_axi_awlen;
@@ -96,7 +99,7 @@ module core_top(
     axi_crossbar #(
         .S_COUNT(2),
         .M_COUNT(1),
-        .S_ID_WIDTH(4),
+        .S_ID_WIDTH(2),
         .M_ID_WIDTH(4)
     ) the_axi_crossbar(
         .clk(aclk),.rst(~aresetn),
@@ -107,7 +110,7 @@ module core_top(
         .m_axi_awlen(awlen),
         .m_axi_awsize(awsize),
         .m_axi_awburst(arburst),
-        .m_axi_awlock(awlock),
+        .m_axi_awlock(awlock[0]),
         .m_axi_awcache(awcache),
         .m_axi_awprot(awprot),
         //https://developer.arm.com/documentation/ihi0022/e/AMBA-AXI3-and-AXI4-Protocol-Specification/AXI4-Additional-Signaling/QoS-signaling/QoS-interface-signals?lang=en
@@ -136,7 +139,7 @@ module core_top(
         .m_axi_arlen(arlen),
         .m_axi_arsize(arsize),
         .m_axi_arburst(arburst),
-        .m_axi_arlock(arlock),
+        .m_axi_arlock(arlock[0]),
         .m_axi_arcache(arcache),
         .m_axi_arprot(arprot),
         // .m_axi_arqos(),
@@ -154,7 +157,7 @@ module core_top(
         .m_axi_rready(rready),
 
         //slave
-        .s_axi_awid     ({ i_axi_awid     ,  d_axi_awid     }),
+        .s_axi_awid     ({ i_axi_awid[1:0],  d_axi_awid[1:0]}),
         .s_axi_awaddr   ({ i_axi_awaddr   ,  d_axi_awaddr   }),
         .s_axi_awlen    ({ i_axi_awlen    ,  d_axi_awlen    }),
         .s_axi_awsize   ({ i_axi_awsize   ,  d_axi_awsize   }),
@@ -172,12 +175,12 @@ module core_top(
         .s_axi_wuser    (0),
         .s_axi_wvalid   ({ i_axi_wvalid   ,  d_axi_wvalid   }),
         .s_axi_wready   ({ i_axi_wready   ,  d_axi_wready   }),
-        .s_axi_bid      ({ i_axi_bid      ,  d_axi_bid      }),
+        .s_axi_bid      ({ i_axi_bid[1:0] ,  d_axi_bid[1:0] }),
         .s_axi_bresp    ({ i_axi_bresp    ,  d_axi_bresp    }),
         // .s_axi_buser    (),
         .s_axi_bvalid   ({ i_axi_bvalid   ,  d_axi_bvalid   }),
         .s_axi_bready   ({ i_axi_bready   ,  d_axi_bready   }),
-        .s_axi_arid     ({ i_axi_arid     ,  d_axi_arid     }),
+        .s_axi_arid     ({ i_axi_arid[1:0],  d_axi_arid[1:0]}),
         .s_axi_araddr   ({ i_axi_araddr   ,  d_axi_araddr   }),
         .s_axi_arlen    ({ i_axi_arlen    ,  d_axi_arlen    }),
         .s_axi_arsize   ({ i_axi_arsize   ,  d_axi_arsize   }),
@@ -189,7 +192,7 @@ module core_top(
         .s_axi_aruser   (0),
         .s_axi_arvalid  ({ i_axi_arvalid  ,  d_axi_arvalid  }),
         .s_axi_arready  ({ i_axi_arready  ,  d_axi_arready  }),
-        .s_axi_rid      ({ i_axi_rid      ,  d_axi_rid      }),
+        .s_axi_rid      ({ i_axi_rid[1:0] ,  d_axi_rid[1:0] }),
         .s_axi_rdata    ({ i_axi_rdata    ,  d_axi_rdata    }),
         .s_axi_rresp    ({ i_axi_rresp    ,  d_axi_rresp    }),
         .s_axi_rlast    ({ i_axi_rlast    ,  d_axi_rlast    }),
@@ -427,8 +430,8 @@ module core_top(
 
     wire rf_wen0;
     wire rf_wen1;
-    wire [31:0]rf_waddr0;
-    wire [31:0]rf_waddr1;
+    wire [4:0]rf_waddr0;
+    wire [4:0]rf_waddr1;
     wire [31:0]rf_wdata0;
     wire [31:0]rf_wdata1;
 

@@ -145,10 +145,10 @@ module axi_crossbar_rd #
     output wire [M_COUNT-1:0]               m_axi_rready
 );
 
-parameter CL_S_COUNT = $clog2(S_COUNT);
-parameter CL_M_COUNT = $clog2(M_COUNT);
-parameter M_COUNT_P1 = M_COUNT+1;
-parameter CL_M_COUNT_P1 = $clog2(M_COUNT_P1);
+localparam CL_S_COUNT = $clog2(S_COUNT);
+localparam CL_M_COUNT = $clog2(M_COUNT);
+localparam M_COUNT_P1 = M_COUNT+1;
+localparam CL_M_COUNT_P1 = $clog2(M_COUNT_P1);
 
 integer i;
 
