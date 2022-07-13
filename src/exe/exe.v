@@ -84,6 +84,7 @@ wire[6:0]mem_exp_mid;
 wire[4:0]mem_rd_mid;
 wire[0:0]mem_en_mid;
 wire[1:0]mem_width_mid;
+
 wire[0:0]eu1_alu_en_mid;
 wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
@@ -182,13 +183,13 @@ always @(posedge clk) begin
 end
 
 hazard  u_hazard (
-    .eu0_en_0                ( eu0_en_in              ),
-    .eu1_en_0                ( eu1_en_in              ),
+    .eu0_en_0                ( eu0_en_0              ),
+    .eu1_en_0                ( eu1_en_0              ),
     .eu0_rj                  ( eu0_rj_in              ),
     .eu0_rk                  ( eu0_rk_in              ),
     .eu1_rj                  ( eu1_rj_in              ),
     .eu1_rk                  ( eu1_rk_in              ),
-    .eu0_en_1                ( eu0_en_1              ),
+    .eu0_en_1                ( en_out0              ),
     .eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
     .eu0_rd                  ( eu0_rd_in                ),
     .stall_because_cache     ( stall_because_cache   ),
@@ -212,10 +213,10 @@ forward  u_forward (
     .eu1_rd_0                ( eu1_rd_0         ),
     .data_forward00          ( data_mid00   ),
     .data_forward10          ( data_mid10   ),
-    .eu0_en_1                ( eu0_en_1         ),
-    .eu1_en_1                ( eu1_en_1         ),
-    .eu0_rd_1                ( eu0_rd_1         ),
-    .eu1_rd_1                ( eu1_rd_1         ),
+    .eu0_en_1                ( en_out0         ),
+    .eu1_en_1                ( en_out1         ),
+    .eu0_rd_1                ( addr_out0         ),
+    .eu1_rd_1                ( addr_out1         ),
     .data_forward01          ( data_out0   ),
     .data_forward11          ( data_out1   ),
 
