@@ -1,5 +1,8 @@
-//  Xilinx Simple Dual Port Single Clock RAM
-//  This code implements a parameterizable SDP single clock memory.
+//  Xilinx True Dual Port RAM, Write First with Single Clock
+//  This code implements a parameterizable true dual port memory (both ports can read and write).
+//  This implements write-first mode where the data being written to the RAM also resides on
+//  the output port.  If the output data is not needed during writes or the last read value is
+//  desired to be retained, it is suggested to use no change as it is more power efficient.
 //  If a reset or enable is not necessary, it may be tied off or removed from the code.
 
 module TagV #(
@@ -12,14 +15,12 @@ module TagV #(
   input [RAM_WIDTH-1:0] dina,          // RAM input data
   input clka,                          // Clock
   input wea,                           // Write enable
-  //input enb,                           // Read Enable, for additional power savings, disable when not in use
-  //input rstb,                          // Output reset (does not affect memory contents)
-  //input regceb,                        // Output register enable
   output [RAM_WIDTH-1:0] doutb         // RAM output data
 );
 
   reg [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
-  reg [RAM_WIDTH-1:0] ram_data = {RAM_WIDTH{1'b0}};
+  reg [RAM_WIDTH-1:0] ram_data_a = {RAM_WIDTH{1'b0}};
+  reg [RAM_WIDTH-1:0] ram_data_b = {RAM_WIDTH{1'b0}};
 
   // The following code either initializes the memory values to a specified file or to all zeros to match hardware
   generate
@@ -34,16 +35,21 @@ module TagV #(
     end
   endgenerate
 
-  always @(posedge clka) begin
-    if (wea) begin
-      BRAM[addra] <= dina;
-      ram_data <= addra==addrb?dina:BRAM[addrb];
-    end
-    else
-      ram_data <= BRAM[addrb];
-  end
+  always @(posedge clka)
+      if (wea) begin
+        BRAM[addra] <= dina;
+        ram_data_a <= dina;
+      end else
+        ram_data_a <= BRAM[addra];
 
-  assign doutb = ram_data;
+  always @(posedge clka)
+        ram_data_b <= BRAM[addrb];
+
+  reg last_addr_eq;
+  always @(posedge clka)
+    last_addr_eq <= addra==addrb;
+  assign doutb = last_addr_eq?ram_data_a:ram_data_b;
+
 
   //  The following function calculates the address width based on specified RAM depth
   function integer clogb2;
