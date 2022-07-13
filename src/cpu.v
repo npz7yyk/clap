@@ -477,7 +477,7 @@ module core_top(
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
-    wire  [ 5:0 ]  ex_mem_addr;
+    wire  [ 31:0 ]  ex_mem_addr;
     wire  [ 3:0 ]  ex_mem_write_type;
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
     wire ex_mem_data_valid;
