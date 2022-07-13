@@ -109,7 +109,7 @@ module core_top(
         .m_axi_awaddr(awaddr),
         .m_axi_awlen(awlen),
         .m_axi_awsize(awsize),
-        .m_axi_awburst(arburst),
+        .m_axi_awburst(awburst),
         .m_axi_awlock(awlock[0]),
         .m_axi_awcache(awcache),
         .m_axi_awprot(awprot),
@@ -423,7 +423,7 @@ module core_top(
     wire  [4:0]  rf_eu0_rk,rf_eu1_rk;
     wire  [31:0]  rf_eu0_pc,rf_eu1_pc;
     wire  [31:0]  rf_eu0_pc_next,rf_eu1_pc_next;
-    wire  [5:0]  rf_eu0_exp,rf_eu1_exp;
+    wire  [6:0]  rf_eu0_exp,rf_eu1_exp;
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm;
@@ -472,11 +472,11 @@ module core_top(
     wire  ex_eu0_en, ex_eu1_en;
     wire  [31:0]  ex_eu0_data,ex_eu1_data;
     wire  [4:0]  ex_eu0_rd,ex_eu1_rd;
-    wire  [5:0] ex_eu0_exp;
+    wire  [6:0] ex_eu0_exp;
     wire  [31:0] ex_eu0_pc;
     
     wire  ex_mem_valid;
-    wire  [1:0]  ex_mem_op;
+    wire  [0:0]  ex_mem_op;
     wire  [ 5:0 ]  ex_mem_addr;
     wire  [ 3:0 ]  ex_mem_write_type;
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
@@ -518,6 +518,7 @@ module core_top(
         .valid                   ( ex_mem_valid                    ),
         .op                      ( ex_mem_op                       ),
         //????
+        .addr(ex_mem_addr),
         // .index                   ( ex_mem_index                    ),
         // .tag                     ( ex_mem_tag                      ),
         // .offset                  ( ex_mem_offset                   ),
@@ -529,13 +530,14 @@ module core_top(
     );
 
     //TODO: connect it
-    dcache the_decache
+    dcache the_dcache
     (
         .clk(aclk),.rstn(aresetn),
         .valid(ex_mem_valid),
         .op(ex_mem_op),
         .addr(ex_mem_addr), //TODO: connect it to exe
-        .read_type(ex_mem_write_type),//TODO: write type in exe equals to read type in dcache???
+        //.read_type(ex_mem_write_type),//TODO: write type in exe equals to read type in dcache???
+        .write_type(ex_mem_write_type),
         .data_valid(ex_mem_data_valid),
         .r_data_CPU(ex_mem_r_data_CPU),
         .w_data_CPU(ex_mem_w_data_CPU),
