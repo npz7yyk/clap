@@ -27,17 +27,17 @@ _start:
     srli.w $r28,$r29,3
     sra.w $r31,$r1,$r2
     srai.w $r31,$r1,8
-    mul.w $r3,$r4,$r5       # 错误！！
-    mulh.w $r6,$r7,$r8      # 错误！！
-    mulh.wu $r9,$r10,$r11   # 错误！！
-    div.w $r12,$r13,$r14    # 错误！！
-    mod.w $r15,$r16,$r17    # 错误！！
-    div.wu $r18,$r19,$r20   # 错误！！
-    mod.wu $r21,$r22,$r23   # 错误！！
-    break 1926              # 区分break和syscall
-    syscall 817             # 区分break和syscall
+    mul.w $r3,$r4,$r5
+    mulh.w $r6,$r7,$r8
+    mulh.wu $r9,$r10,$r11
+    div.w $r12,$r13,$r14
+    mod.w $r15,$r16,$r17
+    div.wu $r18,$r19,$r20
+    mod.wu $r21,$r22,$r23
+    break 1926
+    syscall 817
     ertn
-    idle 3454               # 错误！！
+    idle 3454
     lu12i.w $r24,-5241
     lu12i.w $r25,262143
     pcaddu12i $r26,-5242
