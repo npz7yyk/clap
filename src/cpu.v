@@ -549,8 +549,10 @@ module core_top(
         .r_rdy(d_axi_arready),
         .ret_valid(d_axi_rvalid),
         .ret_last(d_axi_rlast),
+        .r_data_AXI(d_axi_rdata),
 
         .w_req(d_axi_awvalid),
+        .w_data_ready(d_axi_wready),
         .w_data_req(d_axi_wvalid),
         .w_last(d_axi_wlast),
         .b_ready(d_axi_bready),
