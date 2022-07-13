@@ -58,7 +58,7 @@ module mem1 (
     //assign mem_data_out =mem_width_in=='b01 ?{24'b0,r_data_CPU[7:0]}:
     //                     mem_width_in=='b10 ?{16'b0,r_data_CPU[15:0]}:
     //                     r_data_CPU[31:0];
-    assign mem_data_out=r_data_CPU;
+    assign mem_data_out=data_valid?r_data_CPU:0;
     assign mem_rd_out=mem_rd_in;
     assign mem_en_out=mem_en_in;
 

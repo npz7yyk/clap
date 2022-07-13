@@ -1,11 +1,12 @@
 `include "../uop.vh"
 module register_file(
     input [0:0]clk,
+    input [0:0]rstn,
     //从exe2段后输入
     input [0:0]write_en_0,
     input [0:0]write_en_1,
-    input [31:0]write_addr_0,
-    input [31:0]write_addr_1,
+    input [4:0]write_addr_0,
+    input [4:0]write_addr_1,
     input [31:0]write_data_0,
     input [31:0]write_data_1,
     //从issue段后输入
@@ -58,7 +59,29 @@ module register_file(
 reg[31:0]register_file[31:0];
 
 always @(posedge clk) begin
-
+    if(!rstn)begin
+        eu0_en_out<=0;
+        eu0_uop_out<=0;
+        eu0_rd_out<=0;
+        eu0_rj_out<=0;
+        eu0_rk_out<=0;
+        eu0_pc_out<=0;
+        eu0_pc_next_out<=0;
+        eu0_exp_out<=0;
+        read_data00<=0;
+        read_data01<=0;
+        eu0_imm_out<=0;
+        eu1_en_out<=0;
+        eu1_uop_out<=0;
+        eu1_rd_out<=0;
+        eu1_rj_out<=0;
+        eu1_rk_out<=0;
+        eu1_pc_out<=0;
+        eu1_pc_next_out<=0;
+        eu1_exp_out<=0;
+        read_data10<=0;
+        read_data11<=0;
+    end else begin
     if (write_en_0) begin
         register_file[write_addr_0]<=write_data_0;
     end
@@ -81,7 +104,9 @@ always @(posedge clk) begin
         if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
             case (eu0_uop_in[`UOP_SRC1])
                 `CTRL_SRC1_RF:begin
-                    if (eu0_rj_in==write_addr_0) begin
+                    if(eu0_rj_in==0)begin
+                        read_data00<=0;
+                    end else if (eu0_rj_in==write_addr_0) begin
                         read_data00<=write_data_0;
                     end else if (eu0_rj_in==write_addr_1) begin
                         read_data00<=write_data_1;
@@ -100,7 +125,9 @@ always @(posedge clk) begin
                 end
             endcase
         end else begin
-            if (eu0_rj_in==write_addr_0) begin
+            if(eu0_rj_in==0)begin
+                read_data00<=0;
+            end else   if (eu0_rj_in==write_addr_0) begin
                 read_data00<=write_data_0;
             end else if (eu0_rj_in==write_addr_1) begin
                 read_data00<=write_data_1;
@@ -112,7 +139,9 @@ always @(posedge clk) begin
         if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
             case (eu0_uop_in[`UOP_SRC2])
                 `CTRL_SRC2_RF:begin
-                    if (eu0_rk_in==write_addr_0) begin
+                    if(eu0_rk_in==0)begin
+                        read_data01<=0;
+                    end else if (eu0_rk_in==write_addr_0) begin
                         read_data01<=write_data_0;
                     end else if (eu0_rk_in==write_addr_1) begin
                         read_data01<=write_data_1;
@@ -132,12 +161,14 @@ always @(posedge clk) begin
                 end
             endcase
         end else begin
-                if (eu0_rj_in==write_addr_0) begin
-                    read_data00<=write_data_0;
+                if(eu0_rj_in==0)begin
+                    read_data01<=0;
+                end else if (eu0_rj_in==write_addr_0) begin
+                    read_data01<=write_data_0;
                 end else if (eu0_rj_in==write_addr_1) begin
-                    read_data00<=write_data_1;
+                    read_data01<=write_data_1;
                 end else begin
-                    read_data00<=register_file[eu0_rj_in];
+                    read_data01<=register_file[eu0_rj_in];
                 end 
         end
     end
@@ -154,7 +185,9 @@ always @(posedge clk) begin
 
         case (eu1_uop_in[`UOP_SRC1])
             `CTRL_SRC1_RF:begin
-                if (eu1_rj_in==write_addr_0) begin
+                if(eu0_rj_in==0)begin
+                        read_data10<=0;
+                end else if (eu1_rj_in==write_addr_0) begin
                     read_data10<=write_data_0;
                 end else if (eu1_rj_in==write_addr_1) begin
                     read_data10<=write_data_1;
@@ -175,7 +208,9 @@ always @(posedge clk) begin
         
         case (eu1_uop_in[`UOP_SRC2])
             `CTRL_SRC2_RF:begin
-                if (eu1_rk_in==write_addr_0) begin
+                if(eu0_rk_in==0)begin
+                    read_data11<=0;
+                end else if (eu1_rk_in==write_addr_0) begin
                     read_data11<=write_data_0;
                 end else if (eu1_rk_in==write_addr_1) begin
                     read_data11<=write_data_1;
@@ -194,5 +229,6 @@ always @(posedge clk) begin
             end
         endcase
     end
+end
 end
 endmodule
