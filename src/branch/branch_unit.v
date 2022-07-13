@@ -73,8 +73,7 @@ module branch_unit #(
         .erLower        (erFactLower),
         .erUpper        (erFactUpper),
 
-        //exVld does not exist for instance fact of module data
-        //.exVld          (exVld),
+        .exVld          (exVld),
         .exPC           (exPC),
         .exExist        (exFactExist),
         .exSel          (exFactSel),
@@ -110,14 +109,12 @@ module branch_unit #(
         .clk            (clk),
         .rstn           (rstn),
 
-        //erSel does not exit for instance past of module para
-        //.erSel          (erFactSel),
+        .erSel          (erFactSel),
         .erPC           (idPC),
         .erLower        (erFactLower),
         .erUpper        (erFactUpper),
 
-        //bdSel doest not exit for instance past of module data
-        //.bdSel          (exFactSel),
+        .bdSel          (exFactSel),
         .bdPC           (exPC),
         .bdBack         (exBack),
         .bdType         (exType),
