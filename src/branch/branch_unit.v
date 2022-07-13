@@ -153,7 +153,6 @@ module branch_unit #(
         .past2      (ifPastPara2),
 
         .ex_vld     (exVld),
-        .ex_pc      (exPC),
         .ex_wrong   (exWrong),
 
         .pc_new     (pdPC),

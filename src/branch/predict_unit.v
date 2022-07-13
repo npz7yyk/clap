@@ -42,8 +42,7 @@ module predict_unit #(
     input wire [PARA_WIDTH - 1:0] past1,
     input wire [PARA_WIDTH - 1:0] past2,
 
-    input wire                    ex_vld,           // if ex_vld = 1,
-    input wire [ADDR_WIDTH - 1:0] ex_pc,            // ex_pc no more in guess
+    input wire                    ex_vld,
     input wire                    ex_wrong,
 
     output wire [ADDR_WIDTH - 1:0] pc_new,
@@ -93,7 +92,6 @@ module predict_unit #(
 
     // new values for inGuess
     wire inGuess1_new, inGuess2_new;
-    wire ex_addr = ex_pc[GUESS_DEPTH + 2:3];
 
     // this "always" deals with inGuess
     always @(posedge clk or negedge rstn) begin
