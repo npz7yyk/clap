@@ -42,10 +42,11 @@ module exe(
     output [1:0]category_out,
     //向cache输出
     output [0:0] valid,                 //    valid request
-    output [1:0] op,                    //    write: 1, read: 0
-    output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
-    output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
-    output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
+    output [0:0] op,                    //    write: 1, read: 0
+    output [31:0]addr,
+    // output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
+    // output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
+    // output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
     output [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ] w_data_CPU,         //    write data
     //从cache输入
@@ -70,8 +71,8 @@ wire[31:0]br_rd_data_mid;
 wire[4:0]br_rd_addr_mid;
 wire[0:0]br_en_mid;
 wire[0:0]alu_en_mid;
-wire[0:0]alu_rd_mid;
-wire[0:0]alu_result_mid;
+wire[4:0]alu_rd_mid;
+wire[31:0]alu_result_mid;
 wire[0:0]mul_en_mid;
 wire[4:0]mul_rd_mid;
 wire[0:0]mul_sel_mid;
@@ -312,9 +313,10 @@ mem0  u_mem0 (
 
     .valid                   ( valid           ),
     .op                      ( op              ),
-    .index                   ( index           ),
-    .tag                     ( tag             ),
-    .offset                  ( offset          ),
+    .addr(addr),
+    // .index                   ( index           ),
+    // .tag                     ( tag             ),
+    // .offset                  ( offset          ),
     .write_type              ( write_type      ),
     .w_data_CPU              ( w_data_CPU      ),
     .mem_exp_out             ( mem_exp_mid     ),
@@ -362,9 +364,9 @@ alu  u_alu1 (
     .alu_sr0                 ( eu1_sr0       ),
     .alu_sr1                 ( eu1_sr1       ),
 
-    .alu_en_out              ( eu1_alu_en_out    ),
-    .alu_rd_out              ( eu1_alu_rd_out    ),
-    .alu_result              ( eu1_alu_result    )
+    .alu_en_out              ( eu1_alu_en_mid    ),
+    .alu_rd_out              ( eu1_alu_rd_mid    ),
+    .alu_result              ( eu1_alu_result_mid    )
 );
 
 endmodule 
