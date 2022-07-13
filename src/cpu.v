@@ -290,7 +290,7 @@ module core_top(
     assign i_axi_awaddr = 0;
     assign i_axi_awlen = 0;
     assign i_axi_awsize = 0;
-    assign i_axi_arburst = 2'b01;
+    assign i_axi_awburst = 2'b01;
     assign i_axi_awlock = 0;
     assign i_axi_awcache = 0;
     assign i_axi_awprot = 0;
@@ -303,8 +303,9 @@ module core_top(
     assign i_axi_bready = 0;
     assign i_axi_bresp = 0;
     assign i_axi_arid = 0;
-    assign i_axi_arlen = 0;
-    assign i_axi_arsize = 0;
+    assign i_axi_arburst = 2'b01;
+    assign i_axi_arlen = 8'd15;
+    assign i_axi_arsize = 3'b010;
     assign i_axi_arlock = 0;
     assign i_axi_arcache = 0;
     assign i_axi_arprot = 0;
@@ -576,17 +577,18 @@ module core_top(
         .b_valid(d_axi_bvalid)
     );
     assign d_axi_awid = 0;
-    assign d_axi_awlen = 0;
-    assign d_axi_awsize = 0;
-    assign d_axi_arburst = 2'b01;
+    assign d_axi_awlen = 8'd15;
+    assign d_axi_awsize = 3'b010;
+    assign d_axi_awburst = 2'b01;
     assign d_axi_awlock = 0;
     assign d_axi_awcache = 0;
     assign d_axi_awprot = 0;
     assign d_axi_bid = 0;
     assign d_axi_bresp = 0;
     assign d_axi_arid = 0;
-    assign d_axi_arlen = 0;
-    assign d_axi_arsize = 0;
+    assign d_axi_arlen = 8'd15;
+    assign d_axi_arburst = 2'b01;
+    assign d_axi_arsize = 3'b010;
     assign d_axi_arlock = 0;
     assign d_axi_arcache = 0;
     assign d_axi_arprot = 0;
