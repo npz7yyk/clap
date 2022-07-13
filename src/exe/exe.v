@@ -90,8 +90,8 @@ wire[31:0]eu1_alu_result_mid;
 //中段寄存器
 reg[0:0]eu0_en_0;
 reg[0:0]eu1_en_0;
-reg[0:0]eu0_rd_0;
-reg[0:0]eu1_rd_0;
+reg[4:0]eu0_rd_0;
+reg[4:0]eu1_rd_0;
 reg[31:0]data_mid00;
 reg[31:0]data_mid10;
 reg[6:0]mem_exp_exe1;

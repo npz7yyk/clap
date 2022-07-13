@@ -14,6 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Revisions:
+// 2022-05-13: Create module.
+// 2022-05-17: fetch buffer and instruction decoder (without privileged instructions decoding)
+// 2022-05-28: decoder: immediate number generator, signals used by branch prediction unit
+// 2022-07-10: use predecoder module to generate feedback signals for branch prediction unit
+// 2022-07-13: do not push NOP into fetch buffer
+
 `timescale 1ns / 1ps
 `include "../uop.vh"
 `include "../exception.vh"
@@ -58,8 +65,8 @@ module id_stage
     output reg [31:0] probably_right_destination,
     output wire set_pc
 );
-    wire valid0 = ~pc_in[2];   //输入的指令0有效
-    wire valid1 = ~first_inst_jmp;//输入的指令1有效
+    wire valid0 = input_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
+    wire valid1 = input_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
 
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
@@ -115,8 +122,8 @@ module id_stage
     
     //真正有效的第一条输入指令， 当valid0时，它就是inst0，否则它是inst1
     //TODO不把空指令放进FIFO
-    wire [31:0] real_inst0 = input_valid? (valid0? inst0:(set_pc_due_to_inst0?`INST_NOP:inst1)) : `INST_NOP;
-    wire [31:0] real_inst1 = input_valid&&!set_pc_due_to_inst0? inst1 : `INST_NOP;
+    wire [31:0] real_inst0 = valid0? inst0:inst1;
+    wire [31:0] real_inst1 = inst1;
     
     //真正有效的第一条输入指令的pc
     wire [31:0] real_pc0 = pc_in;
@@ -139,14 +146,6 @@ module id_stage
     //FIFO
     always @(posedge clk)
         if(~rstn || flush)begin
-//            fetch_buffer0[0]<=`INST_NOP;
-//            fetch_buffer0[1]<=`INST_NOP;
-//            fetch_buffer0[2]<=`INST_NOP;
-//            fetch_buffer0[3]<=`INST_NOP;
-//            fetch_buffer1[0]<=`INST_NOP;
-//            fetch_buffer1[1]<=`INST_NOP;
-//            fetch_buffer1[2]<=`INST_NOP;
-//            fetch_buffer1[3]<=`INST_NOP;
             head0<=0; head1<=0;
             tail0<=0; tail1<=0;
             push_sel<=0;
@@ -169,6 +168,8 @@ module id_stage
     
     wire invalid0,invalid1;
     wire [6:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
+    wire is_syscall0,is_syscall1;
+    wire is_break0,is_break1;
     decoder decoder0
     (
         .pcnext_pc_inst(pop_sel==0?
@@ -177,9 +178,14 @@ module id_stage
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
         .exception(exception0_ICQlsmuv),
-        .invalid(invalid0)
+        .invalid_instruction(invalid0),
+        .is_syscall(is_syscall0),
+        .is_break(is_break0)
     );
-    assign exception0_out = exception0_ICQlsmuv==0? (invalid0?`EXP_INE:0):exception0_ICQlsmuv;
+    assign exception0_out = exception0_ICQlsmuv != 0 ? exception0_ICQlsmuv:
+        ({7{invalid0}}&`EXP_INE |
+         {7{is_syscall0}}&`EXP_SYS |
+         {7{is_break0}}&`EXP_BRK);
     decoder decoder1
     (
         .pcnext_pc_inst(pop_sel==1?
@@ -188,7 +194,12 @@ module id_stage
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
         .exception(exception1_ICQlsmuv),
-        .invalid(invalid1)
+        .invalid_instruction(invalid1),
+        .is_syscall(is_syscall1),
+        .is_break(is_break1)
     );
-    assign exception1_out = exception1_ICQlsmuv==0? (invalid1?`EXP_INE:0):exception1_ICQlsmuv;
+    assign exception1_out = exception1_ICQlsmuv != 0 ? exception1_ICQlsmuv:
+        ({7{invalid1}}&`EXP_INE |
+         {7{is_syscall1}}&`EXP_SYS |
+         {7{is_break1}}&`EXP_BRK);
 endmodule

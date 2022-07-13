@@ -45,7 +45,11 @@ module icache
     );
 
     cache_excption_i exp_cope(
+<<<<<<< HEAD
         .addr_rbuf      (addr_rbuf[31:0]),
+=======
+        .addr_rbuf     (addr_rbuf),
+>>>>>>> bfd2327631d220aa46c43e3b331df615b2599924
         .exception      (exception)
     );
     

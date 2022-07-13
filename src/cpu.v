@@ -203,14 +203,11 @@ module core_top(
     
     wire data_valid;
     wire if_buf_full;
-    reg just_reset;
+    reg did_not_query_at_last_clock;
     always @(posedge aclk)
-        if(~aresetn)just_reset<=1;
-        else just_reset<=if_buf_full;
-    //stall信号与valid信号不同，
-    //在没有读请求时，i-cache的data_valid=0，但是PC不能在此时stall，否则待到data_valid=1时，相同的指令会被取出两次
-    // 这种情况只会发生在刚刚reset后，解决方法是令刚刚reset后的data_valid=1
-    wire pc_stall_n=(data_valid|just_reset) & ~if_buf_full;
+        if(~aresetn)did_not_query_at_last_clock<=1;
+        else did_not_query_at_last_clock <= if_buf_full;
+    wire pc_stall_n=(data_valid|did_not_query_at_last_clock) & ~if_buf_full;
     
     reg [31:0] pc;
     wire [31:0] pc_next;
@@ -461,6 +458,7 @@ module core_top(
 
     register_file  the_register (
         .clk                     ( aclk              ),
+        .rstn                    ( aresetn           ),
         
         .stable_counter(stable_counter),
         .eu0_en_in     (is_eu0_en     ), .eu1_en_in     (is_eu1_en     ),
