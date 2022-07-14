@@ -38,7 +38,7 @@ module register_file(
     output reg  [4:0]eu0_rk_out,
     output reg [31:0]eu0_pc_out,
     output reg [31:0]eu0_pc_next_out,
-    output reg  [6:]eu0_exp_out,
+    output reg  [6:0]eu0_exp_out,
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]eu0_imm_out,
