@@ -168,7 +168,8 @@ module decoder
     //各种指令格式的操作位（包括alu、mul、div、mem、br）
     assign uop[`UOP_COND]=
         {4{type[`ITYPE_IDX_ALU]}}&alu_op |
-        {3'b0,(type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&inst[15]} |
+        {3'b0,type[`ITYPE_IDX_DIV]&inst[15]} |
+        {3'b0,type[`ITYPE_IDX_MUL]&(inst[15]|inst[16])} |
         //inst[27]==1时是保留取字和条件存字，宽度是32位
         {4{type[`ITYPE_IDX_MEM]}}&{1'b0,inst[24],inst[27]?inst[23:22]:2'b10}|
         {4{type[`ITYPE_IDX_BR]}}&cond;
