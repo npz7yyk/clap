@@ -90,6 +90,7 @@ wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
 //中段寄存器
 reg[0:0]eu0_en_0;
+reg[0:0]eu0_mul_en_0;
 reg[0:0]eu1_en_0;
 reg[4:0]eu0_rd_0;
 reg[4:0]eu1_rd_0;
@@ -123,6 +124,7 @@ wire[4:0]div_addr_out;
 always @(posedge clk) begin
     if(!rstn)begin
         eu0_en_0<=0;
+        eu0_mul_en_0<=0;
         eu1_en_0<=0;
         eu0_rd_0<=0;
         eu1_rd_0<=0;
@@ -141,6 +143,7 @@ always @(posedge clk) begin
         eu0_pc_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
+        eu0_mul_en_0<=mul_en_mid;
         eu1_en_0<=eu1_alu_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
@@ -294,7 +297,7 @@ mul_1  u_mul_1 (
     .mul_mid_sr2             ( mul_sr2_exe1   ),
     .mul_mid_sr3             ( mul_sr3_exe1   ),
     .mul_sel                 ( mul_sel_exe1       ),
-    .mul_en_in               ( eu0_en_0     ),
+    .mul_en_in               ( eu0_mul_en_0     ),
     .mul_rd_in               ( eu0_rd_0     ),
 
     .mul_rd_out              ( mul_rd_out    ),

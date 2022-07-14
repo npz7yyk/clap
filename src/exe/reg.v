@@ -92,7 +92,7 @@ always @(posedge clk) begin
         register_file[write_addr_1]<=write_data_1;
     end
 
-    if(eu0_en_in)begin
+    //if(eu0_en_in)begin
         eu0_en_out<=eu0_en_in;
         eu0_uop_out<=eu0_uop_in;
         eu0_rd_out<=eu0_rd_in;
@@ -172,9 +172,9 @@ always @(posedge clk) begin
                     read_data01<=register_file[eu0_rk_in];
                 end 
         end
-    end
+    //end
 
-    if(eu1_en_in)begin
+    //if(eu1_en_in)begin
         eu1_en_out<=eu1_en_in;
         eu1_uop_out<=eu1_uop_in;
         eu1_rd_out<=eu1_rd_in;
@@ -230,7 +230,7 @@ always @(posedge clk) begin
                 read_data11<=stable_counter[63:32];
             end
         endcase
-    end
+    //end 
 end
 end
 endmodule

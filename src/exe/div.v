@@ -150,10 +150,10 @@ always @(posedge clk) begin
     end else if(i==1)begin
         i<=0;
         stall_because_div<=0;
-        div_result<=op?(divisor_sign==dividend_sign?qoucient:~qoucient+1):(dividend_sign?~dividend+1:dividend);
+        div_result<=op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
         div_addr_out<=addr;
         div_en_out<=1;
-    end else begin
+    end else if(i>0)begin
         i=i-1;
         if (dividend>=divisor) begin
             dividend<=dividend-divisor;
@@ -162,6 +162,8 @@ always @(posedge clk) begin
             qoucient<={qoucient[30:0],1'b0};
         end
         divisor=divisor>>1;
-    end 
+    end else begin
+        div_result<=0;
+    end
 end
 endmodule
