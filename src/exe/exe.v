@@ -91,6 +91,7 @@ wire[31:0]eu1_alu_result_mid;
 //中段寄存器
 reg[0:0]eu0_en_0;
 reg[0:0]eu0_mul_en_0;
+reg[0:0]eu0_mem_en_0;
 reg[0:0]eu1_en_0;
 reg[4:0]eu0_rd_0;
 reg[4:0]eu1_rd_0;
@@ -122,9 +123,10 @@ wire[31:0]div_result;
 wire[4:0]div_addr_out;
 //中段寄存器更新
 always @(posedge clk) begin
-    if(!rstn)begin
+    if(!rstn||stall)begin
         eu0_en_0<=0;
         eu0_mul_en_0<=0;
+        eu0_mem_en_0<=0;
         eu1_en_0<=0;
         eu0_rd_0<=0;
         eu1_rd_0<=0;
@@ -141,9 +143,10 @@ always @(posedge clk) begin
         mul_sr3_exe1<=0;
         exp_exe1<=0;
         eu0_pc_exe1<=0;
-    end else if(!stall)begin
+    end else begin
         eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
         eu0_mul_en_0<=mul_en_mid;
+        eu0_mem_en_0<=mem_en_mid;
         eu1_en_0<=eu1_alu_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
@@ -186,15 +189,17 @@ always @(posedge clk) begin
 end
 
 hazard  u_hazard (
-    .eu0_en_0                ( eu0_en_0              ),
-    .eu1_en_0                ( eu1_en_0              ),
+    .eu0_en_in                ( eu0_en_in              ),
+    .eu1_en_in                ( eu1_en_in              ),
     .eu0_rj                  ( eu0_rj_in              ),
     .eu0_rk                  ( eu0_rk_in              ),
     .eu1_rj                  ( eu1_rj_in              ),
     .eu1_rk                  ( eu1_rk_in              ),
-    .eu0_en_1                ( en_out0              ),
-    .eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
-    .eu0_rd                  ( eu0_rd_in                ),
+    .eu0_mul_en_0                ( eu0_mul_en_0               ),
+    .eu0_mem_en_0                ( eu0_mem_en_0               ),
+
+    //.eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
+    .eu0_rd                  ( eu0_rd_0                ),
     .stall_because_cache     ( stall_because_cache   ),
     .stall_because_div       ( stall_because_div     ),
 

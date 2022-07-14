@@ -459,6 +459,8 @@ module core_top(
     register_file  the_register (
         .clk                     ( aclk              ),
         .rstn                    ( aresetn           ),
+        .stall                   ( ex_stall          ),
+        .flush                   ( ex_flush          ),
         
         .stable_counter(stable_counter),
         .eu0_en_in     (is_eu0_en     ), .eu1_en_in     (is_eu1_en     ),
