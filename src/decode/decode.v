@@ -59,9 +59,9 @@ module decoder
     assign type[`ITYPE_IDX_ERET] = inst[30:10]=='b000011001001000001110;
     assign type[`ITYPE_IDX_TLB] = tlb_invalid||
         inst[30:13]=='b000011001001000001&&inst[12:10]!='b110;
-    assign type[`ITYPE_IDX_ECALL] = inst[30:17]=='b00000000010101&&inst[15]=='b0;
-    assign is_syscall = type[`ITYPE_IDX_ECALL]&inst[16];
-    assign is_break = type[`ITYPE_IDX_ECALL]&~inst[16];
+    wire is_ecall = inst[30:17]=='b00000000010101&&inst[15]=='b0;
+    assign is_syscall = is_ecall&inst[16];
+    assign is_break = is_ecall&~inst[16];
     assign type[`ITYPE_IDX_MUL] = inst[30:17]=='b00000000001110;
     assign type[`ITYPE_IDX_DIV] = inst[30:17]=='b00000000010000;
     wire is_alu_sfti = inst[30:20]=='b00000000100&&inst[17:15]=='b001;
@@ -176,17 +176,8 @@ module decoder
     ////////////////////////////////////
     
     ///////////////////////////////////
-    //ATTENTION: 当UOP_TYPE改变时需要手动修改
     //非法指令检查
-    //检查12位的type只含一个1
-    wire [5:0] tmp_or0 = type[5:0]|type[11:6];
-    wire [5:0] tmp_and0 = type[5:0]&type[11:6];
-    wire [2:0] tmp_or1 = tmp_or0[2:0]|tmp_or0[5:3];
-    wire [2:0] tmp_and1 = tmp_or0[2:0]&tmp_or0[5:3];
-    wire [1:0] tmp_or2 = tmp_or1[1:0]|{1'b0,tmp_or1[2:2]};
-    wire [1:0] tmp_and2 = tmp_or1[1:0]&{1'b0,tmp_or1[2:2]};
-    wire [0:0] tmp_and3 = tmp_or2[0]&tmp_or2[1];
-    wire type_invalid = tmp_and0!=0||tmp_and1!=0||tmp_and2!=0||tmp_and3!=0||type==0;
+    wire type_invalid = type==0&!is_ecall;
     
     assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31];
     //////////////////////////////////////
@@ -194,8 +185,7 @@ module decoder
     /////////////////////////////////////
     //目标地址
     assign rd =
-        (type[`ITYPE_IDX_ECALL]||
-        type[`ITYPE_IDX_CACHE]||
+        (type[`ITYPE_IDX_CACHE]||
         type[`ITYPE_IDX_TLB]||
         type[`ITYPE_IDX_IDLE]||
         type[`ITYPE_IDX_CSR]||
@@ -209,8 +199,7 @@ module decoder
     
     //源地址1
     assign rj =
-        (type[`ITYPE_IDX_ECALL]||
-        type[`ITYPE_IDX_CSR]||
+        (type[`ITYPE_IDX_CSR]||
         type[`ITYPE_IDX_TLB]||
         type[`ITYPE_IDX_IDLE]||
         is_pcadd||is_lui||is_b_or_bl)?0:

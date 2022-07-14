@@ -163,6 +163,7 @@ always @(posedge clk) begin
         end
         divisor=divisor>>1;
     end else begin
+        div_en_out<=0;
         div_result<=0;
     end
 end
