@@ -58,24 +58,23 @@ module is_stage
     wire first_nop = uop0[`UOP_TYPE] == 0 && exception0==0;
     wire second_nop = uop1[`UOP_TYPE] == 0 && exception1==0;
     
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = {pc_next0,pc0,exception0,imm0,rd0,rk0,rj0,uop0};
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = {pc_next1,pc1,exception1,imm1,rd1,rk1,rj1,uop1};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {pc_next0,pc0,exception0,imm0,rd0,rk0,rj0,uop0};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {pc_next1,pc1,exception1,imm1,rd1,rk1,rj1,uop1};
+
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
     
     reg [4:0] size_after_out;
-    reg [1:0] size_out;
     always @ *
         case({eu1_en,eu0_en})
         2'b10,2'b01: begin
             size_after_out = fifo_size<=1?0:fifo_size-1;
-            size_out = 1;
         end
         2'b11: begin
             size_after_out = fifo_size<=2?0:fifo_size-2;
-            size_out = 2;
         end
         2'b00: begin
             size_after_out = fifo_size;
-            size_out = 0;
         end
         endcase
     always @*
@@ -113,16 +112,15 @@ module is_stage
                     fifo1 <= input1;
         endcase
 
-    wire [2:0] tmp_4WcsDb8esTV8xg = num_read[0] + num_read[1];
     always @(posedge clk)
         if(~rstn || flush)
             fifo_size <= 0;
-        else case({eu1_en,eu0_en})
-            2'b00: fifo_size <= fifo_size + tmp_4WcsDb8esTV8xg;
+        else case({first_nop,second_nop})
+            2'b00: fifo_size <= 2;
             2'b10,2'b01:
-                fifo_size <= (fifo_size<=1?0:fifo_size-1)+tmp_4WcsDb8esTV8xg;
+                fifo_size <= size_after_out==0?1:2;
             2'b11:
-                fifo_size <= (fifo_size<=2?0:fifo_size-2)+tmp_4WcsDb8esTV8xg;
+                fifo_size <= size_after_out;
        endcase
     
     reg [31:0] register_valid;

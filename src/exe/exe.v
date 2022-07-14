@@ -19,6 +19,7 @@ module exe(
     input [4:0]eu1_rd_in,
     input [4:0]eu1_rj_in,
     input [4:0]eu1_rk_in,
+    input [31:0]eu1_imm_in,
     input [31:0]data10,
     input [31:0]data11,
     //向exe2段后输出
@@ -89,6 +90,7 @@ wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
 //中段寄存器
 reg[0:0]eu0_en_0;
+reg[0:0]eu0_mul_en_0;
 reg[0:0]eu1_en_0;
 reg[4:0]eu0_rd_0;
 reg[4:0]eu1_rd_0;
@@ -122,6 +124,7 @@ wire[4:0]div_addr_out;
 always @(posedge clk) begin
     if(!rstn)begin
         eu0_en_0<=0;
+        eu0_mul_en_0<=0;
         eu1_en_0<=0;
         eu0_rd_0<=0;
         eu1_rd_0<=0;
@@ -140,6 +143,7 @@ always @(posedge clk) begin
         eu0_pc_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
+        eu0_mul_en_0<=mul_en_mid;
         eu1_en_0<=eu1_alu_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
@@ -255,13 +259,15 @@ branch #(
     .branch_status           (branch_status),
     .category_out(category_out)
 );
+wire[31:0]eu0_alu_sr1;
+assign eu0_alu_sr1=eu0_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu0_imm_in:eu0_sr1;
 
 alu  u_alu0 (
     .alu_en_in               ( eu0_alu_en    ),
     .alu_control             ( eu0_uop_in[`UOP_ALUOP]   ),
     .alu_rd_in               ( eu0_rd_in     ),
     .alu_sr0                 ( eu0_sr0       ),
-    .alu_sr1                 ( eu0_sr1       ),
+    .alu_sr1                 ( eu0_alu_sr1       ),
 
     .alu_en_out              ( alu_en_mid    ),
     .alu_rd_out              ( alu_rd_mid    ),
@@ -291,7 +297,7 @@ mul_1  u_mul_1 (
     .mul_mid_sr2             ( mul_sr2_exe1   ),
     .mul_mid_sr3             ( mul_sr3_exe1   ),
     .mul_sel                 ( mul_sel_exe1       ),
-    .mul_en_in               ( eu0_en_0     ),
+    .mul_en_in               ( eu0_mul_en_0     ),
     .mul_rd_in               ( eu0_rd_0     ),
 
     .mul_rd_out              ( mul_rd_out    ),
@@ -355,13 +361,14 @@ div  u_div (
     .div_result              ( div_result               ),
     .div_addr_out            ( div_addr_out   )
 );
-
+wire[31:0]eu1_alu_sr1;
+assign eu1_alu_sr1=eu1_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu1_imm_in:eu1_sr1;
 alu  u_alu1 (
     .alu_en_in               ( eu1_alu_en     ),
     .alu_control             ( eu1_uop_in[`UOP_ALUOP]   ),
     .alu_rd_in               ( eu1_rd_in     ),
     .alu_sr0                 ( eu1_sr0       ),
-    .alu_sr1                 ( eu1_sr1       ),
+    .alu_sr1                 ( eu1_alu_sr1       ),
 
     .alu_en_out              ( eu1_alu_en_mid    ),
     .alu_rd_out              ( eu1_alu_rd_mid    ),

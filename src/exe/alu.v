@@ -24,9 +24,9 @@ module alu (
     assign op_sub  = alu_control==`CTRL_ALU_SUB;
     assign op_slt  = alu_control==`CTRL_ALU_SLT;
     assign op_sltu = alu_control==`CTRL_ALU_SLTU;
-    assign op_and  = alu_control==`CTRL_ALU_NOR;
-    assign op_or   = alu_control==`CTRL_ALU_AND;
-    assign op_nor  = alu_control==`CTRL_ALU_OR;
+    assign op_and  = alu_control==`CTRL_ALU_AND;
+    assign op_or   = alu_control==`CTRL_ALU_OR;
+    assign op_nor  = alu_control==`CTRL_ALU_NOR;
     assign op_xor  = alu_control==`CTRL_ALU_XOR;
     assign op_sll  = alu_control==`CTRL_ALU_SLL;
     assign op_srl  = alu_control==`CTRL_ALU_SRL;
@@ -62,7 +62,7 @@ module alu (
     assign sll_result          = alu_sr1<<alu_sr0[ 4:0 ];
     assign srl_result                = alu_sr1>>alu_sr0[ 4:0 ];
     assign sra_result                = ( $signed ( alu_sr1 ) )>>>alu_sr0[ 4:0 ];
-    assign alu_result                = ( {32{op_add|op_sub}}&add_sub_result )
+    assign alu_result                = alu_en_out?(( {32{op_add|op_sub}}&add_sub_result )
                                         |( {32{op_slt}}&slt_result )
                                         |( {32{op_sltu}}&sltu_result )
                                         |( {32{op_and}}&and_result )
@@ -71,7 +71,7 @@ module alu (
                                         |( {32{op_xor}}&xor_result )
                                         |( {32{op_sll}}&sll_result )
                                         |( {32{op_srl}}&srl_result )
-                                        |( {32{op_sra}}&sra_result );
+                                        |( {32{op_sra}}&sra_result )):0;
     assign alu_rd_out=alu_rd_in;
     assign alu_en_out=alu_en_in;
 endmodule
