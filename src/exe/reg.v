@@ -3,6 +3,8 @@
 module register_file(
     input [0:0]clk,
     input [0:0]rstn,
+    input [0:0]stall,
+    input [0:0]flush,
     //从exe2段后输入
     input [0:0]write_en_0,
     input [0:0]write_en_1,
@@ -63,13 +65,12 @@ reg[31:0]register_file[31:0];
 always @(posedge clk) begin
     if (write_en_0) begin
             register_file[write_addr_0]<=write_data_0;
-        end
+    end
 
     if (write_en_1) begin
         register_file[write_addr_1]<=write_data_1;
     end
         
-    
     if(!rstn)begin
         eu0_en_out<=0;
         eu0_uop_out<=0;
