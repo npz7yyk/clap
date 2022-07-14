@@ -151,7 +151,6 @@ always @(posedge clk) begin
                 end
                 `CTRL_SRC2_IMM: begin
                     read_data01<=eu0_imm_in;
-                    read_data01<=eu0_imm_in;
                 end
                 `CTRL_SRC2_CNTL:begin
                     read_data01<=stable_counter[31:0];

@@ -255,13 +255,15 @@ branch #(
     .branch_status           (branch_status),
     .category_out(category_out)
 );
+wire[31:0]eu0_alu_sr1;
+assign eu0_alu_sr1=eu0_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu0_imm_in:eu0_sr1;
 
 alu  u_alu0 (
     .alu_en_in               ( eu0_alu_en    ),
     .alu_control             ( eu0_uop_in[`UOP_ALUOP]   ),
     .alu_rd_in               ( eu0_rd_in     ),
     .alu_sr0                 ( eu0_sr0       ),
-    .alu_sr1                 ( eu0_sr1       ),
+    .alu_sr1                 ( eu0_alu_sr1       ),
 
     .alu_en_out              ( alu_en_mid    ),
     .alu_rd_out              ( alu_rd_mid    ),
