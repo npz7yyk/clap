@@ -38,7 +38,7 @@ module register_file(
     output reg  [4:0]eu0_rk_out,
     output reg [31:0]eu0_pc_out,
     output reg [31:0]eu0_pc_next_out,
-    output reg  [6:0]eu0_exp_out,
+    output reg  [6:]eu0_exp_out,
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]eu0_imm_out,
@@ -61,6 +61,15 @@ module register_file(
 reg[31:0]register_file[31:0];
 
 always @(posedge clk) begin
+    if (write_en_0) begin
+            register_file[write_addr_0]<=write_data_0;
+        end
+
+    if (write_en_1) begin
+        register_file[write_addr_1]<=write_data_1;
+    end
+        
+    
     if(!rstn)begin
         eu0_en_out<=0;
         eu0_uop_out<=0;
@@ -84,15 +93,8 @@ always @(posedge clk) begin
         read_data10<=0;
         read_data11<=0;
         eu1_imm_out<=0;
-    end else begin
-    if (write_en_0) begin
-        register_file[write_addr_0]<=write_data_0;
-    end
-
-    if (write_en_1) begin
-        register_file[write_addr_1]<=write_data_1;
-    end
-
+    end else if(!stall)begin
+        
     //if(eu0_en_in)begin
         eu0_en_out<=eu0_en_in;
         eu0_uop_out<=eu0_uop_in;
