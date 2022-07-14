@@ -48,7 +48,7 @@ module inst_cache_memory #(
 
     reg last_addr_eq;
     always @(posedge clka)
-        last_addr_eq <= addra == addrb;
+        last_addr_eq <= addra == addrb && wea;
     assign doutb = last_addr_eq?ram_data_a:ram_data_b;
 
 
