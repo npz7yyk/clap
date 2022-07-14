@@ -19,6 +19,7 @@ module exe(
     input [4:0]eu1_rd_in,
     input [4:0]eu1_rj_in,
     input [4:0]eu1_rk_in,
+    input [31:0]eu1_imm_in,
     input [31:0]data10,
     input [31:0]data11,
     //向exe2段后输出
@@ -357,13 +358,14 @@ div  u_div (
     .div_result              ( div_result               ),
     .div_addr_out            ( div_addr_out   )
 );
-
+wire[31:0]eu1_alu_sr1;
+assign eu1_alu_sr1=eu1_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu1_imm_in:eu1_sr1;
 alu  u_alu1 (
     .alu_en_in               ( eu1_alu_en     ),
     .alu_control             ( eu1_uop_in[`UOP_ALUOP]   ),
     .alu_rd_in               ( eu1_rd_in     ),
     .alu_sr0                 ( eu1_sr0       ),
-    .alu_sr1                 ( eu1_sr1       ),
+    .alu_sr1                 ( eu1_alu_sr1       ),
 
     .alu_en_out              ( eu1_alu_en_mid    ),
     .alu_rd_out              ( eu1_alu_rd_mid    ),

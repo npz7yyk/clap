@@ -51,7 +51,8 @@ module register_file(
     output reg [31:0]eu1_pc_next_out,
     output reg  [6:0]eu1_exp_out,
     output reg [31:0]read_data10,
-    output reg [31:0]read_data11
+    output reg [31:0]read_data11,
+    output reg [31:0]eu1_imm_out
 );
 
 
@@ -81,6 +82,7 @@ always @(posedge clk) begin
         eu1_exp_out<=0;
         read_data10<=0;
         read_data11<=0;
+        eu1_imm_out<=0;
     end else begin
     if (write_en_0) begin
         register_file[write_addr_0]<=write_data_0;
@@ -160,14 +162,14 @@ always @(posedge clk) begin
                 end
             endcase
         end else begin
-                if(eu0_rj_in==0)begin
+                if(eu0_rk_in==0)begin
                     read_data01<=0;
-                end else if (eu0_rj_in==write_addr_0) begin
+                end else if (eu0_rk_in==write_addr_0) begin
                     read_data01<=write_data_0;
-                end else if (eu0_rj_in==write_addr_1) begin
+                end else if (eu0_rk_in==write_addr_1) begin
                     read_data01<=write_data_1;
                 end else begin
-                    read_data01<=register_file[eu0_rj_in];
+                    read_data01<=register_file[eu0_rk_in];
                 end 
         end
     end
@@ -181,6 +183,7 @@ always @(posedge clk) begin
         eu1_pc_out<=eu1_pc_in;
         eu1_pc_next_out<=eu1_pc_next_in;
         eu1_exp_out<=eu1_exp_in;
+        eu1_imm_out<=eu1_imm_in;
 
         case (eu1_uop_in[`UOP_SRC1])
             `CTRL_SRC1_RF:begin

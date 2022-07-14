@@ -447,7 +447,7 @@ module core_top(
     wire  [6:0]  rf_eu0_exp,rf_eu1_exp;
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
-    wire  [31:0]  rf_eu0_imm;
+    wire  [31:0]  rf_eu0_imm, rf_eu1_imm;
 
     wire rf_wen0;
     wire rf_wen1;
@@ -481,7 +481,7 @@ module core_top(
         .eu0_exp_out    (rf_eu0_exp       ), .eu1_exp_out    (rf_eu1_exp       ),
         .read_data00    (rf_eu0_read_dataj), .read_data10    (rf_eu1_read_dataj),
         .read_data01    (rf_eu0_read_datak), .read_data11    (rf_eu1_read_datak),
-        .eu0_imm_out    (rf_eu0_imm       ),  
+        .eu0_imm_out    (rf_eu0_imm       ), .eu1_imm_out    (rf_eu1_imm),
 
         .write_en_0   (rf_wen0  ),
         .write_en_1   (rf_wen1  ),
@@ -512,7 +512,7 @@ module core_top(
         .eu0_rd_in     (rf_eu0_rd     ), .eu1_rd_in (rf_eu1_rd ),
         .eu0_rj_in     (rf_eu0_rj     ), .eu1_rj_in (rf_eu1_rj ),
         .eu0_rk_in     (rf_eu0_rk     ), .eu1_rk_in (rf_eu1_rk ),
-        .eu0_imm_in    (rf_eu0_imm     ),
+        .eu0_imm_in    (rf_eu0_imm     ),.eu1_imm_in(rf_eu1_imm),
         .eu0_pc_in     (rf_eu0_pc     ),
         .eu0_pc_next_in(rf_eu0_pc_next),
         .eu0_exp_in    (rf_eu0_exp    ), //.eu1_exp_in    ( rf_eu1_exp    ),
