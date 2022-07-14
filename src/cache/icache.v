@@ -25,10 +25,10 @@ module icache
     output [6:0] exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf; //{pc_next,pc}
-    wire[3:0] hit, mem_en, tagv_we, tagv, way_visit;
+    wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
-    wire[63:0] mem_we, r_data_mem;
+    wire[63:0] r_data_mem;
     wire[3:0] way_replace, way_replace_mbuf;
     wire mbuf_we, rdata_sel, fill_finish;
     wire cache_hit, rbuf_we;
@@ -72,13 +72,12 @@ module icache
         .hit        (hit),
         .cache_hit  (cache_hit)
     );
-    memory cache_memory(
+    inst_memory cache_memory(
         .clk        (clk),
         .r_addr     (pc_in),
         .w_addr     (addr_rbuf[31:0]),
         .mem_din    (mem_din),
         .mem_we     (mem_we),
-        .mem_en     (mem_en),
         .mem_dout   (mem_dout)
     );
     miss_way_sel_lru way_sel(
@@ -112,7 +111,6 @@ module icache
         .rdata_sel      (rdata_sel),
         .way_sel_en     (way_sel_en),
         .mem_we         (mem_we),
-        .mem_en         (mem_en),
         .tagv_we        (tagv_we),
         .r_req          (r_req),
         .r_data_ready   (r_data_ready),

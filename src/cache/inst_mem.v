@@ -15,7 +15,7 @@ module inst_mem(
         .clk            (clk),
         .rstn           (rstn),
         .valid          (valid),
-        .addr           (addr),
+        .pc_in           (addr),
         .data_valid     (data_valid),
         .r_data_CPU     (r_data_CPU),
         .r_req          (r_req),

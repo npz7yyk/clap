@@ -13,8 +13,7 @@ module main_FSM_i(
     output reg rdata_sel,
     output reg rbuf_we,
     output reg way_sel_en,
-    output reg [63:0] mem_we,
-    output reg [3:0] mem_en,
+    output reg [3:0] mem_we,
     output reg [3:0] tagv_we,
     output reg r_req,
     output reg r_data_ready,
@@ -61,7 +60,6 @@ module main_FSM_i(
         mbuf_we = 0;
         rbuf_we = 0;
         mem_we = 0;
-        mem_en = 0;
         rdata_sel = 0;
         tagv_we = 0;
         r_req = 0;
@@ -89,8 +87,7 @@ module main_FSM_i(
         REFILL: begin
             r_data_ready = 1;
             if(fill_finish) begin
-                mem_we = {64{1'b1}};
-                mem_en = lru_way_sel;
+                mem_we = lru_way_sel;
                 tagv_we = lru_way_sel;
                 data_valid = 1;
                 rbuf_we = 1;
