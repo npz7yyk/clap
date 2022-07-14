@@ -1,3 +1,4 @@
+# arithmeic instructions without data hazards
 .globl _start 
 .type _start, @function
 .text
@@ -120,7 +121,7 @@ _start:
     nop
     mulh.wu $r30,$r3,$r4
     addi.w $r3,$r0,100
-    addi.w $r4,$r1,9
+    addi.w $r4,$r0,9
     nop
     nop
     nop

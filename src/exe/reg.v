@@ -1,3 +1,4 @@
+//FIXME: handle stall signal
 `include "../uop.vh"
 module register_file(
     input [0:0]clk,
