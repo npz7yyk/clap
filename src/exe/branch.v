@@ -41,7 +41,7 @@ assign branch_status = branch_op == JIRL
 
 assign br_en_out=br_en_in&&(branch_op == JIRL||branch_op == BL);
 assign br_rd_addr_out=branch_op==JIRL?br_rd_addr_in:branch_op==BL?1:0;
-assign br_rd_data=pc+4;
+assign br_rd_data=br_en_out?pc+4:0;
 
 assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr1+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
 
