@@ -11,7 +11,7 @@ _start:
 .L1:
     addi.w $r2,$r2,5
     addi.w $r1,$r1,-1
-    bnez $r1,.L1
+    bne $r1,$r0,.L1
     addi.w $r31,$r2,0   # r31 = 50
     addi.w $r2,$r2,10
     addi.w $r3,$r0,1
@@ -30,7 +30,7 @@ _start:
 .L6:
     bge $r2,$r1,.L4
     andi $r4,$r2,1
-    beqz $r4,.L5
+    beq $r4,$r0,.L5
     add.w $r3,$r2,$r3
 .L5:
     addi.w $r2,$r2,1
