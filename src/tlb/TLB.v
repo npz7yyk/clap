@@ -1,14 +1,15 @@
 `timescale 1ns / 1ps
-`include "../exception.vh"
 module TLB#(
     parameter TLBNUM = 16
     )(
     input                       clk,
+    input                       rstn,
     //search port pc
     input  [              19:0] s0_vpn,
     input  [               7:0] s0_asid,
     input  [               1:0] s0_plv,
     input  [               1:0] s0_mem_type,
+    input                       s0_en,
     output                      s0_found,
     //output [$clog2(TLBNUM)-1:0] s0_index,
     output     [           19:0] s0_pfn,
@@ -22,6 +23,7 @@ module TLB#(
     input  [               7:0] s1_asid,
     input  [               1:0] s1_plv,
     input  [               1:0] s1_mem_type,
+    input                       s1_en,
     output                      s1_found,
     //output [$clog2(TLBNUM)-1:0] s1_index,
     output     [          19:0] s1_pfn,
@@ -76,6 +78,11 @@ module TLB#(
     wire [1:0] found_plv0, found_plv1;
     wire [19:0] found_pfn0, found_pfn1;
 
+    wire [19:0] s0_vpn_rbuf, s1_vpn_rbuf;
+    wire [7:0] s0_asid_rbuf, s1_asid_rbuf;
+    wire [1:0] s0_plv_rbuf, s1_plv_rbuf;
+    wire [1:0] s0_mem_type_rbuf, s1_mem_type_rbuf; 
+
     wire [    TLBNUM*19-1:0]  all_vpn2;
     wire [     TLBNUM*8-1:0]  all_asid;
     wire [     TLBNUM*6-1:0]  all_ps;
@@ -91,75 +98,91 @@ module TLB#(
     wire [     TLBNUM*2-1:0]  all_plv1;
     wire [       TLBNUM-1:0]  all_d1;
     wire [       TLBNUM-1:0]  all_v1;
+
+    register#(32) req0_buffer(
+        .clk            (clk),
+        .rstn           (rstn),
+        .we             (s0_en),
+        .din            ({s0_vpn, s0_asid, s0_plv, s0_mem_type}),
+        .dout           ({s0_vpn_rbuf, s0_asid_rbuf, s0_plv_rbuf, s0_mem_type_rbuf})
+    );
+    register#(32) req1_buffer(
+        .clk            (clk),
+        .rstn           (rstn),
+        .we             (s1_en),
+        .din            ({s1_vpn, s1_asid, s1_plv, s1_mem_type}),
+        .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
+    );
+
     
     /* memory */
     TLB_memory memory(
-        .clk        (clk),
-        .all_vpn2   (all_vpn2),
-        .all_asid   (all_asid),
-        .all_ps     (all_ps),
-        .all_g      (all_g),
-        .all_e      (all_e),
-        .all_pfn0   (all_pfn0),
-        .all_mat0   (all_mat0),
-        .all_plv0   (all_plv0),
-        .all_d0     (all_d0),
-        .all_v0     (all_v0),
-        .all_pfn1   (all_pfn1),
-        .all_mat1   (all_mat1),
-        .all_plv1   (all_plv1),
-        .all_d1     (all_d1),
-        .all_v1     (all_v1),
+        .clk            (clk),
+        .all_vpn2       (all_vpn2),
+        .all_asid       (all_asid),
+        .all_ps         (all_ps),
+        .all_g          (all_g),
+        .all_e          (all_e),
+        .all_pfn0       (all_pfn0),
+        .all_mat0       (all_mat0),
+        .all_plv0       (all_plv0),
+        .all_d0         (all_d0),
+        .all_v0         (all_v0),
+        .all_pfn1       (all_pfn1),
+        .all_mat1       (all_mat1),
+        .all_plv1       (all_plv1),
+        .all_d1         (all_d1),
+        .all_v1         (all_v1),
 
-        .r_index    (r_index),
-        .r_vpn2     (r_vpn2),
-        .r_asid     (r_asid),
-        .r_ps       (r_ps),
-        .r_e        (r_e),
-        .r_g        (r_g),
-        .r_pfn0     (r_pfn0),
-        .r_mat0     (r_mat0),
-        .r_plv0     (r_plv0),
-        .r_d0       (r_d0),
-        .r_v0       (r_v0),
-        .r_pfn1     (r_pfn1),
-        .r_mat1     (r_mat1),
-        .r_plv1     (r_plv1),
-        .r_d1       (r_d1),
-        .r_v1       (r_v1),
+        .r_index        (r_index),
+        .r_vpn2         (r_vpn2),
+        .r_asid         (r_asid),
+        .r_ps           (r_ps),
+        .r_e            (r_e),
+        .r_g            (r_g),
+        .r_pfn0         (r_pfn0),
+        .r_mat0         (r_mat0),
+        .r_plv0         (r_plv0),
+        .r_d0           (r_d0),
+        .r_v0           (r_v0),
+        .r_pfn1         (r_pfn1),
+        .r_mat1         (r_mat1),
+        .r_plv1         (r_plv1),
+        .r_d1           (r_d1),
+        .r_v1           (r_v1),
 
-        .we         (we),
-        .w_index    (w_index),
-        .w_vpn2     (w_vpn2),
-        .w_asid     (w_asid),
-        .w_ps       (w_ps),
-        .w_e        (w_e),
-        .w_g        (w_g),
-        .w_pfn0     (w_pfn0),
-        .w_mat0     (w_mat0),
-        .w_plv0     (w_plv0),
-        .w_d0       (w_d0),
-        .w_v0       (w_v0),
-        .w_pfn1     (w_pfn1),
-        .w_mat1     (w_mat1),
-        .w_plv1     (w_plv1),
-        .w_d1       (w_d1),
-        .w_v1       (w_v1)
+        .we             (we),
+        .w_index        (w_index),
+        .w_vpn2         (w_vpn2),
+        .w_asid         (w_asid),
+        .w_ps           (w_ps),
+        .w_e            (w_e),
+        .w_g            (w_g),
+        .w_pfn0         (w_pfn0),
+        .w_mat0         (w_mat0),
+        .w_plv0         (w_plv0),
+        .w_d0           (w_d0),
+        .w_v0           (w_v0),
+        .w_pfn1         (w_pfn1),
+        .w_mat1         (w_mat1),
+        .w_plv1         (w_plv1),
+        .w_d1           (w_d1),
+        .w_v1           (w_v1)
     );
 
     /* hit judge */
-    genvar i;
-    for(i = 0; i < TLBNUM; i = i + 1) begin
-        assign found0[i] = all_e[i] && 
-                           (all_g[i] || (all_asid[8*i+7:8*i] == s0_asid)) && 
-                           (all_vpn2[19*i+18:19*i] == s0_vpn[19:1]);
-        
-        assign found1[i] = all_e[i] && 
-                           (all_g[i] || (all_asid[8*i+7:8*i] == s1_asid)) && 
-                           (all_vpn2[19*i+18:19*i] == s1_vpn[19:1]);
-
-
-    end
+    TLB_found_compare compare(
+        .all_e      (all_e),
+        .all_g      (all_g),
+        .all_asid   (all_asid),
+        .all_vpn2   (all_vpn2),
+        .s0_asid    (s0_asid_rbuf),
+        .s1_asid    (s1_asid_rbuf),
+        .s0_vpn2    (s0_vpn_rbuf[19:1]),
+        .s1_vpn2    (s1_vpn_rbuf[19:1]),
+        .found0     (found0),
+        .found1     (found1)
+    );
     /* TLB hit */
     assign s0_found = |found0;
     assign s1_found = |found1;
@@ -176,14 +199,14 @@ module TLB#(
     .all_d0         (all_d0),
     .all_v0         (all_v0),
     .found0         (found0),
-    .odd0_bit       (s0_vpn[0]),
+    .odd0_bit       (s0_vpn_rbuf[0]),
     .all_pfn1       (all_pfn1),
     .all_mat1       (all_mat1),
     .all_plv1       (all_plv1),
     .all_d1         (all_d1),
     .all_v1         (all_v1),
     .found1         (found1),
-    .odd1_bit       (s1_vpn[1]),
+    .odd1_bit       (s1_vpn_rbuf[0]),
     .found_v0       (found_v0), 
     .found_v1       (found_v1),
     .found_d0       (found_d0), 
@@ -200,17 +223,17 @@ module TLB#(
     TLB_exp_handler exp_handler(
         .clk            (clk),
         .s0_found       (s0_found),
-        .s0_mem_type    (s0_mem_type),
+        .s0_mem_type    (s0_mem_type_rbuf),
         .found_v0       (found_v0),
         .found_d0       (found_d0),
-        .s0_plv         (s0_plv),
+        .s0_plv         (s0_plv_rbuf),
         .found_plv0     (found_plv0),
         .s0_exception   (s0_exception),
         .s1_found       (s1_found),
-        .s1_mem_type    (s1_mem_type),
+        .s1_mem_type    (s1_mem_type_rbuf),
         .found_v1       (found_v1),
         .found_d1       (found_d1),
-        .s1_plv         (s1_plv),
+        .s1_plv         (s1_plv_rbuf),
         .found_plv1     (found_plv1),
         .s1_exception   (s1_exception)
     );
