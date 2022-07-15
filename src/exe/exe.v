@@ -123,7 +123,7 @@ wire[31:0]div_result;
 wire[4:0]div_addr_out;
 //中段寄存器更新
 always @(posedge clk) begin
-    if(!rstn||stall&&!stall_because_cache)begin
+    if(!rstn||stall&&!stall_because_cache&&!stall_because_div)begin
         eu0_en_0<=0;
         eu0_mul_en_0<=0;
         //eu0_mem_en_0<=0;
@@ -169,22 +169,25 @@ end
 always @(posedge clk) begin
     if(!rstn)begin
         en_out0<=0;
-        en_out1<=0;
         data_out0<=0;
         addr_out0<=0;
-        data_out1<=0;
-        addr_out1<=0;
         exp_out<=0;
         eu0_pc_out<=0;
     end else if(!stall_because_cache)begin
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
-        en_out1<=eu1_en_0;
         data_out0<=data_mid00|mul_result|div_result|mem_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
-        data_out1<=data_mid10;
-        addr_out1<=eu1_rd_0;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1;
+    end
+    if(!rstn||stall_because_div)begin
+        en_out1<=0;
+        data_out1<=0;
+        addr_out1<=0;
+    end else if(!stall_because_cache)begin
+        en_out1<=eu1_en_0;
+        data_out1<=data_mid10;
+        addr_out1<=eu1_rd_0;
     end
 end
 

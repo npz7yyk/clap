@@ -115,7 +115,7 @@ assign n=divisor_one_hot== 32'b1000_0000_0000_0000_0000_0000_0000_0000 ?1:
         divisor_one_hot== 32'b0000_0000_0000_0000_0000_0000_0000_0001 ?32:0;
 
 always @(posedge clk) begin
-    if(!rstn)begin
+    if(!rstn||div_en_out)begin
         div_en_out<=0;
         stall_because_div<=0;
         div_result<=0;
@@ -141,7 +141,7 @@ always @(posedge clk) begin
             divisor<=b<<m-n;
             dividend_sign<=div_sign?div_sr0[31]:0;
             divisor_sign<=div_sign?div_sr1[31]:0;
-            i=i+m-n+2;
+            i<=i+m-n+2;
             stall_because_div<=1;
             div_en_out<=0;
             div_result<=0;
@@ -149,7 +149,6 @@ always @(posedge clk) begin
         end
     end else if(i==1)begin
         i<=0;
-        
         div_result<=op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
         div_addr_out<=addr;
         div_en_out<=1;
