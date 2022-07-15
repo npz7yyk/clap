@@ -34,7 +34,7 @@ module icache
     wire cache_hit, rbuf_we;
     wire way_sel_en;
 
-    assign r_addr = addr_rbuf[31:0];
+    assign r_addr = {addr_rbuf[31:6], 6'b0};
     assign {cookie_out,pc_out} = addr_rbuf;
     register#(32+COOKIE_WIDHT) req_buf(
         .clk    (clk),

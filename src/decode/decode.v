@@ -232,7 +232,7 @@ module decoder
     wire [31:0] i14_result = $signed(inst[23:10]);
     wire [31:0] i16_result = $signed(inst[25:10]);
     wire [31:0] i26_result = $signed({inst[9:0],inst[25:10]});
-    wire [31:0] i20_result = $signed(inst[24:5]);
+    wire [31:0] i20_result = $signed({inst[24:5],12'b0});
     
     assign imm = 
         i12_result&{32{is_i12}} |

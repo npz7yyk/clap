@@ -5,12 +5,13 @@
 int main(int argc,char **argv)
 {
     auto fin = std::ifstream(argv[1]);
-    fmt::print("memory_initialization_radix=16;\nmemory_initialization_vector=\n");
-    while(fin)
+    fmt::print("memory_initialization_radix=16;\nmemory_initialization_vector=");
+    while(true)
     {
         char buf[4];
         fin.read(buf,4);
-        fmt::print("{:08x}\n",reinterpret_cast<uint32_t&>(buf));
+        if(!fin) break;
+        fmt::print("\n{:08x}",reinterpret_cast<uint32_t&>(buf));
     }
-    fmt::print(";");
+    fmt::print(";\n");
 }
