@@ -102,20 +102,26 @@ module id_stage
 
     wire empty;            //FIFO空
     
-    //用交叠法实现伪双端口循环队列，浪费25%的空间，以简化push/pop逻辑
+    //用交叠法实现伪双端口循环队列，浪费12.5%的空间，以简化push/pop逻辑
     //[31:0] 指令; [63:32] pc；[95:64] pc_next
-    reg [102:0] fetch_buffer0[0:3],fetch_buffer1[0:3];
-    reg [1:0] head0,head1;      //队头指针
-    reg [1:0] tail0,tail1;      //队尾指针
+    reg [102:0] fetch_buffer0[0:7],fetch_buffer1[0:7];
+    reg [2:0] head0,head1;      //队头指针
+    reg [2:0] tail0,tail1;      //队尾指针
     reg push_sel;   //进行push操作时，inst0被push到fetch_buffer0还是fetch_buffer1
     reg pop_sel;    //进行pop操作时，uop0来自fetch_buffer0还是fetch_buffer1
     
     wire empty0 = head0==tail0;
     wire empty1 = head1==tail1;
-    wire full0 = tail0+1==head0;
-    wire full1 = tail1+1==head1;
+    wire [2:0] tail0_plus_1 = tail0+1;
+    wire [2:0] tail1_plus_1 = tail1+1;
+    wire [2:0] tail0_plus_2 = tail0+2;
+    wire [2:0] tail1_plus_2 = tail1+2;
+    wire full0 = tail0_plus_1==head0;
+    wire full1 = tail1_plus_1==head1;
     assign empty = empty0&&empty1;
-    assign full  = full0||full1;
+    assign really_full = full0||full1;
+    //在还剩2 words容量时发出full，因为i-cache不支持stall
+    assign full  = really_full || tail0_plus_2==head0 || tail1_plus_2==head1;
     
     wire valid_either = valid0 ^ valid1;
     wire valid_both   = valid0 && valid1;
@@ -154,15 +160,15 @@ module id_stage
         else begin
             if(pop0&~empty0)head0<=head0+1;
             if(pop1&~empty1)head1<=head1+1;
-            if(push0&~full)begin
+            if(push0&~really_full)begin
                 tail0<=tail0+1;
                 fetch_buffer0[tail0]<=push_sel==0?real_0_concat:real_1_concat;
             end
-            if(push1&~full)begin
+            if(push1&~really_full)begin
                 tail1<=tail1+1;
                 fetch_buffer1[tail1]<=push_sel==1?real_0_concat:real_1_concat;
             end
-            if(valid_either&~full)push_sel<=~push_sel;
+            if(valid_either&~really_full)push_sel<=~push_sel;
             if((pop0&~empty0)^(pop1&~empty1))pop_sel<=~pop_sel;
         end
     

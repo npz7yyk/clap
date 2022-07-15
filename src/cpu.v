@@ -540,7 +540,6 @@ module core_top(
         .r_data_CPU             ( ex_mem_r_data_CPU)
     );
 
-    //TODO: connect it
     dcache the_dcache
     (
         .clk(aclk),.rstn(aresetn),
