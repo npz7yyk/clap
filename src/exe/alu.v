@@ -59,9 +59,9 @@ module alu (
     assign slt_result[ 0 ]           = ( alu_sr0[ 31 ]&~alu_sr1[ 31 ] )|( ~( alu_sr0[ 31 ]^alu_sr1[ 31 ] )&adder_result[ 31 ] );
     assign sltu_result[ 31:1 ]       = 31'b0;
     assign sltu_result[ 0 ]          = ~adder_cout;
-    assign sll_result          = alu_sr1<<alu_sr0[ 4:0 ];
-    assign srl_result                = alu_sr1>>alu_sr0[ 4:0 ];
-    assign sra_result                = ( $signed ( alu_sr1 ) )>>>alu_sr0[ 4:0 ];
+    assign sll_result                = alu_sr0<<alu_sr1[ 4:0 ];
+    assign srl_result                = alu_sr0>>alu_sr1[ 4:0 ];
+    assign sra_result                = ( $signed ( alu_sr0 ) )>>>alu_sr1[ 4:0 ];
     assign alu_result                = alu_en_out?(( {32{op_add|op_sub}}&add_sub_result )
                                         |( {32{op_slt}}&slt_result )
                                         |( {32{op_sltu}}&sltu_result )

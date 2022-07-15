@@ -149,7 +149,7 @@ always @(posedge clk) begin
         end
     end else if(i==1)begin
         i<=0;
-        stall_because_div<=0;
+        
         div_result<=op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
         div_addr_out<=addr;
         div_en_out<=1;
@@ -163,7 +163,10 @@ always @(posedge clk) begin
         end
         divisor=divisor>>1;
     end else begin
+        div_en_out<=0;
         div_result<=0;
+        div_addr_out<=0;
+        stall_because_div<=0;
     end
 end
 endmodule

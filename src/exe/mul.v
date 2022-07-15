@@ -51,5 +51,5 @@ module mul_1 (
     assign result_full={mul_mid_sr0,36'b0}+{18'b0,mul_mid_sr1,18'b0}+{18'b0,mul_mid_sr2,18'b0}+{36'b0,mul_mid_sr3};
     assign result=mul_en_out?(mul_sel?result_full[63:32]:result_full[31:0]):0;
     assign mul_en_out=mul_en_in;
-    assign mul_rd_out=mul_rd_in;
+    assign mul_rd_out=mul_en_out?mul_rd_in:0;
 endmodule
