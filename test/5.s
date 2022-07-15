@@ -5,15 +5,15 @@
 .align 2
 
 _start:
-    la $r31,int2
+    la.local $r31,int2
     ld.w $r1,$r31,0     # 19260817
-    la $r31,char1
+    la.local $r31,char1
     ld.b $r2,$r31,0     # -1
     ld.bu $r3,$r31,0    # 255
-    la $r31,short1
+    la.local $r31,short1
     ld.h $r4,$r31,0     # -32767
     ld.hu $r5,$r31,0    # 32769
-    la $r31,int1
+    la.local $r31,int1
     addi.w $r1,$r0,100
     addi.w $r2,$r0,101
     addi.w $r3,$r0,102
