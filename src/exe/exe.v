@@ -144,7 +144,7 @@ always @(posedge clk) begin
         exp_exe1<=0;
         eu0_pc_exe1<=0;
     end else if(!stall)begin
-        eu0_en_0<=br_en_mid|alu_en_mid|mul_en_mid|mem_en_mid;
+        eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
         //eu0_mem_en_0<=mem_en_mid;
         eu1_en_0<=eu1_alu_en_mid;
