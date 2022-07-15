@@ -191,7 +191,7 @@ always @(posedge clk) begin
 
         case (eu1_uop_in[`UOP_SRC1])
             `CTRL_SRC1_RF:begin
-                if(eu0_rj_in==0)begin
+                if(eu1_rj_in==0)begin
                         read_data10<=0;
                 end else if (eu1_rj_in==write_addr_0) begin
                     read_data10<=write_data_0;
