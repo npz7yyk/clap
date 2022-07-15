@@ -86,7 +86,7 @@ module data #(
         vldUpper <= 32'b0;
     end
 
-    assign idIsPair = vldLower[idWaddr] & vldUpper[idWaddr] & ifTagLower == ifTagUpper;
+    assign idIsPair = vldLower[idWaddr] & vldUpper[idWaddr] & idTagLower == idTagUpper;
 
     always @(posedge clk) begin
         if (!rstn) begin
@@ -352,7 +352,7 @@ module fact #(
         .HASH_DEPTH (HASH_DEPTH)
     ) way_select (
         .clk    (clk),
-        .en     (exVld & &visit),
+        .en     (exVld & |visit),
         .waddr  (exPC[HASH_DEPTH + 2:3]),
         .visit  (visit),
         .raddr  (idPC[HASH_DEPTH + 2:3]),
