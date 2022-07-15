@@ -7,6 +7,7 @@
 _start:
     addi.w $r1,$r0,1000
     addi.w $r5,$r0,1989
+    add.w $r2,$r2,$r0
 .L1:
     addi.w $r2,$r2,5
     addi.w $r1,$r1,-1
