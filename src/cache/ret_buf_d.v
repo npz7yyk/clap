@@ -15,7 +15,8 @@ module ret_buf_d(
     parameter WORD = 4'b1111;
     parameter READ = 1'b0;
     parameter WRITE = 1'b1;
-
+    wire [31:0]test_hi;
+    assign test_hi = w_data_AXI[511:480];
     reg [3:0] count;
     initial begin
         count = 0;
