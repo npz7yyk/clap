@@ -48,7 +48,7 @@ module dcache(
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
 
-    assign r_addr = addr_rbuf;
+    assign r_addr = {addr_rbuf[31:6], 6'b0};
     
     /* exception */
     cache_exception_d exp(
