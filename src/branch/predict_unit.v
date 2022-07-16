@@ -171,11 +171,13 @@ module predict_unit #(
         end else branch2 = 1'b0;
     end
 
+//////////////////////////////////////////////////////////////////////////////////
     assign inGuess1_new = pcAtHalf ? 1'b0 : exist1 & past_vld1;
     assign inGuess2_new = branch1 ? 1'b0 : exist2 & past_vld2;
     assign branch = branch1 | branch2;
     assign reason = pcAtHalf ? 1'b1 : ~branch1 & branch2;
-
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
     wire [1:0] guess1 = {
         inGuess1[guess_raddr] ? 
         guess_rdata[2] : past1[8],
@@ -186,6 +188,7 @@ module predict_unit #(
         guess_rdata[0] : past2[8],
         branch && reason
     };
+//////////////////////////////////////////////////////////////////////////////////
 
     assign guess_wdata = {guess1, guess2};
     
