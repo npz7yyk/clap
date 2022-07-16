@@ -131,14 +131,14 @@ module TLB#(
         .clk            (clk),
         .rstn           (rstn),
         .we             (1'b1),
-        .din            (s0_addr),
+        .din            (s0_vaddr),
         .dout           (s0_addr_buf)
     );
     register#(32) vad1_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (1'b1),
-        .din            (s1_addr),
+        .din            (s1_vaddr),
         .dout           (s1_addr_buf)
     );
     
@@ -255,7 +255,7 @@ module TLB#(
         .s0_paddr   (s0_paddr),
         .s1_paddr   (s1_paddr)
     );
-    
+
     /* exeption coping */
     TLB_exp_handler exp_handler(
         .s0_found       (s0_found),
