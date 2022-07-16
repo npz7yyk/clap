@@ -31,7 +31,6 @@ module icache
     wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
-    wire[63:0] r_data_mem;
     wire[3:0] way_replace, way_replace_mbuf;
     wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;

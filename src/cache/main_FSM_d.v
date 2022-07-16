@@ -20,6 +20,7 @@ module main_FSM_d(
     output reg [3:0] way_visit,
     output reg mbuf_we,
     output reg rbuf_we,
+    output reg pbuf_we,
     output reg wbuf_AXI_we,
     output reg wbuf_AXI_reset,
     output reg way_sel_en,
@@ -97,7 +98,7 @@ module main_FSM_d(
         r_req = 0; w_req = 0; data_valid = 0; dirty_we = 0; 
         w_dirty_data = 0; r_data_ready = 0; rbuf_we = 0;
         way_sel_en = 0; wbuf_AXI_reset = 0;
-        way_visit = 0; cache_ready = 0;
+        way_visit = 0; cache_ready = 0; pbuf_we = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -106,6 +107,7 @@ module main_FSM_d(
         LOOKUP: begin
             rdata_sel = 1;
             wrt_data_sel = 1;
+            pbuf_we = 1;
             if(!cache_hit) begin
                 mbuf_we = 1;
                 wbuf_AXI_we = 1;

@@ -6,6 +6,7 @@ module dcache(
     input valid,                // valid request
     input op,                   // write: 1, read: 0
     input [31:0] addr,
+    input [31:0] p_addr,
     //input [3:0] read_type,
     input [3:0] write_type,     // byte write enable
     input [31:0] w_data_CPU,    // write data
@@ -42,10 +43,10 @@ module dcache(
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
-    wire vld, vld_mbuf;
+    wire vld, vld_mbuf, pbuf_we;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [19:0] replace_tag;
-    wire [31:0] addr_rbuf, w_data_CPU_rbuf;
+    wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf;
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
@@ -68,6 +69,14 @@ module dcache(
         .we         (rbuf_we),
         .din        ({signed_ext, addr, w_data_CPU, op, write_type}),
         .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf})
+    );
+    /* physical addr buffer */
+    register#(32) phy_buf(
+        .clk        (clk),
+        .rstn       (rstn),
+        .we         (pbuf_we),
+        .din        (p_addr),
+        .dout       (addr_pbuf)
     );
 
     /* write buffer AXI */
@@ -127,7 +136,8 @@ module dcache(
     TagV_memory_d tagv_mem(
         .clk            (clk),
         .r_addr         (addr),
-        .w_addr         (addr_rbuf),
+        .w_addr         (addr_pbuf),
+        .tag            (p_addr[31:12]),
         .we             (tagv_we),
         .way_sel        (way_replace),
         .hit            (hit),
@@ -148,12 +158,6 @@ module dcache(
     );
 
     /* miss way sel */
-    // way_sel_lru way_sel(
-    //     .clk            (clk),
-    //     .en             (way_sel_en),
-    //     .visit          (hit),
-    //     .lru_way_sel    (way_replace)
-    // );
     miss_way_sel_lru way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf),
@@ -210,6 +214,7 @@ module dcache(
 
         .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),
+        .pbuf_we            (pbuf_we),
         .rbuf_we            (rbuf_we),
         .wbuf_AXI_we        (wbuf_AXI_we),
         .wbuf_AXI_reset     (wbuf_AXI_reset),

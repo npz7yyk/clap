@@ -4,6 +4,7 @@ module TagV_memory_d(
     input clk,
     input [31:0] r_addr,
     input [31:0] w_addr,
+    input [19:0] tag,
     input [3:0] we,
     input [3:0] way_sel,
     output [3:0] hit,
@@ -16,13 +17,13 @@ module TagV_memory_d(
     parameter WAY2 = 4'b0100;
     parameter WAY3 = 4'b1000;
     wire [5:0] index, index_w;
-    wire [19:0] tag;
+    //wire [19:0] tag;
     wire [19:0] tag_0, tag_1, tag_2, tag_3;
     wire vld_0, vld_1, vld_2, vld_3;
 
     assign index = r_addr[11:6];
     assign index_w = w_addr[11:6];
-    assign tag = w_addr[31:12];
+    //assign tag = w_addr[31:12];
 
     assign hit[0] = (tag == tag_0) && vld_0;
     assign hit[1] = (tag == tag_1) && vld_1;
