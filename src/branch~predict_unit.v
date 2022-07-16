@@ -171,9 +171,9 @@ module predict_unit #(
     end
 
 //////////////////////////////////////////////////////////////////////////////////
-    assign inGuess1_new = pcAtHalf ? 1'b0 : exist1 & past_vld1;
-    assign inGuess2_new = branch1 ? 1'b0 : exist2 & past_vld2;
-    assign branch = pcAtHalf ? branch1 | branch2 : branch2;
+    assign inGuess1_new = pcAtHalf ? 1'b0 : exist1 & past_vld1 & info1[0];
+    assign inGuess2_new = branch1 ? 1'b0 : exist2 & past_vld2 & info2[0];
+    assign branch = pcAtHalf ? branch2 : branch1 | branch2;
     assign reason = pcAtHalf ? 1'b1 : ~branch1 & branch2;
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
