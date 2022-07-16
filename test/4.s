@@ -1,3 +1,4 @@
+# -*- LoongArch Assembly -*-
 # arithmeic instructions with data hazards
 .globl _start 
 .type _start, @function

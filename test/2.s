@@ -1,3 +1,4 @@
+# -*- LoongArch Assembly -*-
 .text
 .align 2
 .globl _start

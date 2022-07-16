@@ -1,3 +1,4 @@
+# -*- LoongArch Assembly -*-
 # load and store instructions without data hazards
 .globl _start 
 .type _start, @function

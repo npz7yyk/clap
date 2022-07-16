@@ -1,3 +1,4 @@
+# -*- LoongArch Assembly -*-
 	.file	"1.c"
 	.text
 	.align	2
