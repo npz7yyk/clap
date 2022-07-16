@@ -423,7 +423,7 @@ module log_init (
     input wire       back,
     input wire [1:0] type_,
 
-    output reg [9:0]  log
+    output reg [9:0] log
 );
     always @(*) begin
         if (type_[1]) log = 10'b11_11_11_11_11;
@@ -575,7 +575,7 @@ module para #(
     log_init log_init(
         .branch (bdBranch),
         .back   (bdBack),
-        .type_   (bdType),
+        .type_  (bdType),
         .log    (init)
     );
 
@@ -583,7 +583,7 @@ module para #(
     log_update log_update(
         .branch (bdBranch),
         .old    (rdata_ex),
-        .new_    (update)
+        .new_   (update)
     );
 
     assign wdata_ex = vld[waddr_ex] ? update : init;
