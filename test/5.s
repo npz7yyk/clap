@@ -67,11 +67,13 @@ _start:
 .align 2
 int1:
     .space 44
-int2:
-    .word 19260817
 .align 0
 char1:
     .byte 0xFF
 .align 1
 short1:
     .short -32767
+.space 64
+.align 2
+int2:
+    .word 19260817

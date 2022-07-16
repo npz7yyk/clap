@@ -65,8 +65,17 @@ module id_stage
     output reg [31:0] probably_right_destination,
     output wire set_pc
 );
-    wire valid0_before_predecode = input_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
-    wire valid1_before_predecode = input_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
+    // icache cannot be flushed, therefore, after flushing, there is a pair of 
+    // wrong instructions in the stage register in the middle of icache,
+    // therefore, the first valid input after flush should be ignored
+    reg just_flushed;
+    wire input_really_valid = input_valid &~ just_flushed;
+    wire valid0_before_predecode = input_really_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
+    wire valid1_before_predecode = input_really_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
+    always @(posedge clk)
+        if(~rstn) just_flushed <= 0;
+        else if(flush||set_pc) just_flushed <=1;
+        else if(input_valid) just_flushed <= 0;
 
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
@@ -75,7 +84,7 @@ module id_stage
     assign pc_for_predict = pc_in;
     assign jmpdist0 = pc_in + pc_offset0;
     assign jmpdist1 = pc_in+4 + pc_offset1;
-    assign feedback_valid = input_valid;
+    assign feedback_valid = input_really_valid;
     wire should_jmp0 = category0=='b10 || category0=='b01&&pc_offset0[31];
     wire should_jmp1 = category1=='b10 || category1=='b01&&pc_offset1[31];
     reg set_pc_due_to_inst0,set_pc_due_to_inst1;
@@ -100,8 +109,8 @@ module id_stage
         end
     end
 
-    wire valid0 = valid0_before_predecode & ~set_pc_due_to_inst0;
-    wire valid1 = valid1_before_predecode;
+    wire valid0 = valid0_before_predecode;
+    wire valid1 = valid1_before_predecode & ~set_pc_due_to_inst0;
     wire [31:0] pc_next_after_predecode = set_pc?probably_right_destination:pc_next_in;
 
     wire empty;            //FIFO空

@@ -219,16 +219,14 @@ module core_top(
     always @(posedge aclk)
         if(~aresetn)
             pc <= 0;
-        else if(pc_stall_n) begin
-            if(set_pc_by_writeback)
-                pc <= pc_writeback;
-            else if(set_pc_by_executer)
-                pc <= pc_executer;
-            else if(set_pc_by_decoder)
-                pc <= pc_decoder;
-            else
-                pc <= pc_next;
-        end
+        else if(set_pc_by_writeback)
+            pc <= pc_writeback;
+        else if(set_pc_by_executer)
+            pc <= pc_executer;
+        else if(set_pc_by_decoder)
+            pc <= pc_decoder;
+        else if(pc_stall_n)
+            pc <= pc_next;
     
     wire id_feedback_valid;
     wire [31:0] id_pc_for_predict,ex_branch_pc;
@@ -309,7 +307,6 @@ module core_top(
     assign i_axi_arcache = 0;
     assign i_axi_arprot = 0;
     
-    wire  ex_flush;
     wire [1:0] id_read_en;
     wire [`WIDTH_UOP-1:0] id_uop0,id_uop1;
     wire [31:0] id_imm0,id_imm1;
@@ -319,7 +316,7 @@ module core_top(
     
     id_stage the_decoder (
         .clk(aclk), .rstn(aresetn),
-        .flush(ex_flush),
+        .flush(set_pc_by_executer||set_pc_by_writeback),
         .read_en(id_read_en),
         .full(if_buf_full),
         .input_valid(data_valid),
@@ -361,7 +358,7 @@ module core_top(
     is_stage the_issue (
         .clk(aclk),.rstn(aresetn),
         .num_read(id_read_en),
-        .flush(ex_flush),
+        .flush(set_pc_by_executer||set_pc_by_writeback),
         
         .uop0(id_uop0),.uop1(id_uop1),
         .rd0(id_rd0),.rd1(id_rd1),.rk0(id_rk0),.rk1(id_rk1),.rj0(id_rj0),.rj1(id_rj1),
@@ -406,7 +403,7 @@ module core_top(
 
     execute_unit_input_reg euir0
     (
-        .clk(aclk),.rstn(aresetn),.flush(ex_flush),.stall(ex_stall),
+        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
         
         .en_in(is_eu0_en_3qW1U3J0hMn),.en_out(is_eu0_en),
         .uop_in(is_eu0_uop_3qW1U3J0hMn),.uop_out(is_eu0_uop),
@@ -421,7 +418,7 @@ module core_top(
 
     execute_unit_input_reg euir1
     (
-        .clk(aclk),.rstn(aresetn),.flush(ex_flush),.stall(ex_stall),
+        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
         
         .en_in(is_eu1_en_3qW1U3J0hMn),.en_out(is_eu1_en),
         .uop_in(is_eu1_uop_3qW1U3J0hMn),.uop_out(is_eu1_uop),
@@ -462,7 +459,7 @@ module core_top(
         .clk                     ( aclk              ),
         .rstn                    ( aresetn           ),
         .stall                   ( ex_stall          ),
-        .flush                   ( ex_flush          ),
+        .flush                   ( set_pc_by_executer||set_pc_by_writeback ),
         
         .stable_counter(stable_counter),
         .eu0_en_in     (is_eu0_en     ), .eu1_en_in     (is_eu1_en     ),
@@ -512,6 +509,7 @@ module core_top(
     exe  the_exe (
         .clk           (aclk          ),
         .rstn          (aresetn       ),
+        .flush_by_writeback(set_pc_by_writeback),
         .eu0_en_in     (rf_eu0_en     ), .eu1_en_in (rf_eu1_en ),
         .eu0_uop_in    (rf_eu0_uop    ), .eu1_uop_in(rf_eu1_uop),
         .eu0_rd_in     (rf_eu0_rd     ), .eu1_rd_in (rf_eu1_rd ),
@@ -532,7 +530,7 @@ module core_top(
         .eu0_pc_out(ex_eu0_pc),
 
         .stall                   ( ex_stall              ),
-        .flush                   ( ex_flush              ),
+        .flush                   ( set_pc_by_executer    ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),
         .branch_pc               ( ex_branch_pc ),
@@ -596,8 +594,6 @@ module core_top(
     assign d_axi_arlock = 0;
     assign d_axi_arcache = 0;
     assign d_axi_arprot = 0;
-
-    assign set_pc_by_executer = ex_flush;
 
     writeback the_writeback
     (
