@@ -4,7 +4,9 @@ module TLB#(
     )(
     input                       clk,
     input                       rstn,
+    input                       ad_mode,
     //search port pc
+    input  [              31:0] s0_vaddr,
     input  [              19:0] s0_vpn,
     input  [               7:0] s0_asid,
     input  [               1:0] s0_plv,
@@ -19,6 +21,7 @@ module TLB#(
     // output reg                   s0_v,
 
     //search port data
+    input  [              31:0] s1_vaddr,
     input  [              19:0] s1_vpn,
     input  [               7:0] s1_asid,
     input  [               1:0] s1_plv,
@@ -69,6 +72,8 @@ module TLB#(
     output                      r_d1,
     output                      r_v1
     );
+    wire mode_mbuf;
+    wire [31:0] s0_addr_buf, s1_addr_buf;
 
     wire [TLBNUM-1:0] found0, found1;
 
@@ -113,7 +118,27 @@ module TLB#(
         .din            ({s1_vpn, s1_asid, s1_plv, s1_mem_type}),
         .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
     );
-
+    register#(1) mode_buffer(
+        .clk            (clk),
+        .rstn           (rstn),
+        .we             (1'b1),
+        .din            (ad_mode),
+        .dout           (mode_mbuf)
+    );
+    register#(32) vad0_buffer(
+        .clk            (clk),
+        .rstn           (rstn),
+        .we             (1'b1),
+        .din            (s0_addr),
+        .dout           (s0_addr_buf)
+    );
+    register#(32) vad1_buffer(
+        .clk            (clk),
+        .rstn           (rstn),
+        .we             (1'b1),
+        .din            (s1_addr),
+        .dout           (s1_addr_buf)
+    );
     
     /* memory */
     TLB_memory memory(
@@ -236,7 +261,7 @@ module TLB#(
         .found_plv1     (found_plv1),
         .s1_exception   (s1_exception)
     );
-
+    
 
 endmodule 
  
