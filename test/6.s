@@ -20,7 +20,7 @@ _start:
 .L2:
     beq $r3,$r2,.L3
     mul.w $r1,$r3,$r1
-    # mod.w $r1,$r1,$r5
+    mod.w $r1,$r1,$r5
     addi.w $r3,$r3,1
     b .L2
 .L3:
