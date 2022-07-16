@@ -14,6 +14,7 @@ module branch(
     output[0:0]br_en_out,
     output[0:0]flush,
     output[31:0]branch_addr_calculated,
+    output[31:0]ex_pc_tar,
     output[0:0]branch_valid,
     output[0:0]branch_status,
     output[1:0]category_out
@@ -44,7 +45,7 @@ assign br_rd_addr_out=branch_op==JIRL?br_rd_addr_in:branch_op==BL?1:0;
 assign br_rd_data=br_en_out?pc+4:0;
 
 assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr1+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
-
+assign ex_pc_tar=branch_op==JIRL?(branch_sr1+ (branch_imm<<2)):(pc+(branch_imm<<2));
 assign flush=br_en_in&&(branch_addr_calculated!=pc_next);
 assign branch_valid=br_en_in;
 
