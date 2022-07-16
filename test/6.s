@@ -25,7 +25,7 @@ _start:
     b .L2
 .L3:
     add.w $r30,$r1,$r0  # r30 = 10! mod 1989
-    addi.w $r1,$r0,10
+    addi.w $r1,$r0,50
     addi.w $r2,$r0,1
     addi.w $r3,$r0,0
 .L6:
