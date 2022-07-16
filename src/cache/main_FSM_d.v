@@ -33,7 +33,8 @@ module main_FSM_d(
     output reg r_req,
     output reg r_data_ready,
     output reg w_req,
-    output reg data_valid
+    output reg data_valid,
+    output reg cache_ready
     );
     parameter IDLE = 3'd0;
     parameter LOOKUP = 3'd1;
@@ -96,10 +97,11 @@ module main_FSM_d(
         r_req = 0; w_req = 0; data_valid = 0; dirty_we = 0; 
         w_dirty_data = 0; r_data_ready = 0; rbuf_we = 0;
         way_sel_en = 0; wbuf_AXI_reset = 0;
-        way_visit = 0;
+        way_visit = 0; cache_ready = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
+            cache_ready = 1;
         end
         LOOKUP: begin
             rdata_sel = 1;
@@ -113,6 +115,7 @@ module main_FSM_d(
                 rbuf_we = 1;
                 way_visit = hit;
                 way_sel_en = 1;
+                cache_ready = 1;
                 if(op == WRITE)begin
                     mem_en = hit;
                     mem_we = mem_we_normal;
@@ -144,6 +147,7 @@ module main_FSM_d(
                 data_valid = 1;
                 rbuf_we = 1;
                 wbuf_AXI_reset = 1;
+                cache_ready = 1;
             end
         end
         endcase

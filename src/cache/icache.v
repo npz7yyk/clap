@@ -115,7 +115,8 @@ module icache
         .tagv_we        (tagv_we),
         .r_req          (r_req),
         .r_data_ready   (r_data_ready),
-        .data_valid     (data_valid)
+        .data_valid     (data_valid),
+        .cache_ready    (cache_ready)
     );
 
 endmodule

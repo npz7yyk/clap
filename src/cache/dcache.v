@@ -12,6 +12,7 @@ module dcache(
     input signed_ext,             // 1: signed ext, 0: zero ext
     //output addr_valid,        // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
+    output cache_ready,
     output [31:0] r_data_CPU,   // read data to CPU
     /* for AXI */
     // read
@@ -223,6 +224,7 @@ module dcache(
         .r_req              (r_req),
         .w_req              (w_req),
         .r_data_ready       (r_data_ready),
-        .data_valid         (data_valid)
+        .data_valid         (data_valid),
+        .cache_ready        (cache-ready)
     );
 endmodule
