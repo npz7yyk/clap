@@ -205,11 +205,8 @@ module core_top(
     
     wire data_valid;
     wire if_buf_full;
-    reg did_not_query_at_last_clock;
-    always @(posedge aclk)
-        if(~aresetn)did_not_query_at_last_clock<=1;
-        else did_not_query_at_last_clock <= if_buf_full;
-    wire pc_stall_n=(data_valid|did_not_query_at_last_clock) & ~if_buf_full;
+    wire cache_ready;
+    wire pc_stall_n=cache_ready & ~if_buf_full;
     
     reg [31:0] pc;
     wire [31:0] pc_next;
@@ -267,6 +264,7 @@ module core_top(
     icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
+        .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
         .valid          (~if_buf_full),
         .pc_in          (pc),
         .p_addr         (p_pc),
@@ -275,6 +273,7 @@ module core_top(
         .data_valid     (data_valid),
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc),
+        .cache_ready    (cache_ready),
         
         .r_req          (i_axi_arvalid),
         .r_addr         (i_axi_araddr),

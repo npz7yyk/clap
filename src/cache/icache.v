@@ -4,6 +4,7 @@ module icache
     input clk, rstn,
     /* for CPU */
     input valid,                // valid request
+    input flush,
     input [31:0] pc_in,
     input [31:0] p_addr,
     input [COOKIE_WIDHT-1:0] cookie_in,
@@ -26,7 +27,7 @@ module icache
 
     output [6:0] exception
     );
-    wire[31+COOKIE_WIDHT:0] addr_rbuf; //{pc_next,pc}
+    wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;
     wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;
     wire[2047:0] mem_dout;
@@ -38,6 +39,10 @@ module icache
 
     assign r_addr = {addr_pbuf[31:6], 6'b0};
     assign {cookie_out,pc_out} = addr_rbuf;
+    reg valid_reg;
+    always @(posedge clk)
+        if(flush) valid_reg <= 0;
+        else if(rbuf_we) valid_reg <= valid;
     register#(32+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
@@ -106,6 +111,7 @@ module icache
         .rdata_sel      (rdata_sel),
         .r_data         (r_data_CPU)
     );
+    wire data_valid_oIzprAXodb8T;
     main_FSM_i main_FSM(
         .clk            (clk),
         .rstn           (rstn),
@@ -125,8 +131,9 @@ module icache
         .tagv_we        (tagv_we),
         .r_req          (r_req),
         .r_data_ready   (r_data_ready),
-        .data_valid     (data_valid),
+        .data_valid     (data_valid_oIzprAXodb8T),
         .cache_ready    (cache_ready)
     );
 
+    assign data_valid = data_valid_oIzprAXodb8T&valid_reg;
 endmodule
