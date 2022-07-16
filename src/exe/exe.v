@@ -367,7 +367,7 @@ mem1  u_mem1 (
 div  u_div (
     .clk                     ( clk                      ),
     .rstn                    ( rstn||flush_by_writeback ),
-    .div_en_in               ( eu0_div_en                ),
+    .div_en_in               ( eu0_div_en&&!stall        ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),

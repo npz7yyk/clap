@@ -130,7 +130,7 @@ always @(posedge clk) begin
         qoucient<=0;
     end else if(i==0&&div_en_in)begin
         if(m<n||n==0)begin
-            div_result<=div_op?0:div_sr0;
+            div_result<= div_op? div_sr0:0;
             div_addr_out<=div_addr_in;
             stall_because_div<=0;
             div_en_out<=div_en_in;
