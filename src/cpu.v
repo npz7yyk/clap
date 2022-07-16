@@ -217,9 +217,10 @@ module core_top(
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     reg [6:0] pc_exception;
-    always @(posedge aclk)
+    always @(posedge aclk) begin
         if(~aresetn)
-            pc <= 0;
+            //龙芯架构32位精简版参考手册 v1.00 p. 53
+            pc <= 32'h1C000000;
         else if(set_pc_by_writeback)
             pc <= pc_writeback;
         else if(set_pc_by_executer)
@@ -228,6 +229,7 @@ module core_top(
             pc <= pc_decoder;
         else if(pc_stall_n)
             pc <= pc_next;
+    end
     
     wire id_feedback_valid;
     wire [31:0] id_pc_for_predict,ex_branch_pc;

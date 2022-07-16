@@ -37,10 +37,13 @@ module writeback
     assign wdata1 = eu1_data;
 
     assign debug0_wb_pc = eu0_pc;
-    assign debug0_wb_rf_wen = wen0;
+    assign debug0_wb_rf_wen = {4{wen0}};
     assign debug0_wb_rf_wnum = eu0_rd;
+    assign debug0_wb_rf_wdata = eu0_data;
 
     assign debug1_wb_pc = eu1_pc;
-    assign debug1_wb_rf_wen = wen1;
+    assign debug1_wb_rf_wen = {4{wen1}};
     assign debug1_wb_rf_wnum = eu1_rd;
+    assign debug1_wb_rf_wdata = eu1_data;
+
 endmodule
