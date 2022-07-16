@@ -1,3 +1,4 @@
+# -*- LoongArch Assembly -*-
 # branch
 .globl _start 
 .type _start, @function
