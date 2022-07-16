@@ -22,6 +22,7 @@ module exe(
     input [4:0]eu1_rj_in,
     input [4:0]eu1_rk_in,
     input [31:0]eu1_imm_in,
+    input [31:0]eu1_pc_in,
     input [31:0]data10,
     input [31:0]data11,
     //向exe2段后输出
@@ -33,6 +34,7 @@ module exe(
     output reg [4:0]addr_out1,
     output reg[6:0]exp_out,
     output reg [31:0]eu0_pc_out,
+    output reg [31:0]eu1_pc_out,
     //向issue段输出
     output stall,
     output flush,
@@ -192,10 +194,12 @@ always @(posedge clk) begin
         en_out1<=0;
         data_out1<=0;
         addr_out1<=0;
+        eu1_pc_out<=0;
     end else if(!stall_because_cache)begin
         en_out1<=eu1_en_0;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
+        eu1_pc_out<=eu1_pc_in;
     end
 end
 
