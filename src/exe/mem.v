@@ -8,6 +8,7 @@ module mem0 (
     input [ 0:0 ]mem_write,
     input [ 1:0 ]mem_width_in,
     input [6:0]mem_exp_in,
+    input [0:0]mem_sign,
     //向cache输出
     output [0:0] valid,                 //    valid request
     output [0:0] op,                    //    write: 1, read: 0
@@ -21,18 +22,22 @@ module mem0 (
     output [6:0]mem_exp_out,
     output [4:0]mem_rd_out,
     output [0:0]mem_en_out,
-    output [1:0]mem_width_out
+    output [1:0]mem_width_out,
+    output [0:0]signed_ext
 );
     assign valid=mem_en_in;
     assign op=mem_write;
     assign addr=mem_sr+mem_imm;
     //assign {tag,index,offset} = mem_sr+mem_imm;
-    assign write_type = mem_width_in==00?'b0001:mem_width_in==10?'b0011:mem_width_in==11?'b1111:'b1111;
+    assign write_type = mem_width_in==00?'b0001:
+                        mem_width_in==01?'b0011:
+                        mem_width_in==10?'b1111:'b1111;
     assign w_data_CPU=mem_data_in;
     assign mem_width_out=mem_width_in;
     assign mem_en_out=mem_en_in;
     assign mem_exp_out=mem_exp_in;
     assign mem_rd_out=mem_rd_in;
+    assign signed_ext=mem_sign;
 endmodule
 
 module mem1 (

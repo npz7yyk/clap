@@ -44,6 +44,7 @@ module exe(
     output [0:0] valid,                 //    valid request
     output [0:0] op,                    //    write: 1, read: 0
     output [31:0]addr,
+    output [0:0]signed_ext,
     // output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
     // output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
     // output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
@@ -328,10 +329,12 @@ mem0  u_mem0 (
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
     .mem_width_in            ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
     .mem_exp_in              (eu0_exp_in),
+    .mem_sign                ( eu0_uop_in[`UOP_SIGN]),
 
     .valid                   ( valid           ),
     .op                      ( op              ),
     .addr(addr),
+    .signed_ext(signed_ext),
     // .index                   ( index           ),
     // .tag                     ( tag             ),
     // .offset                  ( offset          ),
