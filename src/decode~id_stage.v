@@ -139,7 +139,7 @@ module id_stage
     wire [31:0] real_pc1 = pc_in+4;
     
     //真正有效的第一条输入指令的pc_next
-    wire [31:0] real_pc_next0 = first_inst_jmp||pc_in[2]?pc_next_after_predecode:pc_in+4;
+    wire [31:0] real_pc_next0 = first_inst_jmp||set_pc_due_to_inst0||pc_in[2]?pc_next_after_predecode:pc_in+4;
     wire [31:0] real_pc_next1 = pc_next_after_predecode;
     
     wire [102:0] real_0_concat = {exception_in,real_pc_next0,real_pc0,real_inst0};
