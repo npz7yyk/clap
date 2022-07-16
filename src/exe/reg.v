@@ -58,20 +58,16 @@ module register_file(
     output reg [31:0]eu1_imm_out
 );
 
-
-
 reg[31:0]register_file[31:0];
 
 always @(posedge clk) begin
     if (write_en_0) begin
-            register_file[write_addr_0]<=write_data_0;
+        register_file[write_addr_0]<=write_data_0;
     end
-
     if (write_en_1) begin
         register_file[write_addr_1]<=write_data_1;
     end
-        
-    if(!rstn)begin
+    if(!rstn||flush)begin
         eu0_en_out<=0;
         eu0_uop_out<=0;
         eu0_rd_out<=0;
@@ -95,8 +91,6 @@ always @(posedge clk) begin
         read_data11<=0;
         eu1_imm_out<=0;
     end else if(!stall)begin
-        
-    //if(eu0_en_in)begin
         eu0_en_out<=eu0_en_in;
         eu0_uop_out<=eu0_uop_in;
         eu0_rd_out<=eu0_rd_in;
@@ -106,7 +100,6 @@ always @(posedge clk) begin
         eu0_pc_next_out<=eu0_pc_next_in;
         eu0_exp_out<=eu0_exp_in;
         eu0_imm_out<=eu0_imm_in;
-
         if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
             case (eu0_uop_in[`UOP_SRC1])
                 `CTRL_SRC1_RF:begin
@@ -141,7 +134,6 @@ always @(posedge clk) begin
                 read_data00<=register_file[eu0_rj_in];
             end 
         end
-
         if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
             case (eu0_uop_in[`UOP_SRC2])
                 `CTRL_SRC2_RF:begin
@@ -176,9 +168,6 @@ always @(posedge clk) begin
                     read_data01<=register_file[eu0_rk_in];
                 end 
         end
-    //end
-
-    //if(eu1_en_in)begin
         eu1_en_out<=eu1_en_in;
         eu1_uop_out<=eu1_uop_in;
         eu1_rd_out<=eu1_rd_in;
@@ -188,10 +177,9 @@ always @(posedge clk) begin
         eu1_pc_next_out<=eu1_pc_next_in;
         eu1_exp_out<=eu1_exp_in;
         eu1_imm_out<=eu1_imm_in;
-
         case (eu1_uop_in[`UOP_SRC1])
             `CTRL_SRC1_RF:begin
-                if(eu0_rj_in==0)begin
+                if(eu1_rj_in==0)begin
                         read_data10<=0;
                 end else if (eu1_rj_in==write_addr_0) begin
                     read_data10<=write_data_0;
@@ -211,7 +199,6 @@ always @(posedge clk) begin
                 read_data10<=0;
             end
         endcase
-        
         case (eu1_uop_in[`UOP_SRC2])
             `CTRL_SRC2_RF:begin
                 if(eu0_rk_in==0)begin
@@ -234,7 +221,6 @@ always @(posedge clk) begin
                 read_data11<=stable_counter[63:32];
             end
         endcase
-    //end 
-end
+    end
 end
 endmodule

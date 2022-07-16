@@ -1,2 +1,4 @@
 *.elf
-*.bin 
+*.bin
+a.out 
+.VSCodeCounter

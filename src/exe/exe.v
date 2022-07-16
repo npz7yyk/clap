@@ -2,6 +2,8 @@
 module exe(
     input [0:0]clk,   
     input [0:0]rstn,
+    //TODO: flush dcache or ignore data from dcache
+    input flush_by_writeback,
     //从rf段后输入
     input [0:0]eu0_en_in,
     input [`WIDTH_UOP-1:0]eu0_uop_in,
@@ -44,6 +46,7 @@ module exe(
     output [0:0] valid,                 //    valid request
     output [0:0] op,                    //    write: 1, read: 0
     output [31:0]addr,
+    output [0:0]signed_ext,
     // output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
     // output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
     // output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
@@ -123,15 +126,12 @@ wire[31:0]div_result;
 wire[4:0]div_addr_out;
 //中段寄存器更新
 always @(posedge clk) begin
-    if(!rstn||stall&&!stall_because_cache)begin
+    //eu0
+    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div)begin
         eu0_en_0<=0;
         eu0_mul_en_0<=0;
-        //eu0_mem_en_0<=0;
-        eu1_en_0<=0;
         eu0_rd_0<=0;
-        eu1_rd_0<=0;
         data_mid00<=0;
-        data_mid10<=0;
         mem_exp_exe1<=0;
         mem_rd_exe1<=0;
         mem_en_exe1<=0;
@@ -146,12 +146,8 @@ always @(posedge clk) begin
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
-        //eu0_mem_en_0<=mem_en_mid;
-        eu1_en_0<=eu1_alu_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
-        eu1_rd_0<=eu1_alu_rd_mid;
         data_mid00<=br_rd_data_mid|alu_result_mid;
-        data_mid10<=eu1_alu_result_mid;
         mem_exp_exe1<=mem_exp_mid;
         mem_rd_exe1<=mem_rd_mid;
         mem_en_exe1<=mem_en_mid;
@@ -164,27 +160,42 @@ always @(posedge clk) begin
         exp_exe1<=eu0_exp_in;
         eu0_pc_exe1<=eu0_pc_in;
     end
+    //eu1
+    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
+        eu1_en_0<=0;
+        eu1_rd_0<=0;
+        data_mid10<=0;
+    end else if(!stall)begin
+        eu1_en_0<=eu1_alu_en_mid;
+        eu1_rd_0<=eu1_alu_rd_mid;
+        data_mid10<=eu1_alu_result_mid;
+    end
 end
 //末段寄存器更新
 always @(posedge clk) begin
-    if(!rstn)begin
+    //eu0
+    if(!rstn||flush_by_writeback)begin
         en_out0<=0;
-        en_out1<=0;
         data_out0<=0;
         addr_out0<=0;
-        data_out1<=0;
-        addr_out1<=0;
         exp_out<=0;
         eu0_pc_out<=0;
     end else if(!stall_because_cache)begin
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
-        en_out1<=eu1_en_0;
         data_out0<=data_mid00|mul_result|div_result|mem_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
-        data_out1<=data_mid10;
-        addr_out1<=eu1_rd_0;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1;
+    end
+    //eu1
+    if(!rstn||flush_by_writeback||stall_because_div)begin
+        en_out1<=0;
+        data_out1<=0;
+        addr_out1<=0;
+    end else if(!stall_because_cache)begin
+        en_out1<=eu1_en_0;
+        data_out1<=data_mid10;
+        addr_out1<=eu1_rd_0;
     end
 end
 
@@ -283,7 +294,7 @@ mul_0  u_mul_0 (
     .mul_en_in               ( eu0_mul_en     ),
     .mul_rd_in               ( eu0_rd_in     ),
     .mul_sel_in              ( eu0_uop_in[`UOP_MD_SEL]    ),
-    .mul_usign               ( eu0_uop_in[`UOP_USIGN]     ),
+    .mul_sign                ( eu0_uop_in[`UOP_SIGN]     ),
     .mul_sr0                 ( eu0_sr0       ),
     .mul_sr1                 ( eu0_sr1       ),
 
@@ -318,12 +329,14 @@ mem0  u_mem0 (
     .mem_sr                  ( eu0_sr0                ),
     .mem_imm                 ( eu0_imm_in               ),
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
-    .mem_width_in               ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
-    .mem_exp_in               (eu0_exp_in),
+    .mem_width_in            ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
+    .mem_exp_in              (eu0_exp_in),
+    .mem_sign                ( eu0_uop_in[`UOP_SIGN]),
 
     .valid                   ( valid           ),
     .op                      ( op              ),
     .addr(addr),
+    .signed_ext(signed_ext),
     // .index                   ( index           ),
     // .tag                     ( tag             ),
     // .offset                  ( offset          ),
@@ -353,10 +366,10 @@ mem1  u_mem1 (
 
 div  u_div (
     .clk                     ( clk                      ),
-    .rstn                    ( rstn                     ),
+    .rstn                    ( rstn||flush_by_writeback ),
     .div_en_in               ( eu0_div_en                ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
-    .div_sign                ( eu0_uop_in[`UOP_USIGN]                 ),
+    .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
     .div_sr1                 ( eu0_sr1                  ),
     .div_addr_in             ( eu0_rd_in              ),

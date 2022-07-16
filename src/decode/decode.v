@@ -161,9 +161,9 @@ module decoder
     assign uop[`UOP_MEM_ATM]= ~inst[27];
     
     //符号域: 乘除的inst[16]、访存的inst[25]
-    assign uop[`UOP_USIGN]=
-        (type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&inst[16] |
-        (type[`ITYPE_IDX_MEM])&inst[25];
+    assign uop[`UOP_SIGN]=
+        (type[`ITYPE_IDX_MUL]|type[`ITYPE_IDX_DIV])&~inst[16] |
+        (type[`ITYPE_IDX_MEM])&~inst[25];
     
     //各种指令格式的操作位（包括alu、mul、div、mem、br）
     assign uop[`UOP_COND]=
