@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module cpu_test1();
     // core_top Inputs
     reg   aclk;
