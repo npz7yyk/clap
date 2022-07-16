@@ -225,6 +225,6 @@ module dcache(
         .w_req              (w_req),
         .r_data_ready       (r_data_ready),
         .data_valid         (data_valid),
-        .cache_ready        (cache-ready)
+        .cache_ready        (cache_ready)
     );
 endmodule
