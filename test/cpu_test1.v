@@ -1,5 +1,3 @@
-`timescale 1ns / 1ps
-
 module cpu_test1();
     // core_top Inputs
     reg   aclk;
@@ -43,11 +41,6 @@ module cpu_test1();
     wire  wlast;
     wire  wvalid;
     wire  bready;
-    wire  [31:0]  debug0_wb_pc;
-    wire  [ 3:0]  debug0_wb_rf_wen;
-    wire  [ 4:0]  debug0_wb_rf_wnum;
-    wire  [31:0]  debug0_wb_rf_wdata;
-    wire  [31:0]  debug0_wb_inst;
 
     core_top  core_top (
         .aclk                    ( aclk                 ),
@@ -89,12 +82,7 @@ module cpu_test1();
         .wstrb                   ( wstrb                ),
         .wlast                   ( wlast                ),
         .wvalid                  ( wvalid               ),
-        .bready                  ( bready               ),
-        .debug0_wb_pc            ( debug0_wb_pc         ),
-        .debug0_wb_rf_wen        ( debug0_wb_rf_wen     ),
-        .debug0_wb_rf_wnum       ( debug0_wb_rf_wnum    ),
-        .debug0_wb_rf_wdata      ( debug0_wb_rf_wdata   ),
-        .debug0_wb_inst          ( debug0_wb_inst       )
+        .bready                  ( bready               )
     );
     AXI_memory main_mem(
         .s_axi_araddr(araddr),
