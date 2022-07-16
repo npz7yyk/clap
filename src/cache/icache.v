@@ -11,6 +11,7 @@ module icache
     output [63:0] r_data_CPU,   // read data to CPU
     output [31:0] pc_out,
     output [COOKIE_WIDHT-1:0] cookie_out,
+    output cache_ready,
     /* for AXI */
     // read
     output r_req,               // send read request

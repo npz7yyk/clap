@@ -221,7 +221,6 @@ module TLB#(
 
     /* exeption coping */
     TLB_exp_handler exp_handler(
-        .clk            (clk),
         .s0_found       (s0_found),
         .s0_mem_type    (s0_mem_type_rbuf),
         .found_v0       (found_v0),

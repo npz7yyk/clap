@@ -17,7 +17,8 @@ module main_FSM_i(
     output reg [3:0] tagv_we,
     output reg r_req,
     output reg r_data_ready,
-    output reg data_valid
+    output reg data_valid,
+    output reg cache_ready
     );
     parameter IDLE = 2'd0;
     parameter LOOKUP = 2'd1;
@@ -67,9 +68,11 @@ module main_FSM_i(
         way_sel_en = 0;
         r_data_ready = 0;
         way_visit = 0;
+        cache_ready = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
+            cache_ready = 1;
         end
         LOOKUP: begin
             rdata_sel = 1;
@@ -79,6 +82,7 @@ module main_FSM_i(
                 rbuf_we = 1;
                 way_visit = hit;
                 way_sel_en = 1;
+                cache_ready = 1;
             end
         end
         REPLACE: begin
@@ -93,6 +97,7 @@ module main_FSM_i(
                 rbuf_we = 1;
                 way_visit = lru_way_sel;
                 way_sel_en = 1;
+                cache_ready = 1;
             end
         end
         endcase

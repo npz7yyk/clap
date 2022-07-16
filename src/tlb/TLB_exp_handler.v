@@ -3,22 +3,21 @@
 module TLB_exp_handler#(
     parameter TLBNUM = 16
     )(
-    input clk,
     
     input s0_found,
     input [1:0] s0_mem_type,
     input found_v0,
     input found_d0,
-    input s0_plv,
-    input found_plv0,
+    input [1:0] s0_plv,
+    input [1:0] found_plv0,
     output reg [6:0] s0_exception,
 
     input s1_found,
     input [1:0] s1_mem_type,
     input found_v1,
     input found_d1,
-    input s1_plv,
-    input found_plv1,
+    input [1:0] s1_plv,
+    input [1:0] found_plv1,
     output reg [6:0] s1_exception
     );
 
@@ -27,7 +26,7 @@ module TLB_exp_handler#(
     parameter STORE = 2'd2;
 
     /* exeption coping */
-    always @(posedge clk) begin
+    always @(*) begin
         s0_exception = 0;
         // TLBR
         if(!s0_found)  s0_exception = `EXP_TLBR;
@@ -44,7 +43,7 @@ module TLB_exp_handler#(
         //PME
         else if(s0_mem_type == STORE && !found_d0) s0_exception = `EXP_PME;
     end
-    always @(posedge clk) begin
+    always @(*) begin
         s1_exception = 0;
         // TLBR
         if(!s1_found)  s1_exception = `EXP_TLBR;
