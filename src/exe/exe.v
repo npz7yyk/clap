@@ -291,7 +291,7 @@ mul_0  u_mul_0 (
     .mul_en_in               ( eu0_mul_en     ),
     .mul_rd_in               ( eu0_rd_in     ),
     .mul_sel_in              ( eu0_uop_in[`UOP_MD_SEL]    ),
-    .mul_usign               ( eu0_uop_in[`UOP_SIGN]     ),
+    .mul_sign                ( eu0_uop_in[`UOP_SIGN]     ),
     .mul_sr0                 ( eu0_sr0       ),
     .mul_sr1                 ( eu0_sr1       ),
 
@@ -326,8 +326,8 @@ mem0  u_mem0 (
     .mem_sr                  ( eu0_sr0                ),
     .mem_imm                 ( eu0_imm_in               ),
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
-    .mem_width_in               ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
-    .mem_exp_in               (eu0_exp_in),
+    .mem_width_in            ( eu0_uop_in[`UOP_MEM_WIDTH]            ),
+    .mem_exp_in              (eu0_exp_in),
 
     .valid                   ( valid           ),
     .op                      ( op              ),

@@ -5,7 +5,7 @@ module mul_0(
     input[0:0]mul_en_in,
     input[4:0]mul_rd_in,
     input[0:0]mul_sel_in,
-    input[0:0]mul_usign,
+    input[0:0]mul_sign,
     
     input[31:0]mul_sr0,
     input[31:0]mul_sr1,
@@ -22,12 +22,12 @@ module mul_0(
 );
     wire [ 35:0 ]mul_mid_sr0;
     wire [ 35:0 ]mul_mid_sr1;
-    assign mul_mid_sr0 = !mul_usign?{{4{mul_sr0[ 31 ]}},mul_sr0}:{4'b0,mul_sr0};
-    assign mul_mid_sr1 = !mul_usign?{{4{mul_sr1[ 31 ]}},mul_sr1}:{4'b0,mul_sr1};
-    assign mul_mid_rs0 = mul_mid_sr0[ 35:18 ]*mul_mid_sr1[ 35:18 ];
-    assign mul_mid_rs1 = mul_mid_sr0[ 35:18 ]*mul_mid_sr1[ 17:0 ];
-    assign mul_mid_rs2 = mul_mid_sr0[ 17:0 ]*mul_mid_sr1[ 35:18 ];
-    assign mul_mid_rs3 = mul_mid_sr0[ 17:0 ]*mul_mid_sr1[ 17:0 ];
+    assign mul_mid_sr0 = mul_sign?{{4{mul_sr0[ 31 ]}},mul_sr0}:{4'b0,mul_sr0};
+    assign mul_mid_sr1 = mul_sign?{{4{mul_sr1[ 31 ]}},mul_sr1}:{4'b0,mul_sr1};
+    assign mul_mid_rs0 = $signed(mul_mid_sr0[ 35:18 ])*$signed(mul_mid_sr1[ 35:18 ]);
+    assign mul_mid_rs1 = $signed(mul_mid_sr0[ 35:18 ])*$signed(mul_mid_sr1[ 17:0 ]);
+    assign mul_mid_rs2 = $signed(mul_mid_sr0[ 17:0 ])*$signed(mul_mid_sr1[ 35:18 ]);
+    assign mul_mid_rs3 = $signed(mul_mid_sr0[ 17:0 ])*$signed(mul_mid_sr1[ 17:0 ]);
 
     assign mul_en_out=mul_en_in;
     assign mul_rd_out=mul_rd_in;
