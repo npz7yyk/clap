@@ -49,7 +49,7 @@ module icache
         .clk        (clk),
         .rstn       (rstn),
         .we         (pbuf_we),
-        .din        (addr_rbuf),
+        .din        (p_addr),
         .dout       (addr_pbuf)
     );
 
@@ -77,7 +77,7 @@ module icache
         .clk        (clk),
         .r_addr     (pc_in),
         .w_addr     (addr_pbuf),
-        .tag        (addr_rbuf[31:12]),
+        .tag        (p_addr[31:12]),
         .we         (tagv_we),
         .hit        (hit),
         .cache_hit  (cache_hit)

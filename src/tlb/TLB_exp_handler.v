@@ -1,9 +1,6 @@
 `timescale 1ns / 1ps
 `include "../exception.vh"
-module TLB_exp_handler#(
-    parameter TLBNUM = 16
-    )(
-    
+module TLB_exp_handler(
     input s0_found,
     input [1:0] s0_mem_type,
     input found_v0,

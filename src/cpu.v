@@ -261,6 +261,7 @@ module core_top(
 
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc,if_pc_next;
+    wire [31:0] p_pc;
     wire if_known;
     wire first_inst_jmp;
     icache #(34) the_icache (
@@ -268,6 +269,7 @@ module core_top(
         .rstn           (aresetn),
         .valid          (~if_buf_full),
         .pc_in          (pc),
+        .p_addr         (p_pc),
         .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
         .cookie_out     ({first_inst_jmp,if_known,if_pc_next}),
         .data_valid     (data_valid),
@@ -500,7 +502,7 @@ module core_top(
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
-    wire  [ 31:0 ]  ex_mem_addr;
+    wire  [ 31:0 ]  ex_mem_addr, ex_mem_paddr;
     wire  [0:0]  ex_signed_ext;
     wire  [ 3:0 ]  ex_mem_write_type;
     wire  [ 31:0 ]  ex_mem_w_data_CPU,ex_mem_r_data_CPU;
@@ -553,6 +555,7 @@ module core_top(
         .valid(ex_mem_valid),
         .op(ex_mem_op),
         .addr(ex_mem_addr),
+        .p_addr(ex_mem_paddr),
         .signed_ext(ex_signed_ext),
         .write_type(ex_mem_write_type),
         .data_valid(ex_mem_data_valid),
@@ -578,6 +581,17 @@ module core_top(
         .w_rdy(d_axi_awready),
         .b_valid(d_axi_bvalid)
     );
+
+    TLB the_tlb(
+        .clk(aclk),
+        .rstn(aresetn),
+        .ad_mode(2'b0),
+        .s0_vaddr(pc),
+        .s1_vaddr(ex_mem_addr),
+        .s0_paddr(p_pc),
+        .s1_paddr(ex_mem_paddr)
+    );
+
     assign d_axi_awid = 1;
     assign d_axi_awlen = 8'd15;
     assign d_axi_awsize = 3'b010;

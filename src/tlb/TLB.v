@@ -4,7 +4,7 @@ module TLB#(
     )(
     input                       clk,
     input                       rstn,
-    input                       ad_mode,
+    input  [               1:0] ad_mode,
     //search port pc
     input  [              31:0] s0_vaddr,
     input  [              19:0] s0_vpn,
@@ -16,6 +16,7 @@ module TLB#(
     //output [$clog2(TLBNUM)-1:0] s0_index,
     output     [           19:0] s0_pfn,
     output     [            1:0] s0_mat,
+    output     [           31:0] s0_paddr,
     output     [            6:0] s0_exception,
     // output reg                   s0_d,
     // output reg                   s0_v,
@@ -31,6 +32,7 @@ module TLB#(
     //output [$clog2(TLBNUM)-1:0] s1_index,
     output     [          19:0] s1_pfn,
     output     [           1:0] s1_mat,
+    output     [          31:0] s1_paddr,
     output     [           6:0] s1_exception,
     // output reg                  s1_d,
     // output reg                  s1_v,
@@ -72,7 +74,7 @@ module TLB#(
     output                      r_d1,
     output                      r_v1
     );
-    wire mode_mbuf;
+    wire [1:0] mode_mbuf;
     wire [31:0] s0_addr_buf, s1_addr_buf;
 
     wire [TLBNUM-1:0] found0, found1;
@@ -118,7 +120,7 @@ module TLB#(
         .din            ({s1_vpn, s1_asid, s1_plv, s1_mem_type}),
         .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
     );
-    register#(1) mode_buffer(
+    register#(2) mode_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (1'b1),
@@ -244,6 +246,16 @@ module TLB#(
     .found_pfn1     (found_pfn1)
     );
 
+    TLB_out addr_output(
+        .ad_mode    (mode_mbuf),
+        .s0_addr    (s0_addr_buf),
+        .s1_addr    (s1_addr_buf),
+        .s0_pfn     (s0_pfn),
+        .s1_pfn     (s1_pfn),
+        .s0_paddr   (s0_paddr),
+        .s1_paddr   (s1_paddr)
+    );
+    
     /* exeption coping */
     TLB_exp_handler exp_handler(
         .s0_found       (s0_found),
