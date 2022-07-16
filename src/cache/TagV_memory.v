@@ -4,17 +4,19 @@ module TagV_memory(
     input clk,
     input [31:0] r_addr,
     input [31:0] w_addr,
+    input [19:0] tag,
     input [3:0] we,
     output [3:0] hit,
     output cache_hit
     );
-    wire [5:0] index;
-    wire [19:0] tag;
+    wire [5:0] index, index_w;
+   // wire [19:0] tag;
     wire [19:0] tag_0, tag_1, tag_2, tag_3;
     wire vld_0, vld_1, vld_2, vld_3;
 
     assign index = r_addr[11:6];
-    assign tag = w_addr[31:12];
+    assign index_w = w_addr[11:6];
+    //assign tag = w_addr[31:12];
 
     assign hit[0] = (tag == tag_0) && vld_0;
     assign hit[1] = (tag == tag_1) && vld_1;
@@ -23,7 +25,7 @@ module TagV_memory(
 
     assign cache_hit = |hit;
     TagV way0_TagV(
-        .addra  (index),
+        .addra  (index_w),
         .clka   (clk),
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[0]),
@@ -31,7 +33,7 @@ module TagV_memory(
         .doutb  ({vld_0, tag_0})
     );
     TagV way1_TagV(
-        .addra  (index),
+        .addra  (index_w),
         .clka   (clk),
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[1]),
@@ -39,7 +41,7 @@ module TagV_memory(
         .doutb  ({vld_1, tag_1})
     );
     TagV way2_TagV(
-        .addra  (index),
+        .addra  (index_w),
         .clka   (clk),
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[2]),
@@ -47,7 +49,7 @@ module TagV_memory(
         .doutb  ({vld_2, tag_2})
     );
     TagV way3_TagV(
-        .addra  (index),
+        .addra  (index_w),
         .clka   (clk),
         .dina   ({1'b1, w_addr[31:12]}),
         .wea    (we[3]),

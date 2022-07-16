@@ -10,6 +10,7 @@ module main_FSM_i(
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
+    output reg pbuf_we,
     output reg rdata_sel,
     output reg rbuf_we,
     output reg way_sel_en,
@@ -69,6 +70,7 @@ module main_FSM_i(
         r_data_ready = 0;
         way_visit = 0;
         cache_ready = 0;
+        pbuf_we = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -76,7 +78,10 @@ module main_FSM_i(
         end
         LOOKUP: begin
             rdata_sel = 1;
-            if(!cache_hit) mbuf_we = 1;
+            pbuf_we = 1;
+            if(!cache_hit) begin
+                mbuf_we = 1;
+            end
             else begin
                 data_valid = 1;
                 rbuf_we = 1;

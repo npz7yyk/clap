@@ -5,6 +5,7 @@ module icache
     /* for CPU */
     input valid,                // valid request
     input [31:0] pc_in,
+    input [31:0] p_addr,
     input [COOKIE_WIDHT-1:0] cookie_in,
     //output addr_valid,         // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
@@ -26,16 +27,17 @@ module icache
     output [6:0] exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf; //{pc_next,pc}
+    wire [31:0] addr_pbuf;
     wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
     wire[63:0] r_data_mem;
     wire[3:0] way_replace, way_replace_mbuf;
-    wire mbuf_we, rdata_sel, fill_finish;
+    wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;
     wire way_sel_en;
 
-    assign r_addr = {addr_rbuf[31:6], 6'b0};
+    assign r_addr = {addr_pbuf[31:6], 6'b0};
     assign {cookie_out,pc_out} = addr_rbuf;
     register#(32+COOKIE_WIDHT) req_buf(
         .clk    (clk),
@@ -43,6 +45,13 @@ module icache
         .we     (rbuf_we),
         .din    ({cookie_in,pc_in}),
         .dout   (addr_rbuf)
+    );
+    register#(32) phy_buf(
+        .clk        (clk),
+        .rstn       (rstn),
+        .we         (pbuf_we),
+        .din        (p_addr),
+        .dout       (addr_pbuf)
     );
 
     cache_excption_i exp_cope(
@@ -68,7 +77,8 @@ module icache
     TagV_memory tagv_mem(
         .clk        (clk),
         .r_addr     (pc_in),
-        .w_addr     (addr_rbuf[31:0]),
+        .w_addr     (addr_pbuf),
+        .tag        (p_addr[31:12]),
         .we         (tagv_we),
         .hit        (hit),
         .cache_hit  (cache_hit)
@@ -108,6 +118,7 @@ module icache
         .hit            (hit),
         .way_visit      (way_visit),
         .mbuf_we        (mbuf_we),
+        .pbuf_we        (pbuf_we),
         .rbuf_we        (rbuf_we),
         .rdata_sel      (rdata_sel),
         .way_sel_en     (way_sel_en),
