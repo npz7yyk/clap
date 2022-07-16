@@ -9,7 +9,7 @@ module dcache(
     //input [3:0] read_type,
     input [3:0] write_type,     // byte write enable
     input [31:0] w_data_CPU,    // write data
-    input zero_ext,             // 0: signed ext, 1: zero ext
+    input signed_ext,             // 1: signed ext, 0: zero ext
     //output addr_valid,        // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
     output [31:0] r_data_CPU,   // read data to CPU
@@ -48,6 +48,7 @@ module dcache(
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
+    wire signed_ext_rbuf;
 
     assign r_addr = {addr_rbuf[31:6], 6'b0};
     
@@ -60,12 +61,12 @@ module dcache(
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type
-    register#(69) req_buf(
+    register#(70) req_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
-        .din        ({addr, w_data_CPU, op, write_type}),
-        .dout       ({addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf})
+        .din        ({signed_ext, addr, w_data_CPU, op, write_type}),
+        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf})
     );
 
     /* write buffer AXI */
@@ -178,6 +179,7 @@ module dcache(
         .addr_rbuf          (addr_rbuf),
         .r_way_sel          (hit),
         .read_type_rbuf     (write_type_rbuf),
+        .signed_ext         (signed_ext_rbuf),
         .mem_dout           (mem_dout),
         .r_data_AXI         (w_line_AXI),
         .r_data_sel         (r_data_sel),
