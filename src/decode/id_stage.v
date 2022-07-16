@@ -65,8 +65,8 @@ module id_stage
     output reg [31:0] probably_right_destination,
     output wire set_pc
 );
-    wire valid0 = input_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
-    wire valid1 = input_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
+    wire valid0_before_predecode = input_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
+    wire valid1_before_predecode = input_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
 
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
@@ -84,21 +84,25 @@ module id_stage
         set_pc_due_to_inst0 = 0;
         set_pc_due_to_inst1 = 0;
         probably_right_destination = jmpdist0;
-        if(valid0) begin
+        if(valid0_before_predecode) begin
             if(unknown0&&should_jmp0) begin
                 probably_right_destination = jmpdist0;
                 set_pc_due_to_inst0 = 1;
             end
-            else if(valid1&&unknown1&&should_jmp1) begin
+            else if(valid1_before_predecode&&unknown1&&should_jmp1) begin
                 probably_right_destination = jmpdist1;
                 set_pc_due_to_inst1 = 1;
             end
         end
-        else if(valid1&&unknown1&&should_jmp1) begin
+        else if(valid1_before_predecode&&unknown1&&should_jmp1) begin
             probably_right_destination = jmpdist1;
             set_pc_due_to_inst1 = 1;
         end
     end
+
+    wire valid0 = valid0_before_predecode & ~set_pc_due_to_inst0;
+    wire valid1 = valid1_before_predecode;
+    wire [31:0] pc_next_after_predecode = set_pc?probably_right_destination:pc_next_in;
 
     wire empty;            //FIFO空
     
@@ -136,8 +140,8 @@ module id_stage
     wire [31:0] real_pc1 = pc_in+4;
     
     //真正有效的第一条输入指令的pc_next
-    wire [31:0] real_pc_next0 = first_inst_jmp||pc_in[2]?pc_next_in:pc_in+4;
-    wire [31:0] real_pc_next1 = pc_next_in;
+    wire [31:0] real_pc_next0 = first_inst_jmp||pc_in[2]?pc_next_after_predecode:pc_in+4;
+    wire [31:0] real_pc_next1 = pc_next_after_predecode;
     
     wire [102:0] real_0_concat = {exception_in,real_pc_next0,real_pc0,real_inst0};
     wire [102:0] real_1_concat = {exception_in,real_pc_next1,real_pc1,real_inst1};
