@@ -215,7 +215,7 @@ module core_top(
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
-    wire [31:0] pc_decoder,pc_executer,pc_writeback;
+    wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     reg [6:0] pc_exception;
     always @(posedge aclk)
         if(~aresetn)
@@ -249,7 +249,7 @@ module core_top(
         
         .exVld(ex_feedback_valid),
         .exPC(ex_branch_pc),
-        .exPCTar(pc_executer),
+        .exPCTar(ex_pc_tar),
         .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
@@ -541,6 +541,7 @@ module core_top(
         .branch_pc               ( ex_branch_pc ),
         .category_out            ( ex_br_category ),
         .branch_addr_calculated  ( pc_executer   ),
+        .ex_pc_tar               ( ex_pc_tar),
 
         .valid                   ( ex_mem_valid                    ),
         .op                      ( ex_mem_op                       ),

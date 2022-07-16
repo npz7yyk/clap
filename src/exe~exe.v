@@ -44,6 +44,7 @@ module exe(
     output branch_status,
     output branch_valid,
     output [1:0]category_out,
+    output [31:0]ex_pc_tar,
     //向cache输出
     output [0:0] valid,                 //    valid request
     output [0:0] op,                    //    write: 1, read: 0
@@ -89,7 +90,6 @@ wire[6:0]mem_exp_mid;
 wire[4:0]mem_rd_mid;
 wire[0:0]mem_en_mid;
 wire[1:0]mem_width_mid;
-
 wire[0:0]eu1_alu_en_mid;
 wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
@@ -102,6 +102,7 @@ reg[4:0]eu0_rd_0;
 reg[4:0]eu1_rd_0;
 reg[31:0]data_mid00;
 reg[31:0]data_mid10;
+reg[31:0]eu1_pc_exe1;
 reg[6:0]mem_exp_exe1;
 reg[4:0]mem_rd_exe1;
 reg[0:0]mem_en_exe1;
@@ -171,6 +172,7 @@ always @(posedge clk) begin
         eu1_en_0<=eu1_alu_en_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
         data_mid10<=eu1_alu_result_mid;
+        eu1_pc_exe1<=eu1_pc_in;
     end
 end
 //末段寄存器更新
@@ -199,7 +201,7 @@ always @(posedge clk) begin
         en_out1<=eu1_en_0;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
-        eu1_pc_out<=eu1_pc_in;
+        eu1_pc_out<=eu1_pc_exe1;
     end
 end
 
@@ -275,6 +277,7 @@ branch #(
     .br_en_out               ( br_en_mid                ),
     .flush                   ( flush                    ),
     .branch_addr_calculated  ( branch_addr_calculated   ),
+    .ex_pc_tar(ex_pc_tar),
     .branch_valid            (branch_valid),
     .branch_status           (branch_status),
     .category_out(category_out)
