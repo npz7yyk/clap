@@ -9,7 +9,8 @@ module dcache(
     //input [3:0] read_type,
     input [3:0] write_type,     // byte write enable
     input [31:0] w_data_CPU,    // write data
-    //output addr_valid,          // read: addr has been accepted; write: addr and data have been accepted
+    input zero_ext,             // 0: signed ext, 1: zero ext
+    //output addr_valid,        // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
     output [31:0] r_data_CPU,   // read data to CPU
     /* for AXI */

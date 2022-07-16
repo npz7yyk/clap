@@ -291,7 +291,7 @@ mul_0  u_mul_0 (
     .mul_en_in               ( eu0_mul_en     ),
     .mul_rd_in               ( eu0_rd_in     ),
     .mul_sel_in              ( eu0_uop_in[`UOP_MD_SEL]    ),
-    .mul_usign               ( eu0_uop_in[`UOP_USIGN]     ),
+    .mul_usign               ( eu0_uop_in[`UOP_SIGN]     ),
     .mul_sr0                 ( eu0_sr0       ),
     .mul_sr1                 ( eu0_sr1       ),
 
@@ -364,7 +364,7 @@ div  u_div (
     .rstn                    ( rstn                     ),
     .div_en_in               ( eu0_div_en                ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
-    .div_sign                ( eu0_uop_in[`UOP_USIGN]                 ),
+    .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
     .div_sr1                 ( eu0_sr1                  ),
     .div_addr_in             ( eu0_rd_in              ),
