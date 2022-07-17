@@ -21,12 +21,12 @@ module ret_buf_d(
         count = 0;
         w_data_AXI = 0;
     end
-    reg ret_valid_pos;
+    reg ret_last_pos;
     wire ret_finish;
     always @(posedge clk) begin
-        ret_valid_pos <= ret_valid;
+        ret_last_pos <= ret_last;
     end
-    assign ret_finish = !ret_valid_pos & ret_valid;
+    assign ret_finish = !ret_last_pos & ret_last;
 
     always @(posedge clk) begin
         if(ret_valid)begin
