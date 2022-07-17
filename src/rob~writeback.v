@@ -32,8 +32,8 @@ module writeback
 
     assign pc=0;
     assign set_pc=0;
-    assign wen0 = eu0_valid && eu0_rd!=0 && eu0_exception==0;
-    assign wen1 = eu1_valid && eu1_rd!=0;
+    assign wen0 = eu0_valid && eu0_exception==0;
+    assign wen1 = eu1_valid;
     assign waddr0 = eu0_rd;
     assign waddr1 = eu1_rd;
     assign wdata0 = eu0_data;

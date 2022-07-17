@@ -40,12 +40,13 @@ assign branch_status = branch_op == JIRL
                      ||branch_op == BLTU&&branch_sr0<branch_sr1
                      ||branch_op == BGEU&&branch_sr0>= branch_sr1;
 
-assign br_en_out=br_en_in&&(branch_op == JIRL||branch_op == BL);
-assign br_rd_addr_out=branch_op==JIRL?br_rd_addr_in:branch_op==BL?1:0;
+//assign br_en_out=br_en_in&&(branch_op == JIRL||branch_op == BL);
+assign br_en_out=br_en_in;
+assign br_rd_addr_out=br_en_in?branch_op==JIRL?br_rd_addr_in:branch_op==BL?1:0:0;
 assign br_rd_data=br_en_out?pc+4:0;
 
-assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr1+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
-assign ex_pc_tar=branch_op==JIRL?(branch_sr1+ (branch_imm<<2)):(pc+(branch_imm<<2));
+assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
+assign ex_pc_tar=branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2));
 assign flush=br_en_in&&(branch_addr_calculated!=pc_next);
 assign branch_valid=br_en_in;
 

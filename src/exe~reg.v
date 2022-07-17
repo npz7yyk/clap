@@ -62,10 +62,10 @@ reg[31:0]register_file[31:0];
 
 always @(posedge clk) begin
     if (write_en_0) begin
-        register_file[write_addr_0]<=write_data_0;
+        register_file[write_addr_0]<=write_addr_0==0?0:write_data_0;
     end
     if (write_en_1) begin
-        register_file[write_addr_1]<=write_data_1;
+        register_file[write_addr_1]<=write_addr_1==0?0:write_data_1;
     end
     if(!rstn||flush)begin
         eu0_en_out<=0;
