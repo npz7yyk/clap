@@ -8,7 +8,7 @@ module ret_buf_i(
     reg ret_valid_pos;
     wire ret_finish;
     always @(posedge clk) begin
-        ret_vlaid_pos <= ret_valid;
+        ret_valid_pos <= ret_valid;
     end
     assign ret_finish = !ret_valid_pos & ret_valid;
 
