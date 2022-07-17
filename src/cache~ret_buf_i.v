@@ -5,11 +5,18 @@ module ret_buf_i(
     output reg [511:0] mem_din,
     output reg fill_finish
     );
+    reg ret_last_pos;
+    wire ret_finish;
+    always @(posedge clk) begin
+        ret_last_pos <= ret_last;
+    end
+    assign ret_finish = !ret_last_pos & ret_last;
+
     always @(posedge clk) begin
         if(ret_valid)begin
             mem_din = (mem_din >> 32) | {r_data_AXI, 480'b0};
         end
-        if(ret_last) fill_finish = 1;
+        if(ret_finish) fill_finish = 1;
         else fill_finish = 0;
     end
 endmodule

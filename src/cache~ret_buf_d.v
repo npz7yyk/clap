@@ -21,6 +21,13 @@ module ret_buf_d(
         count = 0;
         w_data_AXI = 0;
     end
+    reg ret_last_pos;
+    wire ret_finish;
+    always @(posedge clk) begin
+        ret_last_pos <= ret_last;
+    end
+    assign ret_finish = !ret_last_pos & ret_last;
+
     always @(posedge clk) begin
         if(ret_valid)begin
             if(op_rbuf == READ || count != addr_rbuf[5:2]) begin
@@ -36,7 +43,7 @@ module ret_buf_d(
             end
             count <= count + 1;
         end
-        if(ret_last) begin
+        if(ret_finish) begin
             count <= 0;
             fill_finish <= 1;
         end

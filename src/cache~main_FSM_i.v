@@ -26,7 +26,7 @@ module main_FSM_i(
     parameter REFILL = 2'd3;
 
     reg[1:0] crt, nxt;
-
+    
     always @(posedge clk) begin
         if(!rstn) crt <= 0;
         else crt <= nxt;
