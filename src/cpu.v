@@ -51,7 +51,11 @@ module core_top(
     output [ 3:0] debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
     output [31:0] debug0_wb_rf_wdata,
-    output [31:0] debug0_wb_inst
+
+    output [31:0] debug1_wb_pc,
+    output [ 3:0] debug1_wb_rf_wen,
+    output [ 4:0] debug1_wb_rf_wnum,
+    output [31:0] debug1_wb_rf_wdata
 );
     assign wid = awid;
     assign arlock[1] = 0;
@@ -211,11 +215,12 @@ module core_top(
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
-    wire [31:0] pc_decoder,pc_executer,pc_writeback;
+    wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     reg [6:0] pc_exception;
-    always @(posedge aclk)
+    always @(posedge aclk) begin
         if(~aresetn)
-            pc <= 0;
+            //龙芯架构32位精简版参考手册 v1.00 p. 53
+            pc <= 32'h1C000000;
         else if(set_pc_by_writeback)
             pc <= pc_writeback;
         else if(set_pc_by_executer)
@@ -224,6 +229,7 @@ module core_top(
             pc <= pc_decoder;
         else if(pc_stall_n)
             pc <= pc_next;
+    end
     
     wire id_feedback_valid;
     wire [31:0] id_pc_for_predict,ex_branch_pc;
@@ -245,7 +251,7 @@ module core_top(
         
         .exVld(ex_feedback_valid),
         .exPC(ex_branch_pc),
-        .exPCTar(pc_executer),
+        .exPCTar(ex_pc_tar),
         .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
@@ -497,7 +503,7 @@ module core_top(
     wire  [31:0]  ex_eu0_data,ex_eu1_data;
     wire  [4:0]  ex_eu0_rd,ex_eu1_rd;
     wire  [6:0] ex_eu0_exp;
-    wire  [31:0] ex_eu0_pc;
+    wire  [31:0] ex_eu0_pc,ex_eu1_pc;
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
@@ -517,7 +523,7 @@ module core_top(
         .eu0_rj_in     (rf_eu0_rj     ), .eu1_rj_in (rf_eu1_rj ),
         .eu0_rk_in     (rf_eu0_rk     ), .eu1_rk_in (rf_eu1_rk ),
         .eu0_imm_in    (rf_eu0_imm     ),.eu1_imm_in(rf_eu1_imm),
-        .eu0_pc_in     (rf_eu0_pc     ),
+        .eu0_pc_in     (rf_eu0_pc     ), .eu1_pc_in(rf_eu1_pc),
         .eu0_pc_next_in(rf_eu0_pc_next),
         .eu0_exp_in    (rf_eu0_exp    ), //.eu1_exp_in    ( rf_eu1_exp    ),
         .data00        (rf_eu0_read_dataj), .data10(rf_eu1_read_dataj),
@@ -528,7 +534,7 @@ module core_top(
         .data_out0(ex_eu0_data), .data_out1(ex_eu1_data),
         .addr_out0(ex_eu0_rd  ), .addr_out1(ex_eu1_rd  ),
         .exp_out  (ex_eu0_exp ), //.exp_out  (ex_eu1_exp ),
-        .eu0_pc_out(ex_eu0_pc),
+        .eu0_pc_out(ex_eu0_pc),  .eu1_pc_out(ex_eu1_pc),
 
         .stall                   ( ex_stall              ),
         .flush                   ( set_pc_by_executer    ),
@@ -537,6 +543,7 @@ module core_top(
         .branch_pc               ( ex_branch_pc ),
         .category_out            ( ex_br_category ),
         .branch_addr_calculated  ( pc_executer   ),
+        .ex_pc_tar               ( ex_pc_tar),
 
         .valid                   ( ex_mem_valid                    ),
         .op                      ( ex_mem_op                       ),
@@ -613,12 +620,22 @@ module core_top(
         .eu0_valid(ex_eu0_en), .eu1_valid(ex_eu1_en),
         .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
         .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
-        .eu0_pc(ex_eu0_pc),
+        .eu0_pc(ex_eu0_pc),    .eu1_pc(ex_eu1_pc),
         .eu0_exception(ex_eu0_exp),
 
         .wen0(rf_wen0),.wen1(rf_wen1),
         .waddr0(rf_waddr0),.waddr1(rf_waddr1),
         .wdata0(rf_wdata0),.wdata1(rf_wdata1),
+
+        .debug0_wb_pc(debu0_wb_pc),
+        .debug0_wb_rf_wen(debug0_wb_rf_wen),
+        .debug0_wb_rf_wnum(debug0_wb_rf_wnum),
+        .debug0_wb_rf_wdata(debug0_wb_rf_wdata),
+
+        .debug1_wb_pc(debug1_wb_pc),
+        .debug1_wb_rf_wen(debug1_wb_rf_wen),
+        .debug1_wb_rf_wnum(debug1_wb_rf_wnum),
+        .debug1_wb_rf_wdata(debug1_wb_rf_wdata),
 
         .set_pc(set_pc_by_writeback),
         .pc(pc_writeback)
