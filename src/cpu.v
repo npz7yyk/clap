@@ -51,11 +51,13 @@ module core_top(
     output [ 3:0] debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
     output [31:0] debug0_wb_rf_wdata,
+    output [31:0] debug0_wb_inst,
 
     output [31:0] debug1_wb_pc,
     output [ 3:0] debug1_wb_rf_wen,
     output [ 4:0] debug1_wb_rf_wnum,
-    output [31:0] debug1_wb_rf_wdata
+    output [31:0] debug1_wb_rf_wdata,
+    output [31:0] debug1_wb_inst
 );
     assign wid = awid;
     assign arlock[1] = 0;
@@ -504,6 +506,7 @@ module core_top(
     wire  [4:0]  ex_eu0_rd,ex_eu1_rd;
     wire  [6:0] ex_eu0_exp;
     wire  [31:0] ex_eu0_pc,ex_eu1_pc;
+    wire  [31:0] ex_eu0_inst,ex_eu1_inst;
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
@@ -535,6 +538,7 @@ module core_top(
         .addr_out0(ex_eu0_rd  ), .addr_out1(ex_eu1_rd  ),
         .exp_out  (ex_eu0_exp ), //.exp_out  (ex_eu1_exp ),
         .eu0_pc_out(ex_eu0_pc),  .eu1_pc_out(ex_eu1_pc),
+        .eu0_inst(ex_eu0_inst),  .eu1_inst(ex_eu1_inst),
 
         .stall                   ( ex_stall              ),
         .flush                   ( set_pc_by_executer    ),
@@ -621,23 +625,80 @@ module core_top(
         .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
         .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
         .eu0_pc(ex_eu0_pc),    .eu1_pc(ex_eu1_pc),
+        .eu0_inst(ex_eu0_inst),.eu1_inst(ex_eu1_inst),
         .eu0_exception(ex_eu0_exp),
 
         .wen0(rf_wen0),.wen1(rf_wen1),
         .waddr0(rf_waddr0),.waddr1(rf_waddr1),
         .wdata0(rf_wdata0),.wdata1(rf_wdata1),
 
-        .debug0_wb_pc(debu0_wb_pc),
+        .debug0_wb_pc(debug0_wb_pc),
         .debug0_wb_rf_wen(debug0_wb_rf_wen),
         .debug0_wb_rf_wnum(debug0_wb_rf_wnum),
         .debug0_wb_rf_wdata(debug0_wb_rf_wdata),
+        .debug0_wb_inst(debug0_wb_inst),
 
         .debug1_wb_pc(debug1_wb_pc),
         .debug1_wb_rf_wen(debug1_wb_rf_wen),
         .debug1_wb_rf_wnum(debug1_wb_rf_wnum),
         .debug1_wb_rf_wdata(debug1_wb_rf_wdata),
+        .debug1_wb_inst(debug1_wb_inst),
 
         .set_pc(set_pc_by_writeback),
         .pc(pc_writeback)
     );
+
+`ifdef VERILATOR
+    DifftestInstrCommit DifftestInstrCommit0
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(0),
+        .valid(debug0_wb_inst!=0),
+        .pc(debug0_wb_pc),
+        .instr(debug0_wb_inst),
+        .skip(0),
+        .is_TLBFILL(0),
+        .TLBFILL_index(0),
+        .is_CNTinst(0),
+        .timer_64_value(stable_counter),
+        .wen(debug0_wb_rf_wen),
+        .wdest(debug0_wb_rf_wnum),
+        .wdata(debug0_wb_rf_wdata),
+        .csr_rstat(0),
+        .csr_data(0)
+    );
+
+    DifftestInstrCommit DifftestInstrCommit1
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(1),
+        .valid(debug1_wb_inst!=0),
+        .pc(debug1_wb_pc),
+        .instr(debug1_wb_inst),
+        .skip(0),
+        .is_TLBFILL(0),
+        .TLBFILL_index(0),
+        .is_CNTinst(0),
+        .timer_64_value(stable_counter),
+        .wen(debug1_wb_rf_wen),
+        .wdest(debug1_wb_rf_wnum),
+        .wdata(debug1_wb_rf_wdata),
+        .csr_rstat(0),
+        .csr_data(0)
+    );
+
+    DifftestExcpEvent DifftestExcpEvent
+    (
+        .clock(aclk),
+        .coreid(0),
+        .excp_valid(0),
+        .eret(0),
+        .intrNo(0),
+        .cause(0),
+        .exceptionPC(debug0_wb_pc),
+        .exceptionInst(debug0_wb_inst)
+    );
+`endif
 endmodule 
