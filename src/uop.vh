@@ -32,7 +32,8 @@
 `define UOP_COND 18:15
 `define UOP_SIGN 19:19
 `define UOP_MEM_ATM 20:20
-`define WIDTH_UOP 21
+`define UOP_ORIGINAL_INST 52:21
+`define WIDTH_UOP 53
 
 `define ITYPE_ALU   11'b000000000001
 `define ITYPE_MUL   11'b000000000010
