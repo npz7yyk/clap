@@ -30,7 +30,7 @@ module mul_0(
     assign mul_mid_rs3 = $signed(mul_mid_sr0[ 17:0 ])*$signed(mul_mid_sr1[ 17:0 ]);
 
     assign mul_en_out=mul_en_in;
-    assign mul_rd_out=mul_rd_in;
+    assign mul_rd_out=mul_en_in?mul_rd_in:0;
     assign mul_sel_out=mul_sel_in;
 endmodule
 
