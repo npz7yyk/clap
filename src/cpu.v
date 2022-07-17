@@ -314,7 +314,7 @@ module core_top(
     assign i_axi_arsize = 3'b010;
     assign i_axi_arlock = 0;
     assign i_axi_arcache = 0;
-    assign i_axi_arprot = 0;
+    assign i_axi_arprot = 3'b100;
     
     wire [1:0] id_read_en;
     wire [`WIDTH_UOP-1:0] id_uop0,id_uop1;
@@ -621,7 +621,9 @@ module core_top(
 
     writeback the_writeback
     (
-        .eu0_valid(ex_eu0_en), .eu1_valid(ex_eu1_en),
+        //to run difftest, one instruction cannot be written back for multiple times
+        .eu0_valid(ex_eu0_en&~ex_stall),
+        .eu1_valid(ex_eu1_en&~ex_stall),
         .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
         .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
         .eu0_pc(ex_eu0_pc),    .eu1_pc(ex_eu1_pc),
@@ -699,6 +701,17 @@ module core_top(
         .cause(0),
         .exceptionPC(debug0_wb_pc),
         .exceptionInst(debug0_wb_inst)
+    );
+
+    DifftestTrapEvent DifftestTrapEvent
+    (
+        .clock(aclk),
+        .coreid(0),
+        .valid(0),
+        .code(0),
+        .pc(0),
+        .cycleCnt(0),
+        .instrCnt(0)
     );
 `endif
 endmodule 

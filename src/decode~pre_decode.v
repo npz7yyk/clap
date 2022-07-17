@@ -29,7 +29,7 @@ module pre_decoder
         case(category)
             2'b00,2'b11: pc_offset = 4;
             2'b01:       pc_offset = {{14{inst[25]}},inst[25:10],2'b00};
-            2'b10:       pc_offset = {{4{inst[25]}},inst[9:0],inst[25:10],2'b00};
+            2'b10:       pc_offset = {{4{inst[9]}},inst[9:0],inst[25:10],2'b00};
         endcase
 endmodule
  
