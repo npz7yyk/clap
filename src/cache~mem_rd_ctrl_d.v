@@ -1,5 +1,6 @@
 module mem_rd_ctrl_d(
     input [31:0] addr_rbuf,
+    input [31:0] w_data_CPU,
     input [3:0] r_way_sel,
     input [2047:0] mem_dout,
     input [511:0] r_data_AXI,
@@ -113,12 +114,15 @@ module mem_rd_ctrl_d(
         end
     end
     always @(*) begin
-        case(miss_way_sel)
-        M_SEL0: miss_sel_data = mem_dout[511:0];
-        M_SEL1: miss_sel_data = mem_dout[1023:512];
-        M_SEL2: miss_sel_data = mem_dout[1535:1024];
-        M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
-        default: miss_sel_data = 0;
-        endcase
+        if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};
+        else begin
+            case(miss_way_sel)
+            M_SEL0: miss_sel_data = mem_dout[511:0];
+            M_SEL1: miss_sel_data = mem_dout[1023:512];
+            M_SEL2: miss_sel_data = mem_dout[1535:1024];
+            M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
+            default: miss_sel_data = 0;
+            endcase
+        end
     end
 endmodule

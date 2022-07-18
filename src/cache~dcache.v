@@ -3,6 +3,7 @@ module dcache(
     /* for CPU */
     input valid,                // valid request
     input op,                   // write: 1, read: 0
+    input uncache,
     input [31:0] addr,
     input [31:0] p_addr,
     //input [3:0] read_type,
@@ -105,7 +106,7 @@ module dcache(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        ({replace_tag, addr_pbuf[11:6], 5'b0, way_replace, dirty_data, vld}),
+        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data, vld}),
         .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf, vld_mbuf})
     );
 
@@ -186,6 +187,7 @@ module dcache(
     /* mem read control */
     mem_rd_ctrl_d mem_rd_ctrl(
         .addr_rbuf          (addr_rbuf),
+        .w_data_CPU         (w_data_CPU_rbuf),
         .r_way_sel          (hit),
         .read_type_rbuf     (write_type_rbuf),
         .signed_ext         (signed_ext_rbuf),

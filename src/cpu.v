@@ -582,35 +582,41 @@ module core_top(
 
     dcache the_dcache
     (
-        .clk(aclk),.rstn(aresetn),
-        .valid(ex_mem_valid),
-        .op(ex_mem_op),
-        .addr(ex_mem_addr),
-        .p_addr(ex_mem_paddr),
-        .signed_ext(ex_signed_ext),
-        .write_type(ex_mem_write_type),
-        .data_valid(ex_mem_data_valid),
-        .r_data_CPU(ex_mem_r_data_CPU),
-        .w_data_CPU(ex_mem_w_data_CPU),
+        .clk            (aclk),
+        .rstn           (aresetn),
+        .valid          (ex_mem_valid),
+        .op             (ex_mem_op),
+        .uncache        (1'b0),
+        .addr           (ex_mem_addr),
+        .p_addr         (ex_mem_paddr),
+        .signed_ext     (ex_signed_ext),
+        .write_type     (ex_mem_write_type),
+        .data_valid     (ex_mem_data_valid),
+        .r_data_CPU     (ex_mem_r_data_CPU),
+        .w_data_CPU     (ex_mem_w_data_CPU),
 
-        .r_req(d_axi_arvalid),
-        .r_data_ready(d_axi_rready),
-        .r_addr(d_axi_araddr),
-        .r_rdy(d_axi_arready),
-        .ret_valid(d_axi_rvalid),
-        .ret_last(d_axi_rlast),
-        .r_data_AXI(d_axi_rdata),
+        .r_req          (d_axi_arvalid),
+        .r_data_ready   (d_axi_rready),
+        .r_addr         (d_axi_araddr),
+        .r_size         (d_axi_arsize),
+        .r_length       (d_axi_arlen),
+        .r_rdy          (d_axi_arready),
+        .ret_valid      (d_axi_rvalid),
+        .ret_last       (d_axi_rlast),
+        .r_data_AXI     (d_axi_rdata),
 
-        .w_req(d_axi_awvalid),
-        .w_data_ready(d_axi_wready),
-        .w_data_req(d_axi_wvalid),
-        .w_last(d_axi_wlast),
-        .b_ready(d_axi_bready),
-        .w_addr(d_axi_awaddr),
-        .w_strb(d_axi_wstrb),
-        .w_data_AXI(d_axi_wdata),
-        .w_rdy(d_axi_awready),
-        .b_valid(d_axi_bvalid)
+        .w_req          (d_axi_awvalid),
+        .w_data_ready   (d_axi_wready),
+        .w_data_req     (d_axi_wvalid),
+        .w_last         (d_axi_wlast),
+        .b_ready        (d_axi_bready),
+        .w_size         (d_axi_awsize),
+        .w_length       (d_axi_awlen),
+        .w_addr         (d_axi_awaddr),
+        .w_strb         (d_axi_wstrb),
+        .w_data_AXI     (d_axi_wdata),
+        .w_rdy          (d_axi_awready),
+        .b_valid        (d_axi_bvalid)
     );
 
     TLB the_tlb(
@@ -624,8 +630,8 @@ module core_top(
     );
 
     assign d_axi_awid = 1;
-    assign d_axi_awlen = 8'd15;
-    assign d_axi_awsize = 3'b010;
+    //assign d_axi_awlen = 8'd15;
+    //assign d_axi_awsize = 3'b010;
     assign d_axi_awburst = 2'b01;
     assign d_axi_awlock = 0;
     assign d_axi_awcache = 0;
@@ -633,9 +639,9 @@ module core_top(
     assign d_axi_bid = 1;
     assign d_axi_bresp = 0;
     assign d_axi_arid = 1;
-    assign d_axi_arlen = 8'd15;
+    //assign d_axi_arlen = 8'd15;
     assign d_axi_arburst = 2'b01;
-    assign d_axi_arsize = 3'b010;
+    //assign d_axi_arsize = 3'b010;
     assign d_axi_arlock = 0;
     assign d_axi_arcache = 0;
     assign d_axi_arprot = 0;
