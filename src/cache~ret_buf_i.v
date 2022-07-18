@@ -5,12 +5,12 @@ module ret_buf_i(
     output reg [511:0] mem_din,
     output reg fill_finish
     );
-    reg ret_last_pos;
+    reg finish_pos;
     wire ret_finish;
     always @(posedge clk) begin
-        ret_last_pos <= ret_last;
+        finish_pos <= ret_last & ret_valid;
     end
-    assign ret_finish = !ret_last_pos & ret_last;
+    assign ret_finish = !finish_pos & ret_last & ret_valid;
 
     always @(posedge clk) begin
         if(ret_valid)begin
