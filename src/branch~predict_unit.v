@@ -98,8 +98,8 @@ module predict_unit #(
             inGuess1 <= 32'b0;
             inGuess2 <= 32'b0;
         end
-        else if (en && ex_vld) begin
-            if (ex_wrong) begin
+        else if (en) begin
+            if (ex_vld && ex_wrong) begin
                 inGuess1 <= 32'b0;
                 inGuess2 <= 32'b0;
             end else begin
