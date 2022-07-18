@@ -39,8 +39,7 @@ module cache_memory #(
   genvar i;
      for (i = 0; i < NB_COL; i = i+1) begin: byte_write
        always @(posedge clka)
-         if (ena)
-           if (wea[i]) begin
+           if (wea[i]&&ena) begin
              BRAM[addra][(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= dina[(i+1)*COL_WIDTH-1:i*COL_WIDTH];
              ram_data_a[(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= dina[(i+1)*COL_WIDTH-1:i*COL_WIDTH];
            end else begin

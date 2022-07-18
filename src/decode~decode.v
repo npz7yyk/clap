@@ -38,6 +38,7 @@ module decoder
     assign pc=pcnext_pc_inst[63:32];
     assign pc_next=pcnext_pc_inst[95:64];
     assign exception=pcnext_pc_inst[102:96];
+    assign uop[`UOP_ORIGINAL_INST] = inst;
     /////////////////////////////
     //鉴别指令类型
     wire [`UOP_TYPE] type_;

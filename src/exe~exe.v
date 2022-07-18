@@ -34,7 +34,9 @@ module exe(
     output reg [4:0]addr_out1,
     output reg[6:0]exp_out,
     output reg [31:0]eu0_pc_out,
+    output reg [31:0]eu0_inst,
     output reg [31:0]eu1_pc_out,
+    output reg [31:0]eu1_inst,
     //向issue段输出
     output stall,
     output flush,
@@ -127,6 +129,7 @@ wire[0:0]mem_en_out;
 wire[0:0]div_en_out;
 wire[31:0]div_result;
 wire[4:0]div_addr_out;
+reg [31:0]inst0_mid,inst1_mid;
 //中段寄存器更新
 always @(posedge clk) begin
     //eu0
@@ -146,6 +149,7 @@ always @(posedge clk) begin
         mul_sr3_exe1<=0;
         exp_exe1<=0;
         eu0_pc_exe1<=0;
+        inst0_mid<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
@@ -162,17 +166,20 @@ always @(posedge clk) begin
         mul_sr3_exe1<=mul_rs3_mid;
         exp_exe1<=eu0_exp_in;
         eu0_pc_exe1<=eu0_pc_in;
+        inst0_mid<=eu0_uop_in[`UOP_ORIGINAL_INST];
     end
     //eu1
     if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
         eu1_en_0<=0;
         eu1_rd_0<=0;
         data_mid10<=0;
+        inst1_mid<=0;
     end else if(!stall)begin
         eu1_en_0<=eu1_alu_en_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
         data_mid10<=eu1_alu_result_mid;
         eu1_pc_exe1<=eu1_pc_in;
+        inst1_mid<=eu1_uop_in[`UOP_ORIGINAL_INST];
     end
 end
 //末段寄存器更新
@@ -184,12 +191,14 @@ always @(posedge clk) begin
         addr_out0<=0;
         exp_out<=0;
         eu0_pc_out<=0;
+        eu0_inst<=0;
     end else if(!stall_because_cache)begin
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
         data_out0<=data_mid00|mul_result|div_result|mem_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1;
+        eu0_inst<=inst0_mid;
     end
     //eu1
     if(!rstn||flush_by_writeback||stall_because_div)begin
@@ -197,11 +206,13 @@ always @(posedge clk) begin
         data_out1<=0;
         addr_out1<=0;
         eu1_pc_out<=0;
+        eu1_inst<=0;
     end else if(!stall_because_cache)begin
         en_out1<=eu1_en_0;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
         eu1_pc_out<=eu1_pc_exe1;
+        eu1_inst<=inst1_mid;
     end
 end
 

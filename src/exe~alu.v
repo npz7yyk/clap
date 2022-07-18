@@ -72,6 +72,6 @@ module alu (
                                         |( {32{op_sll}}&sll_result )
                                         |( {32{op_srl}}&srl_result )
                                         |( {32{op_sra}}&sra_result )):0;
-    assign alu_rd_out=alu_rd_in;
+    assign alu_rd_out=alu_en_out?alu_rd_in:0;
     assign alu_en_out=alu_en_in;
 endmodule

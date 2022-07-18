@@ -36,7 +36,7 @@ module mem0 (
     assign mem_width_out=mem_width_in;
     assign mem_en_out=mem_en_in;
     assign mem_exp_out=mem_exp_in;
-    assign mem_rd_out=mem_rd_in;
+    assign mem_rd_out=mem_en_out?mem_rd_in:0;
     assign signed_ext=mem_sign;
 endmodule
 
