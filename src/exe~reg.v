@@ -100,7 +100,7 @@ always @(posedge clk) begin
         eu0_pc_next_out<=eu0_pc_next_in;
         eu0_exp_out<=eu0_exp_in;
         eu0_imm_out<=eu0_imm_in;
-        if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
+        if(eu0_uop_in[`ITYPE_IDX_ALU])begin
             case (eu0_uop_in[`UOP_SRC1])
                 `CTRL_SRC1_RF:begin
                     if(eu0_rj_in==0)begin
@@ -134,7 +134,7 @@ always @(posedge clk) begin
                 read_data00<=register_file[eu0_rj_in];
             end 
         end
-        if(eu0_uop_in[`UOP_TYPE]==`ITYPE_IDX_ALU)begin
+        if(eu0_uop_in[`ITYPE_IDX_ALU])begin
             case (eu0_uop_in[`UOP_SRC2])
                 `CTRL_SRC2_RF:begin
                     if(eu0_rk_in==0)begin
