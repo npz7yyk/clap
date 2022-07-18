@@ -67,7 +67,7 @@ module data #(
     wire [HASH_WIDTH - 1:0] exPCTag =
         exPC[HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];
     wire [HASH_WIDTH - 1:0] ifPCTag =
-        exPC[HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];
+        ifPC[HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];
 
     wire [HASH_WIDTH - 1:0] idTagLower, idTagUpper,
         exTagLower, exTagUpper, ifTagLower, ifTagUpper;
