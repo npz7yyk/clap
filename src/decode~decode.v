@@ -192,7 +192,7 @@ module decoder
         is_preload||
         type_[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE]&&!uop[`UOP_MEM_ATM]||
         //除了jilr和bl之外的分支
-        type_[`ITYPE_IDX_BR]&&!is_jilr&&!inst[29:26]!='b0101)?0:
+        type_[`ITYPE_IDX_BR]&&!is_jilr&&inst[29:26]!='b0101)?0:
             //bl 向r1写PC+4
             inst[30:26]==('b10101)?1:
             inst[4:0];
