@@ -3,8 +3,8 @@
 module core_top(
     input           aclk,
     input           aresetn,
-    input    [ 7:0] intrpt, 
-    //AXI interface 
+    input    [ 7:0] intrpt,
+    //AXI interface
     //read reqest
     output   [ 3:0] arid,
     output   [31:0] araddr,
@@ -208,7 +208,7 @@ module core_top(
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
-    
+
     wire data_valid;
     wire if_buf_full;
     wire cache_ready;
@@ -240,16 +240,37 @@ module core_top(
     wire ex_feedback_valid,ex_did_jump;
     wire pred_known;
     wire pd_branch,pd_reason;
+    reg id_feedback_valid_reg;
+    reg [31:0] id_pc_for_predict_reg;
+    reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
+    reg [1:0] id_category0_reg,id_category1_reg;
+    always @(posedge aclk)
+        if(~aresetn) begin
+            id_feedback_valid_reg<=0;
+            id_pc_for_predict_reg<=0;
+            id_jmpdist0_reg<=0;
+            id_jmpdist1_reg<=0;
+            id_category0_reg<=0;
+            id_category1_reg<=0;
+        end
+        else begin
+            id_feedback_valid_reg <= id_feedback_valid;
+            id_pc_for_predict_reg <= id_pc_for_predict;
+            id_jmpdist0_reg <= id_jmpdist0;
+            id_jmpdist1_reg <= id_jmpdist1;
+            id_category0_reg <= id_category0;
+            id_category1_reg <= id_category1;
+        end
     branch_unit the_branch_predict
     (
         .clk(aclk),.rstn(aresetn),
 
         .ifVld(pc_stall_n),.ifPC(pc),
 
-        .idVld(id_feedback_valid),
-        .idPC(id_pc_for_predict),
-        .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
-        .idType1(id_category0), .idType2(id_category1),
+        .idVld(id_feedback_valid_reg),
+        .idPC(id_pc_for_predict_reg),
+        .idPCTar1(id_jmpdist0_reg), .idPCTar2(id_jmpdist1_reg),
+        .idType1(id_category0_reg), .idType2(id_category1_reg),
         
         .exVld(ex_feedback_valid),
         .exPC(ex_branch_pc),
