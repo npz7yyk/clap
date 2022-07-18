@@ -3,6 +3,7 @@ module dcache(
     /* for CPU */
     input valid,                // valid request
     input op,                   // write: 1, read: 0
+    input uncache,
     input [31:0] addr,
     input [31:0] p_addr,
     //input [3:0] read_type,
@@ -17,7 +18,8 @@ module dcache(
     // read
     output r_req,               // send read request
     output r_data_ready,
-    //output [2:0] r_type,        // read type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output [2:0] r_size,        // read type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output [7:0] r_length,
     output [31:0] r_addr,       // start location of read
     input r_rdy,                // AXI signal, means "shake hands success"
     input ret_valid,            // return data is valid
@@ -28,7 +30,8 @@ module dcache(
     output w_data_req,
     output w_last,
     output b_ready,
-    //output [2:0] w_type,        // write type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output [2:0] w_size,        // write type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output [7:0] w_length,
     output [31:0] w_addr,       // start location of write
     output [3:0] w_strb,        // byte mask, valid when type is 0, 1, 2
     output [31:0] w_data_AXI,   // write data
@@ -44,29 +47,30 @@ module dcache(
     wire vld, vld_mbuf, pbuf_we;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [19:0] replace_tag;
-    wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf;
+    wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
-    wire signed_ext_rbuf;
+    wire signed_ext_rbuf, uncache_rbuf;
 
-    assign r_addr = {addr_rbuf[31:6], 6'b0};
+    assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
+    assign w_addr = uncache_rbuf ? addr_pbuf : w_addr_mbuf;
     
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
-        .type_           (write_type_rbuf),
+        .type_          (write_type_rbuf),
         .exception      (exception)
     );
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type
-    register#(70) req_buf(
+    register#(71) req_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
-        .din        ({signed_ext, addr, w_data_CPU, op, write_type}),
-        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf})
+        .din        ({signed_ext, addr, w_data_CPU, op, write_typem, uncache}),
+        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf, uncache_rbuf})
     );
     /* physical addr buffer */
     register#(32) phy_buf(
@@ -86,6 +90,7 @@ module dcache(
         .bvalid             (b_valid),
         .awvalid            (w_req),
         .awready            (w_rdy),
+        .uncache            (uncache_rbuf),
         .wrt_reset          (wbuf_AXI_reset),
         .w_line_mem         (miss_sel_data),
         .wvalid             (w_data_req),
@@ -101,8 +106,8 @@ module dcache(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        ({replace_tag, addr_rbuf[11:0], way_replace, dirty_data, vld}),
-        .dout       ({w_addr, way_replace_mbuf, dirty_data_mbuf, vld_mbuf})
+        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data, vld}),
+        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf, vld_mbuf})
     );
 
     /* return buffer */
@@ -115,6 +120,7 @@ module dcache(
         .w_data_CPU_rbuf    (w_data_CPU_rbuf),
         .ret_valid          (ret_valid),
         .ret_last           (ret_last),
+        .uncache_rbuf       (uncache_rbuf),
         .fill_finish        (fill_finish),
         .w_data_AXI         (w_line_AXI)
     );
@@ -171,6 +177,7 @@ module dcache(
         .wrt_data_sel       (wrt_data_sel),
         .mem_din            (mem_din),
 
+
         .addr_rbuf          (addr_rbuf),
         .wrt_type           (write_type_rbuf),
         .mem_we_normal      (mem_we_normal),
@@ -180,10 +187,12 @@ module dcache(
     /* mem read control */
     mem_rd_ctrl_d mem_rd_ctrl(
         .addr_rbuf          (addr_rbuf),
+        .w_data_CPU         (w_data_CPU_rbuf),
         .r_way_sel          (hit),
         .read_type_rbuf     (write_type_rbuf),
         .signed_ext         (signed_ext_rbuf),
         .mem_dout           (mem_dout),
+        .uncache_rbuf       (uncache_rbuf),
         .r_data_AXI         (w_line_AXI),
         .r_data_sel         (r_data_sel),
         .miss_way_sel       (way_replace),
@@ -209,6 +218,8 @@ module dcache(
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),
         .mem_we_normal      (mem_we_normal),
+        .uncache            (uncache_rbuf),
+        .visit_type         (write_type_rbuf),
 
         .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),
@@ -226,6 +237,10 @@ module dcache(
         .w_dirty_data       (w_dirty_data),
         .r_req              (r_req),
         .w_req              (w_req),
+        .r_length           (r_length),
+        .w_length           (w_length),
+        .r_size             (r_size),
+        .w_size             (w_size),
         .r_data_ready       (r_data_ready),
         .data_valid         (data_valid),
         .cache_ready        (cache_ready)

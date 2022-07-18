@@ -1,1 +1,1 @@
-# CLAP - Clap LoongArch Processor
+# CLAP - CLAP LoongArch Processor

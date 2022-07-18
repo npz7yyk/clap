@@ -1,7 +1,9 @@
 module main_FSM_d(
-    input clk, rstn,
+    input clk, 
+    input rstn,
     input valid,
     input op,
+    input uncache,
     input cache_hit,
     input r_rdy_AXI,
     input w_rdy_AXI,
@@ -14,6 +16,7 @@ module main_FSM_d(
     input [3:0] lru_way_sel,
     input [3:0] hit,
     input [63:0] mem_we_normal,
+    input [3:0] visit_type,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -32,6 +35,10 @@ module main_FSM_d(
     output reg r_req,
     output reg r_data_ready,
     output reg w_req,
+    output reg [7:0] r_length,
+    output reg [2:0] r_size,
+    output reg [7:0] w_length,
+    output reg [2:0] w_size,
     output reg data_valid,
     output reg cache_ready
     );
@@ -44,6 +51,21 @@ module main_FSM_d(
 
     parameter READ = 1'd0;
     parameter WRITE = 1'd1;
+
+    parameter BYTE = 4'b0001;
+    parameter HALF = 4'b0011;
+    parameter WORD = 4'b1111;
+
+
+    reg [2:0] un_visit_type;
+    always @(*) begin
+        case(visit_type)
+        BYTE: un_visit_type = 3'b000;
+        HALF: un_visit_type = 3'b001;
+        WORD: un_visit_type = 3'b010;
+        default: un_visit_type = 3'b000;
+        endcase
+    end
 
     reg[2:0] crt, nxt;
 
@@ -59,15 +81,23 @@ module main_FSM_d(
             else nxt = IDLE;
         end
         LOOKUP: begin
-            if(valid && cache_hit) nxt = LOOKUP;
+            if(uncache) begin
+                if(op == READ) nxt = REPLACE;
+                else nxt = MISS;
+            end
+            else if(valid && cache_hit) nxt = LOOKUP;
             else if(!valid && cache_hit) nxt = IDLE;
+
             else begin
                 if(op == WRITE && dirty_data && vld) nxt = MISS;
                 else nxt = REPLACE;
             end
         end
         MISS: begin
-            if(w_rdy_AXI) nxt = REPLACE;
+            if(w_rdy_AXI) begin
+                if(uncache) nxt = WAIT_WRITE;
+                else nxt = REPLACE;
+            end
             else nxt = MISS;
         end
         REPLACE: begin
@@ -91,12 +121,14 @@ module main_FSM_d(
         endcase
     end
     always @(*)begin
-        mbuf_we = 0; wbuf_AXI_we = 0; mem_we = 0; mem_en = 0;
-        rdata_sel = 0; wrt_data_sel = 0; tagv_we = 0;
-        r_req = 0; w_req = 0; data_valid = 0; dirty_we = 0; 
-        w_dirty_data = 0; r_data_ready = 0; rbuf_we = 0;
-        way_sel_en = 0; wbuf_AXI_reset = 0;
-        way_visit = 0; cache_ready = 0; pbuf_we = 0;
+        mbuf_we = 0;    wbuf_AXI_we = 0;    mem_we = 0;     mem_en = 0;
+        rdata_sel = 0;  wrt_data_sel = 0;   tagv_we = 0;
+        r_req = 0;      w_req = 0;          data_valid = 0; dirty_we = 0; 
+        w_dirty_data = 0;                   r_data_ready = 0; 
+        rbuf_we = 0;    way_sel_en = 0;     wbuf_AXI_reset = 0;
+        way_visit = 0;  cache_ready = 0;    pbuf_we = 0;
+        r_size = 3'b010;                    w_size = 3'b010;
+        r_length = 8'd15;                   w_length = 8'd15;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -126,9 +158,17 @@ module main_FSM_d(
         end
         MISS: begin
             w_req = 1;
+            if(uncache) begin
+                w_length = 8'd1;
+                w_size = un_visit_type;
+            end
         end
         REPLACE: begin
             r_req = 1;
+            if(uncache) begin
+                r_length = 8'd1;
+                r_size = un_visit_type;
+            end
         end
         REFILL: begin
             r_data_ready = 1;
@@ -152,4 +192,7 @@ module main_FSM_d(
         end
         endcase
     end
+
+
+
 endmodule

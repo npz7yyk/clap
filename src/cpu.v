@@ -3,8 +3,8 @@
 module core_top(
     input           aclk,
     input           aresetn,
-    input    [ 7:0] intrpt, 
-    //AXI interface 
+    input    [ 7:0] intrpt,
+    //AXI interface
     //read reqest
     output   [ 3:0] arid,
     output   [31:0] araddr,
@@ -208,7 +208,7 @@ module core_top(
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
-    
+
     wire data_valid;
     wire if_buf_full;
     wire cache_ready;
@@ -240,16 +240,37 @@ module core_top(
     wire ex_feedback_valid,ex_did_jump;
     wire pred_known;
     wire pd_branch,pd_reason;
+    reg id_feedback_valid_reg;
+    reg [31:0] id_pc_for_predict_reg;
+    reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
+    reg [1:0] id_category0_reg,id_category1_reg;
+    always @(posedge aclk)
+        if(~aresetn) begin
+            id_feedback_valid_reg<=0;
+            id_pc_for_predict_reg<=0;
+            id_jmpdist0_reg<=0;
+            id_jmpdist1_reg<=0;
+            id_category0_reg<=0;
+            id_category1_reg<=0;
+        end
+        else begin
+            id_feedback_valid_reg <= id_feedback_valid;
+            id_pc_for_predict_reg <= id_pc_for_predict;
+            id_jmpdist0_reg <= id_jmpdist0;
+            id_jmpdist1_reg <= id_jmpdist1;
+            id_category0_reg <= id_category0;
+            id_category1_reg <= id_category1;
+        end
     branch_unit the_branch_predict
     (
         .clk(aclk),.rstn(aresetn),
 
         .ifVld(pc_stall_n),.ifPC(pc),
 
-        .idVld(id_feedback_valid),
-        .idPC(id_pc_for_predict),
-        .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
-        .idType1(id_category0), .idType2(id_category1),
+        .idVld(id_feedback_valid_reg),
+        .idPC(id_pc_for_predict_reg),
+        .idPCTar1(id_jmpdist0_reg), .idPCTar2(id_jmpdist1_reg),
+        .idType1(id_category0_reg), .idType2(id_category1_reg),
         
         .exVld(ex_feedback_valid),
         .exPC(ex_branch_pc),
@@ -561,35 +582,41 @@ module core_top(
 
     dcache the_dcache
     (
-        .clk(aclk),.rstn(aresetn),
-        .valid(ex_mem_valid),
-        .op(ex_mem_op),
-        .addr(ex_mem_addr),
-        .p_addr(ex_mem_paddr),
-        .signed_ext(ex_signed_ext),
-        .write_type(ex_mem_write_type),
-        .data_valid(ex_mem_data_valid),
-        .r_data_CPU(ex_mem_r_data_CPU),
-        .w_data_CPU(ex_mem_w_data_CPU),
+        .clk            (aclk),
+        .rstn           (aresetn),
+        .valid          (ex_mem_valid),
+        .op             (ex_mem_op),
+        .uncache        (1'b0),
+        .addr           (ex_mem_addr),
+        .p_addr         (ex_mem_paddr),
+        .signed_ext     (ex_signed_ext),
+        .write_type     (ex_mem_write_type),
+        .data_valid     (ex_mem_data_valid),
+        .r_data_CPU     (ex_mem_r_data_CPU),
+        .w_data_CPU     (ex_mem_w_data_CPU),
 
-        .r_req(d_axi_arvalid),
-        .r_data_ready(d_axi_rready),
-        .r_addr(d_axi_araddr),
-        .r_rdy(d_axi_arready),
-        .ret_valid(d_axi_rvalid),
-        .ret_last(d_axi_rlast),
-        .r_data_AXI(d_axi_rdata),
+        .r_req          (d_axi_arvalid),
+        .r_data_ready   (d_axi_rready),
+        .r_addr         (d_axi_araddr),
+        .r_size         (d_axi_arsize),
+        .r_length       (d_axi_arlen),
+        .r_rdy          (d_axi_arready),
+        .ret_valid      (d_axi_rvalid),
+        .ret_last       (d_axi_rlast),
+        .r_data_AXI     (d_axi_rdata),
 
-        .w_req(d_axi_awvalid),
-        .w_data_ready(d_axi_wready),
-        .w_data_req(d_axi_wvalid),
-        .w_last(d_axi_wlast),
-        .b_ready(d_axi_bready),
-        .w_addr(d_axi_awaddr),
-        .w_strb(d_axi_wstrb),
-        .w_data_AXI(d_axi_wdata),
-        .w_rdy(d_axi_awready),
-        .b_valid(d_axi_bvalid)
+        .w_req          (d_axi_awvalid),
+        .w_data_ready   (d_axi_wready),
+        .w_data_req     (d_axi_wvalid),
+        .w_last         (d_axi_wlast),
+        .b_ready        (d_axi_bready),
+        .w_size         (d_axi_awsize),
+        .w_length       (d_axi_awlen),
+        .w_addr         (d_axi_awaddr),
+        .w_strb         (d_axi_wstrb),
+        .w_data_AXI     (d_axi_wdata),
+        .w_rdy          (d_axi_awready),
+        .b_valid        (d_axi_bvalid)
     );
 
     TLB the_tlb(
@@ -603,8 +630,8 @@ module core_top(
     );
 
     assign d_axi_awid = 1;
-    assign d_axi_awlen = 8'd15;
-    assign d_axi_awsize = 3'b010;
+    //assign d_axi_awlen = 8'd15;
+    //assign d_axi_awsize = 3'b010;
     assign d_axi_awburst = 2'b01;
     assign d_axi_awlock = 0;
     assign d_axi_awcache = 0;
@@ -612,9 +639,9 @@ module core_top(
     assign d_axi_bid = 1;
     assign d_axi_bresp = 0;
     assign d_axi_arid = 1;
-    assign d_axi_arlen = 8'd15;
+    //assign d_axi_arlen = 8'd15;
     assign d_axi_arburst = 2'b01;
-    assign d_axi_arsize = 3'b010;
+    //assign d_axi_arsize = 3'b010;
     assign d_axi_arlock = 0;
     assign d_axi_arcache = 0;
     assign d_axi_arprot = 0;
