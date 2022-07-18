@@ -5,6 +5,7 @@ module mem_rd_ctrl_d(
     input [511:0] r_data_AXI,
     input r_data_sel,
     input [3:0] read_type_rbuf,
+    input uncache_rbuf,
     input signed_ext,
     input [3:0] miss_way_sel,
     output reg [511:0] miss_sel_data,
@@ -88,25 +89,28 @@ module mem_rd_ctrl_d(
     end
 
     always @(*) begin
-        case(read_type_rbuf)
-        BYTE: begin
-            case(addr_rbuf[1:0])
-            2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
-            2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
-            2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
-            2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
-            endcase
-        end
-        HALF: begin
-            case(addr_rbuf[1:0])
-            2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
-            2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
+        if(uncache_rbuf) r_data = r_data_AXI;
+        else begin
+            case(read_type_rbuf)
+            BYTE: begin
+                case(addr_rbuf[1:0])
+                2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
+                2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
+                2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
+                2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
+                endcase
+            end
+            HALF: begin
+                case(addr_rbuf[1:0])
+                2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
+                2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
+                default: r_data = 0;
+                endcase
+            end
+            WORD: r_data = r_data_CPU;
             default: r_data = 0;
-            endcase
-        end
-        WORD: r_data = r_data_CPU;
-        default: r_data = 0;
         endcase
+        end
     end
     always @(*) begin
         case(miss_way_sel)

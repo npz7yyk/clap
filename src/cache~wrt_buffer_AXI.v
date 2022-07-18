@@ -8,6 +8,7 @@ module wrt_buffer_AXI(
     input awready,
     input wrt_reset,
     input [511:0] w_line_mem,
+    input uncache,
 
     output reg wvalid,
     output reg wlast,
@@ -65,7 +66,8 @@ module wrt_buffer_AXI(
         case(crt)
         REQUEST: begin
             wvalid = 1;
-            if(count == 4'd15) wlast = 1;
+            if(count == 4'd15 && !uncache) wlast = 1;
+            else if(count == 4'd0 && uncache) wlast = 1;
         end
         WAIT_FINISH: begin
             bready = 1;
