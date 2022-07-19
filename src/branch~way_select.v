@@ -35,7 +35,7 @@ module way_select #(
     integer i;
     initial 
         for (i = 0; i < (1 << HASH_DEPTH); i = i + 1)
-            queue[i] <= 8'b11100100;
+            queue[i] <= 8'b00_01_10_11;
 
     wire [1:0] way = {visit[3] | visit[2], visit[3] | visit[1]};
     wire [7:0] queueOld = queue[waddr];
