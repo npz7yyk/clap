@@ -22,7 +22,6 @@
 `define TID         14'h040 //定时器编号
 `define TCFG        14'h041 //定时器配置
 `define TVAL        14'h042 //定时器值
-`define CNTC        14'h43  //计数器值
 `define TICLR       14'h044 //定时器中断清除
 `define LLBCTL      14'h060 //LLBit控制
 `define TLBRENTRY   14'h088 //TLB重填例外入口地址
@@ -31,76 +30,59 @@
 `define DMW1        14'h181 //直接映射配置窗口
 
 //CRMD
-`define PLV       1:0
-`define IE        2
-`define DA        3
-`define PG        4
-`define DATF      6:5
-`define DATM      8:7
+`define CRMD_PLV    1:0     //当前特权等级。0: highest, 3: lowest
+`define CRMD_IE     2:2     //当前中断使能
+`define CRMD_DA     3:3     //直接地址翻译模式使能
+`define CRMD_PG     4:4     //映射地址翻译模式的使能
+`define CRMD_DATF   6:5     //直接地址翻译模式时，取值操作的存储访问类型
+`define CRMDDATM    8:7     //直接地址翻译模式时，load/store操作的存储访问类型
 //PRMD
-`define PPLV      1:0
-`define PIE       2
-//ECTL
-`define LIE       12:0
+`define PRMD_PPLV   1:0     //例外发生前的特权模式
+`define PRMD_PIE    2:2     //例外发生前的中断使能
+//EUEN
+`define EUEN_FPE    0:0     //基础浮点指令使能控制位
+//ECFG
+`define ECFG_LIE    12:0    //局部中断使能
 //ESTAT
-`define IS        12:0
-`define ECODE     21:16
-`define ESUBCODE  30:22
-//TLBIDX
-`define INDEX     4:0
-`define PS        29:24
-`define NE        31
-//TLBEHI
-`define VPPN      31:13
-//TLBELO
-`define TLB_V      0
-`define TLB_D      1
-`define TLB_PLV    3:2
-`define TLB_MAT    5:4
-`define TLB_G      6
-`define TLB_PPN    31:8
-`define TLB_PPN_EN 27:8   //todo
-//ASID
-`define TLB_ASID  9:0
-//CPUID
-`define COREID    8:0
-//LLBCTL
-`define ROLLB     0
-`define WCLLB     1
-`define KLO       2
-//TCFG
-`define EN        0
-`define PERIODIC  1
-`define INITVAL   31:2
-//TICLR
-`define CLR       0
+`define ESTAT_IS_0  1:0     //中断状态位
+`define ESTAT_IS_1  12:2
+`define ESTAT_ECODE 21:16
+`define ESTAT_ESUBCODE 30:22
+//EENTRY
+`define EENTRY_VA   31:6
 //TLBRENTRY
 `define TLBRENTRY_PA 31:6
-//DMW
-`define PLV0      0
-`define PLV3      3 
-`define DMW_MAT   5:4
-`define PSEG      27:25
-`define VSEG      31:29
+//LLBCTL
+`define LLBCTL_ROLLB  0:0
+`define LLBCTL_WCLLB  1:1
+`define LLBCTL_KLO    2:2
+//TLBIDX
+`define TLBIDX_INDEX 15:0
+`define TLBIDX_PS   29:24
+`define TLBIDX_NE   31:31
+//TLBEHI
+`define TLBEHI_VPPN 31:13
+//TLBELO
+`define TLBELO_V      0:0
+`define TLBELO_D      1:1
+`define TLBELO_PLV    3:2
+`define TLBELO_MAT    5:4
+`define TLBELO_G      6:6
+`define TLBELO_PPN    31:8
+//ASID
+`define ASID_ASID     9:0
+`define ASID_ASIDBITS 23:16
 //PGDL PGDH PGD
-`define BASE      31:12
-
-`define ECODE_INT  6'h0
-`define ECODE_PIL  6'h1
-`define ECODE_PIS  6'h2
-`define ECODE_PIF  6'h3
-`define ECODE_PME  6'h4
-`define ECODE_PPI  6'h7
-`define ECODE_ADEF 6'h8
-`define ECODE_ADEM 6'h8
-`define ECODE_ALE  6'h9
-`define ECODE_SYS  6'hb
-`define ECODE_BRK  6'hc
-`define ECODE_INE  6'hd
-`define ECODE_IPE  6'he
-`define ECODE_FPD  6'hf
-`define ECODE_TLBR 6'h3f
-
-`define ESUBCODE_ADEF  9'h0
-`define ESUBCODE_ADEM  9'h1
-
+`define PGD_BASE   31:12
+//DMW
+`define DMW_PLV0  0:0
+`define DMW_PLV3  3:3 
+`define DMW_MAT   5:4
+`define DMW_PSEG  27:25
+`define DMW_VSEG  31:29
+//TCFG
+`define TCFG_EN        0:0
+`define TCFG_PERIODIC  1:1
+`define TCFG_INITVAL   31:2
+//TICLR
+`define TICLR_CLR       0:0
