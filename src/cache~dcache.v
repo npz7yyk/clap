@@ -1,45 +1,44 @@
 module dcache(
     input clk, rstn,
     /* for CPU */
-    input valid,                // valid request
-    input op,                   // write: 1, read: 0
-    input uncache,
-    input [31:0] addr,
-    input [31:0] p_addr,
-    //input [3:0] read_type,
-    input [3:0] write_type,     // byte write enable
-    input [31:0] w_data_CPU,    // write data
-    input signed_ext,             // 1: signed ext, 0: zero ext
-    //output addr_valid,        // read: addr has been accepted; write: addr and data have been accepted
-    output data_valid,          // read: data has returned; write: data has been written in
-    output cache_ready,
-    output [31:0] r_data_CPU,   // read data to CPU
+    input                   valid,            
+    input                   op,                   
+    input                   uncache,
+    input            [31:0] addr,
+    input            [31:0] p_addr,
+    input             [3:0] write_type,     
+    input            [31:0] w_data_CPU,  
+    input                   signed_ext,       
+    output                  data_valid,          
+    output                  cache_ready,
+    output           [31:0] r_data_CPU,  
     /* for AXI */
     // read
-    output r_req,               // send read request
-    output r_data_ready,
-    output [2:0] r_size,        // read type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
-    output [7:0] r_length,
-    output [31:0] r_addr,       // start location of read
-    input r_rdy,                // AXI signal, means "shake hands success"
-    input ret_valid,            // return data is valid
-    input ret_last,             // the last returned data
-    input [31:0] r_data_AXI,    // read data from AXI
+    output                  r_req,              
+    output                  r_data_ready,
+    output            [2:0] r_size,     
+    output            [7:0] r_length,
+    output           [31:0] r_addr,      
+    input                   r_rdy,                
+    input                   ret_valid,         
+    input                   ret_last,   
+    input            [31:0] r_data_AXI,    
     // write
-    output w_req,               // send write request
-    output w_data_req,
-    output w_last,
-    output b_ready,
-    output [2:0] w_size,        // write type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
-    output [7:0] w_length,
-    output [31:0] w_addr,       // start location of write
-    output [3:0] w_strb,        // byte mask, valid when type is 0, 1, 2
-    output [31:0] w_data_AXI,   // write data
-    input w_rdy,                 // AXI signal, means "shake hands success"
-    input w_data_ready,
-    input b_valid,
+    output                  w_req,               
+    output                  w_data_req,
+    output                  w_last,
+    output            [2:0] w_size,      
+    output            [7:0] w_length,
+    output           [31:0] w_addr,       
+    output            [3:0] w_strb,       
+    output           [31:0] w_data_AXI, 
+    input                   w_rdy,                 
+    input                   w_data_ready,
+    //back
+    output                  b_ready,
+    input                   b_valid,
 
-    output [6:0] exception
+    output            [6:0] exception
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -69,7 +68,7 @@ module dcache(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
-        .din        ({signed_ext, addr, w_data_CPU, op, write_typem, uncache}),
+        .din        ({signed_ext, addr, w_data_CPU, op, write_type, uncache}),
         .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf, uncache_rbuf})
     );
     /* physical addr buffer */
