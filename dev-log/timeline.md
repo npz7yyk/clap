@@ -1,5 +1,11 @@
 # Timeline
 
+## 2022-07-19
+
+Test #6 fully passed.
+
+Subtasks n1 to n32 in test func_lab6 passed.
+
 ## 2022-07-18
 
 Test func_lab3 passed, with `BUS_DELAY=n`.
