@@ -63,12 +63,12 @@ module exe(
     input [ 31:0 ] r_data_CPU           //    read data to CPU
 );
 assign branch_pc=eu0_pc_in;
-assign eu0_alu_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_ALU;
-assign eu0_mul_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MUL;
-assign eu0_div_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_DIV;
-assign eu0_br_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_BR;
-assign eu0_mem_en=eu0_en_in&eu0_uop_in[`UOP_TYPE]==`ITYPE_MEM;
-assign eu1_alu_en=eu1_en_in&eu1_uop_in[`UOP_TYPE]==`ITYPE_ALU;
+assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
+assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
+assign eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
+assign eu0_br_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_BR];
+assign eu0_mem_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MEM];
+assign eu1_alu_en=eu1_en_in&eu1_uop_in[`ITYPE_IDX_ALU];
 
 wire[31:0]eu0_sr0;
 wire[31:0]eu0_sr1;
@@ -153,7 +153,8 @@ always @(posedge clk) begin
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
-        eu0_rd_0<=br_rd_addr_mid|alu_rd_mid|mul_rd_mid|mem_rd_mid;
+        eu0_rd_0<=br_rd_addr_mid|alu_rd_mid;
+        //|mul_rd_mid|mem_rd_mid;
         data_mid00<=br_rd_data_mid|alu_result_mid;
         mem_exp_exe1<=mem_exp_mid;
         mem_rd_exe1<=mem_rd_mid;

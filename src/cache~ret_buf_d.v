@@ -3,6 +3,7 @@ module ret_buf_d(
     input [31:0] addr_rbuf,
     input [3:0] wrt_type,
     input op_rbuf,
+    input uncache_rbuf,
     input [31:0] r_data_AXI,
     input [31:0] w_data_CPU_rbuf,
     input ret_valid, ret_last,
@@ -30,7 +31,10 @@ module ret_buf_d(
     assign ret_finish = !finish_pos & ret_last & ret_valid;
     always @(posedge clk) begin
         if(ret_valid)begin
-            if(op_rbuf == READ || count != addr_rbuf[5:2]) begin
+            if(uncache_rbuf) begin
+                w_data_AXI <= {480'b0, r_data_AXI};
+            end
+            else if(op_rbuf == READ || count != addr_rbuf[5:2]) begin
                 w_data_AXI <= (w_data_AXI >> 32) | {r_data_AXI, 480'b0};
             end
             else begin
