@@ -62,24 +62,27 @@ module mem_rd_ctrl_d(
         endcase
     end
     always @(*) begin
-        case(addr_rbuf[5:2])
-        4'd0: r_word_AXI = r_data_AXI[31:0];
-        4'd1: r_word_AXI = r_data_AXI[63:32];
-        4'd2: r_word_AXI = r_data_AXI[95:64];
-        4'd3: r_word_AXI = r_data_AXI[127:96];
-        4'd4: r_word_AXI = r_data_AXI[159:128];
-        4'd5: r_word_AXI = r_data_AXI[191:160];
-        4'd6: r_word_AXI = r_data_AXI[223:192];
-        4'd7: r_word_AXI = r_data_AXI[255:224];
-        4'd8: r_word_AXI = r_data_AXI[287:256];
-        4'd9: r_word_AXI = r_data_AXI[319:288];
-        4'd10: r_word_AXI = r_data_AXI[351:320];
-        4'd11: r_word_AXI = r_data_AXI[383:352];
-        4'd12: r_word_AXI = r_data_AXI[415:384];
-        4'd13: r_word_AXI = r_data_AXI[447:416];
-        4'd14: r_word_AXI = r_data_AXI[479:448];
-        4'd15: r_word_AXI = r_data_AXI[511:480];
+        if(uncache_rbuf) r_word_AXI = r_data_AXI[31:0];
+        else begin
+            case(addr_rbuf[5:2])
+            4'd0: r_word_AXI = r_data_AXI[31:0];
+            4'd1: r_word_AXI = r_data_AXI[63:32];
+            4'd2: r_word_AXI = r_data_AXI[95:64];
+            4'd3: r_word_AXI = r_data_AXI[127:96];
+            4'd4: r_word_AXI = r_data_AXI[159:128];
+            4'd5: r_word_AXI = r_data_AXI[191:160];
+            4'd6: r_word_AXI = r_data_AXI[223:192];
+            4'd7: r_word_AXI = r_data_AXI[255:224];
+            4'd8: r_word_AXI = r_data_AXI[287:256];
+            4'd9: r_word_AXI = r_data_AXI[319:288];
+            4'd10: r_word_AXI = r_data_AXI[351:320];
+            4'd11: r_word_AXI = r_data_AXI[383:352];
+            4'd12: r_word_AXI = r_data_AXI[415:384];
+            4'd13: r_word_AXI = r_data_AXI[447:416];
+            4'd14: r_word_AXI = r_data_AXI[479:448];
+            4'd15: r_word_AXI = r_data_AXI[511:480];
         endcase
+        end
     end
 
     always @(*) begin
@@ -90,28 +93,25 @@ module mem_rd_ctrl_d(
     end
 
     always @(*) begin
-        if(uncache_rbuf) r_data = r_data_AXI;
-        else begin
-            case(read_type_rbuf)
-            BYTE: begin
-                case(addr_rbuf[1:0])
-                2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
-                2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
-                2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
-                2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
-                endcase
-            end
-            HALF: begin
-                case(addr_rbuf[1:0])
-                2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
-                2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
-                default: r_data = 0;
-                endcase
-            end
-            WORD: r_data = r_data_CPU;
-            default: r_data = 0;
-        endcase
+        case(read_type_rbuf)
+        BYTE: begin
+            case(addr_rbuf[1:0])
+            2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
+            2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
+            2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
+            2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
+            endcase
         end
+        HALF: begin
+            case(addr_rbuf[1:0])
+            2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
+            2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
+            default: r_data = 0;
+            endcase
+        end
+        WORD: r_data = r_data_CPU;
+        default: r_data = 0;
+        endcase
     end
     always @(*) begin
         if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};

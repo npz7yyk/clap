@@ -19,8 +19,8 @@ module mem_wrt_ctrl_d(
             BYTE: mem_din = {64{w_data_CPU[7:0]}};
             HALF: mem_din = {32{w_data_CPU[15:0]}};
             WORD: mem_din = {16{w_data_CPU}};
-            default: mem_din = 0;
-            endcase
+            default: mem_din = 0;            
+        endcase
         end 
         endcase
     end

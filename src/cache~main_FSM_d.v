@@ -111,7 +111,7 @@ module main_FSM_d(
             else nxt = REFILL;
         end
         WAIT_WRITE: begin
-            if(wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf) begin
+            if(uncache && (wrt_AXI_finish || op == READ) || !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf)) begin
                 if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
             end
@@ -143,47 +143,51 @@ module main_FSM_d(
                 wbuf_AXI_we = 1;
             end
             else begin
-                data_valid = 1;
-                rbuf_we = 1;
-                way_visit = hit;
-                way_sel_en = 1;
-                cache_ready = 1;
-                if(op == WRITE)begin
-                    mem_en = hit;
-                    mem_we = mem_we_normal;
-                    dirty_we = hit;
-                    w_dirty_data = 1;
+                if(!uncache) begin
+                    data_valid = 1;
+                    rbuf_we = 1;
+                    way_visit = hit;
+                    way_sel_en = 1;
+                    cache_ready = 1;
+                    if(op == WRITE)begin
+                        mem_en = hit;
+                        mem_we = mem_we_normal;
+                        dirty_we = hit;
+                        w_dirty_data = 1;
+                    end
                 end
             end
         end
         MISS: begin
             w_req = 1;
             if(uncache) begin
-                w_length = 8'd1;
+                w_length = 8'd0;
                 w_size = un_visit_type;
             end
         end
         REPLACE: begin
             r_req = 1;
             if(uncache) begin
-                r_length = 8'd1;
+                r_length = 8'd0;
                 r_size = un_visit_type;
             end
         end
         REFILL: begin
             r_data_ready = 1;
             if(fill_finish) begin
-                mem_we = {64{1'b1}};
-                mem_en = lru_way_sel;
-                tagv_we = lru_way_sel;
-                dirty_we = lru_way_sel;
-                w_dirty_data = (op == READ ? 1'b0 : 1'b1);
-                way_sel_en = 1;
-                way_visit = lru_way_sel;
+                if(!uncache) begin
+                    mem_we = {64{1'b1}};
+                    mem_en = lru_way_sel;
+                    tagv_we = lru_way_sel;
+                    dirty_we = lru_way_sel;
+                    w_dirty_data = (op == READ ? 1'b0 : 1'b1);
+                    way_sel_en = 1;
+                    way_visit = lru_way_sel;
+                end
             end
         end
         WAIT_WRITE: begin
-            if(wrt_AXI_finish || op == READ || !dirty_data_mbuf|| !vld_mbuf)begin
+            if(uncache && (wrt_AXI_finish || op == READ) || !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf))begin
                 data_valid = 1;
                 rbuf_we = 1;
                 wbuf_AXI_reset = 1;

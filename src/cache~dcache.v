@@ -186,7 +186,7 @@ module dcache(
     /* mem read control */
     mem_rd_ctrl_d mem_rd_ctrl(
         .addr_rbuf          (addr_rbuf),
-        .w_data_CPU         (w_data_CPU_rbuf),
+        .w_data_CPU         (mem_din[31:0]),
         .r_way_sel          (hit),
         .read_type_rbuf     (write_type_rbuf),
         .signed_ext         (signed_ext_rbuf),
