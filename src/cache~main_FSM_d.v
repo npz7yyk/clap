@@ -42,12 +42,12 @@ module main_FSM_d(
     output reg data_valid,
     output reg cache_ready
     );
-    parameter IDLE          = 6'b000001;
-    parameter LOOKUP        = 6'b000010;
-    parameter MISS          = 6'b000100;
-    parameter REPLACE       = 6'b001000;
-    parameter REFILL        = 6'b010000;
-    parameter WAIT_WRITE    = 6'b100000;
+    parameter IDLE          = 3'd0;
+    parameter LOOKUP        = 3'd1;
+    parameter MISS          = 3'd2;
+    parameter REPLACE       = 3'd3;
+    parameter REFILL        = 3'd4;
+    parameter WAIT_WRITE    = 3'd5;
 
     parameter READ          = 1'd0;
     parameter WRITE         = 1'd1;
@@ -67,7 +67,7 @@ module main_FSM_d(
         endcase
     end
 
-    reg[5:0] crt, nxt;
+    reg[2:0] crt, nxt;
 
     always @(posedge clk) begin
         if(!rstn) crt <= 0;
