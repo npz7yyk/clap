@@ -30,8 +30,8 @@ reg [31:0]qoucient;
 
 wire [31:0]dividend_one_hot;
 wire [31:0]divisor_one_hot;
-wire [4:0]m;
-wire [4:0]n;
+wire [5:0]m;
+wire [5:0]n;
 wire [31:0]a;
 wire[31:0]b;
 
@@ -99,6 +99,9 @@ always @(posedge clk) begin
         div_result<=0;
         div_addr_out<=0;
         stall_because_div<=0;
+        div_en_out_quick<=0;
+        div_result_quick<=0;
+        div_addr_out_quick<=0;
     end
 end
 endmodule
