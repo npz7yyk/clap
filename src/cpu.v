@@ -649,8 +649,8 @@ module core_top(
     writeback the_writeback
     (
         //to run difftest, one instruction cannot be written back for multiple times
-        .eu0_valid(ex_eu0_en&~ex_stall),
-        .eu1_valid(ex_eu1_en&~ex_stall),
+        .eu0_valid(ex_eu0_en),
+        .eu1_valid(ex_eu1_en),
         .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
         .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
         .eu0_pc(ex_eu0_pc),    .eu1_pc(ex_eu1_pc),

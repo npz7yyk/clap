@@ -12,7 +12,11 @@ module div(
     output reg div_en_out,
     output reg stall_because_div,
     output reg [ 31:0 ] div_result,
-    output reg[ 4:0 ]div_addr_out
+    output reg[ 4:0 ]div_addr_out,
+
+    output reg div_en_out_quick,
+    output reg [ 31:0 ] div_result_quick,
+    output reg[ 4:0 ]div_addr_out_quick
 );
 
 reg [5:0]i;
@@ -54,10 +58,9 @@ always @(posedge clk) begin
         qoucient<=0;
     end else if(i==0&&div_en_in)begin
         if(m<n||n==0)begin
-            div_result<= div_op? div_sr0:0;
-            div_addr_out<=div_addr_in;
-            stall_because_div<=0;
-            div_en_out<=div_en_in;
+            div_result_quick<=div_op? div_sr0:0;
+            div_en_out_quick<=1;
+            div_addr_out_quick<=div_addr_in;
         end else begin
             op<=div_op;
             addr<=div_addr_in;
@@ -70,12 +73,18 @@ always @(posedge clk) begin
             div_en_out<=0;
             div_result<=0;
             qoucient<=0;
+            div_result_quick<=0;
+            div_en_out_quick<=0;
+            div_addr_out_quick<=0;
         end
     end else if(i==1)begin
         i<=0;
         div_result<=op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
         div_addr_out<=addr;
         div_en_out<=1;
+        // div_result_quick<=op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
+        // div_addr_out_quick<=addr;
+        // div_en_out_quick<=1;
     end else if(i>0)begin
         i<=i-1;
         if (dividend>=divisor) begin
