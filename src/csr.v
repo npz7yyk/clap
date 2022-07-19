@@ -14,7 +14,7 @@ module csr
     //software query port (exe stage)
     input software_query_en,
     input  [13:0] addr,
-    output [31:0] rdata,    //read first
+    output reg [31:0] rdata,//read first
     input  [31:0] wen,      //bit write enable
     input  [31:0] wdata,
     
@@ -66,7 +66,7 @@ module csr
     output tlb_valid_0_out,             tlb_valid_1_out,
     output tlb_dirty_0_out,             tlb_dirty_1_out,
     output [1:0] tlb_priviledge_0_out,  tlb_priviledge_1_out,
-    output [1:0] tlb_mat_0_out,         tlb_mat_1_out,
+    output tlb_mat_0_out,         tlb_mat_1_out,
     output tlb_global_0_out,            tlb_global_1_out,
     output [23:0] tlb_ppn_0_out,        tlb_ppn_1_out,
     output [9:0] asid_out,
@@ -87,7 +87,7 @@ module csr
     input tlb_dirty_0_wen,              tlb_dirty_1_wen,
     input [1:0] tlb_priviledge_0_in,    tlb_priviledge_1_in,
     input tlb_priviledge_0_wen,         tlb_priviledge_1_wen,
-    input [1:0] tlb_mat_0_in,           tlb_mat_1_in,
+    input tlb_mat_0_in,                 tlb_mat_1_in,
     input tlb_mat_0_wen,                tlb_mat_1_wen,
     input tlb_global_0_in,              tlb_global_1_in,
     input tlb_global_0_wen,             tlb_global_1_wen,
@@ -103,7 +103,10 @@ module csr
     input llbit_clear_by_other,
 
     //timer
-    output [31:0] tid
+    output [31:0] tid,
+
+    //cache tag
+    output [31:0] cache_tag
 );
     ///////////////////////////////////////
     //control state registers defination
@@ -240,7 +243,9 @@ module csr
     //TVAL
     reg [31:0] csr_tval;
     //TICLR
-    wire [31:0] csr_tlclr = 0;
+    wire [31:0] csr_ticlr = 0;
+    //CTAG
+    reg [31:0] csr_ctag;
     //end control state registers defination
     ///////////////////////////////////////
 
@@ -681,11 +686,11 @@ module csr
         end else if(tlb_vppn_we)
             tlbehi_vppn<=tlb_vppn_in;
     
-    //TLBEHO0~1
+    //TLBELO0~1
     always @(posedge clk)
         if(~rstn) begin
             csr_tlbelo0 <= 0;
-        end else if(software_query_en&&addr==`CSR_TLBEHO0) begin
+        end else if(software_query_en&&addr==`CSR_TLBELO0) begin
             if(wen[ 0]) csr_tlbelo0[ 0] <= wdata[ 0];
             if(wen[ 1]) csr_tlbelo0[ 1] <= wdata[ 1];
             if(wen[ 2]) csr_tlbelo0[ 2] <= wdata[ 2];
@@ -722,7 +727,7 @@ module csr
             if(tlb_valid_0_wen) csr_tlbelo0[`TLBELO_V] <= tlb_valid_0_in;
             if(tlb_dirty_0_wen) csr_tlbelo0[`TLBELO_D] <= tlb_dirty_0_in;
             if(tlb_priviledge_0_wen) csr_tlbelo0[`TLBELO_PLV] <= tlb_priviledge_0_in;
-            if(tlb_mat_0_wen) csr_tlbelo0[`TLBELO_MAT] <= tlb_mat_0_in;
+            if(tlb_mat_0_wen) csr_tlbelo0[`TLBELO_MAT] <= {1'b0,tlb_mat_0_in};
             if(tlb_global_0_wen) csr_tlbelo0[`TLBELO_G] <= tlb_global_0_in;
             if(tlb_ppn_0_wen) csr_tlbelo0[`TLBELO_PPN] <= tlb_ppn_0_in;
         end
@@ -730,7 +735,7 @@ module csr
     always @(posedge clk)
         if(~rstn) begin
             csr_tlbelo1 <= 0;
-        end else if(software_query_en&&addr==`CSR_TLBEHO1) begin
+        end else if(software_query_en&&addr==`CSR_TLBELO1) begin
             if(wen[ 0]) csr_tlbelo1[ 0] <= wdata[ 0];
             if(wen[ 1]) csr_tlbelo1[ 1] <= wdata[ 1];
             if(wen[ 2]) csr_tlbelo1[ 2] <= wdata[ 2];
@@ -767,7 +772,7 @@ module csr
             if(tlb_valid_1_wen) csr_tlbelo1[`TLBELO_V] <= tlb_valid_1_in;
             if(tlb_dirty_1_wen) csr_tlbelo1[`TLBELO_D] <= tlb_dirty_1_in;
             if(tlb_priviledge_1_wen) csr_tlbelo1[`TLBELO_PLV] <= tlb_priviledge_1_in;
-            if(tlb_mat_1_wen) csr_tlbelo1[`TLBELO_MAT] <= tlb_mat_1_in;
+            if(tlb_mat_1_wen) csr_tlbelo1[`TLBELO_MAT] <= {1'b0,tlb_mat_1_in};
             if(tlb_global_1_wen) csr_tlbelo1[`TLBELO_G] <= tlb_global_1_in;
             if(tlb_ppn_1_wen) csr_tlbelo1[`TLBELO_PPN] <= tlb_ppn_1_in;
         end
@@ -986,6 +991,118 @@ module csr
             timer_int <= 0;
         else if(time_out)
             timer_int <= 1;
+    
+    //CTAG
+    always @(posedge clk)
+        if(software_query_en&&addr==`CSR_CTAG) begin
+            if(wen[ 0]) csr_ctag[ 0]<=wdata[ 0];
+            if(wen[ 1]) csr_ctag[ 1]<=wdata[ 1];
+            if(wen[ 2]) csr_ctag[ 2]<=wdata[ 2];
+            if(wen[ 3]) csr_ctag[ 3]<=wdata[ 3];
+            if(wen[ 4]) csr_ctag[ 4]<=wdata[ 4];
+            if(wen[ 5]) csr_ctag[ 5]<=wdata[ 5];
+            if(wen[ 6]) csr_ctag[ 6]<=wdata[ 6];
+            if(wen[ 7]) csr_ctag[ 7]<=wdata[ 7];
+            if(wen[ 8]) csr_ctag[ 8]<=wdata[ 8];
+            if(wen[ 9]) csr_ctag[ 9]<=wdata[ 9];
+            if(wen[10]) csr_ctag[10]<=wdata[10];
+            if(wen[11]) csr_ctag[11]<=wdata[11];
+            if(wen[12]) csr_ctag[12]<=wdata[12];
+            if(wen[13]) csr_ctag[13]<=wdata[13];
+            if(wen[14]) csr_ctag[14]<=wdata[14];
+            if(wen[15]) csr_ctag[15]<=wdata[15];
+            if(wen[16]) csr_ctag[16]<=wdata[16];
+            if(wen[17]) csr_ctag[17]<=wdata[17];
+            if(wen[18]) csr_ctag[18]<=wdata[18];
+            if(wen[19]) csr_ctag[19]<=wdata[19];
+            if(wen[20]) csr_ctag[20]<=wdata[20];
+            if(wen[21]) csr_ctag[21]<=wdata[21];
+            if(wen[22]) csr_ctag[22]<=wdata[22];
+            if(wen[23]) csr_ctag[23]<=wdata[23];
+            if(wen[24]) csr_ctag[24]<=wdata[24];
+            if(wen[25]) csr_ctag[25]<=wdata[25];
+            if(wen[26]) csr_ctag[26]<=wdata[26];
+            if(wen[27]) csr_ctag[27]<=wdata[27];
+            if(wen[28]) csr_ctag[28]<=wdata[28];
+            if(wen[29]) csr_ctag[29]<=wdata[29];
+            if(wen[30]) csr_ctag[30]<=wdata[30];
+            if(wen[31]) csr_ctag[31]<=wdata[31];
+        end
     //end CSR update
+    ///////////////////////////////////////
+
+    ///////////////////////////////////////
+    //CSR read
+    always @(posedge clk)
+        if(software_query_en)
+            case(addr)
+            `CSR_CRMD     : rdata <= csr_crmd     ;
+            `CSR_PRMD     : rdata <= csr_prmd     ;
+            `CSR_EUEN     : rdata <= csr_euen     ;
+            `CSR_ECFG     : rdata <= csr_ecfg     ;
+            `CSR_ESTAT    : rdata <= csr_estat    ;
+            `CSR_ERA      : rdata <= csr_era      ;
+            `CSR_BADV     : rdata <= csr_badv     ;
+            `CSR_EENTRY   : rdata <= csr_eentry   ;
+            `CSR_TLBIDX   : rdata <= csr_tlbidx   ;
+            `CSR_TLBEHI   : rdata <= csr_tlbehi   ;
+            `CSR_TLBELO0  : rdata <= csr_tlbelo0  ;
+            `CSR_TLBELO1  : rdata <= csr_tlbelo1  ;
+            `CSR_ASID     : rdata <= csr_asid     ;
+            `CSR_PGDL     : rdata <= csr_pgdl     ;
+            `CSR_PGDH     : rdata <= csr_pgdh     ;
+            `CSR_PGD      : rdata <= csr_pgd      ;
+            `CSR_CPUID    : rdata <= csr_cpuid    ;
+            `CSR_SAVE0    : rdata <= csr_save0    ;
+            `CSR_SAVE1    : rdata <= csr_save1    ;
+            `CSR_SAVE2    : rdata <= csr_save2    ;
+            `CSR_SAVE3    : rdata <= csr_save3    ;
+            `CSR_TID      : rdata <= csr_tid      ;
+            `CSR_TCFG     : rdata <= csr_tcfg     ;
+            `CSR_TVAL     : rdata <= csr_tval     ;
+            `CSR_TICLR    : rdata <= csr_ticlr    ;
+            `CSR_LLBCTL   : rdata <= csr_llbctl   ;
+            `CSR_TLBRENTRY: rdata <= csr_tlbrentry;
+            `CSR_CTAG     : rdata <= csr_ctag     ;
+            `CSR_DMW0     : rdata <= csr_dmw0     ;
+            `CSR_DMW1     : rdata <= csr_dmw1     ;
+            endcase
+    
+    assign privilege = crmd_plv;
+    assign coreid = csr_cpuid;
+    assign era_out = csr_era;
+    assign eentry = csr_eentry;
+    assign tlbrentry = csr_tlbrentry;
+    assign ie = crmd_ie;
+    assign lie = ecfg_lie;
+    assign software_int0 = estat_is_0[0];
+    assign software_int1 = estat_is_0[1];
+    assign intercore_int = 0;//TODO
+    assign translate_mode = {crmd_pg,crmd_da};
+    assign direct_i_mat = crmd_datf;
+    assign direct_d_mat = crmd_datm;
+    assign tlb_index_out = tlbidx_index;
+    assign tlb_ps_out = tlbidx_ps;
+    assign tlb_ne_out = tlbidx_ne;
+    assign tlb_vppn_out = tlbehi_vppn;
+    assign tlb_valid_0_out = csr_tlbelo0[`TLBELO_V];
+    assign tlb_dirty_0_out = csr_tlbelo0[`TLBELO_D];
+    assign tlb_priviledge_0_out = csr_tlbelo0[`TLBELO_PLV];
+    assign tlb_mat_0_out = csr_tlbelo0[`TLBELO_V];
+    assign tlb_global_0_out = csr_tlbelo0[`TLBELO_G];
+    assign tlb_ppn_0_out = csr_tlbelo0[`TLBELO_PPN];
+    assign tlb_valid_1_out = csr_tlbelo1[`TLBELO_V];
+    assign tlb_dirty_1_out = csr_tlbelo1[`TLBELO_D];
+    assign tlb_priviledge_1_out = csr_tlbelo1[`TLBELO_PLV];
+    assign tlb_mat_1_out = csr_tlbelo1[`TLBELO_V];
+    assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
+    assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
+    assign asid_out = asid_asid;
+    assign pgdl_out = csr_pgdl;
+    assign pgdh_out = csr_pgdh;
+    assign llbit = llbctl_rollb;
+    assign tid = csr_tid;
+    assign cache_tag = csr_ctag;
+    //end CSR read
     ///////////////////////////////////////
 endmodule
