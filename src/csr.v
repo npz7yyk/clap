@@ -1,3 +1,4 @@
+// -*- Verilog -*-
 `include "csr.vh"
 
 //TODO: reset all CSRs
@@ -20,7 +21,6 @@ module csr
     
     //current machine state
     output [1:0] privilege,
-    output [8:0] coreid,
 
     //exception
     input store_state,      //pplv <= plv , pie <= ie 
@@ -37,12 +37,8 @@ module csr
     input pgd_wen,
 
     //interrupt
-    output [0:0] ie,
-    output [12:0] lie,
-    output software_int0,software_int1,//软中断使能
-    output intercore_int,              //核间中断
-    output reg timer_int,              //定时器中断
-    input [7:0] hardward_int,
+    output has_interrupt,
+    input [7:0] hardware_int,
 
     //MMU
     output [1:0] translate_mode,    //01: direct, 10: paged
@@ -108,6 +104,7 @@ module csr
     //cache tag
     output [31:0] cache_tag
 );
+    reg timer_int;      //定时器中断
     ///////////////////////////////////////
     //control state registers defination
     //CRMD
@@ -148,7 +145,7 @@ module csr
     reg [`ESTAT_ESUBCODE] estat_subecode;
     wire [31:0] csr_estat;
     assign csr_estat[`ESTAT_IS_0] = estat_is_0;
-    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,hardward_int};
+    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,hardware_int};
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -181,7 +178,7 @@ module csr
     assign csr_llbctl[`LLBCTL_ZERO]  = 0;
     //TLBIDX
     reg [`TLBIDX_INDEX] tlbidx_index;
-    reg [`TLBIDX_ZERO_1] tlbidx_ps;
+    reg [`TLBIDX_PS] tlbidx_ps;
     reg [`TLBIDX_NE]    tlbidx_ne;
     wire [31:0] csr_tlbidx;
     assign csr_tlbidx[`TLBIDX_INDEX] = tlbidx_index;
@@ -262,15 +259,15 @@ module csr
             crmd_datf <= 1;
             crmd_datm <= 1;
         end else if(software_query_en&&addr==`CSR_CRMD) begin
-            if(wen[0]) crmd_plv[0]<=wdata[0];
-            if(wen[1]) crmd_plv[1]<=wdata[1];
-            if(wen[2]) crmd_plv[2]<=wdata[2];
-            if(wen[3]) crmd_plv[3]<=wdata[3];
-            if(wen[4]) crmd_plv[4]<=wdata[4];
-            if(wen[5]) crmd_plv[5]<=wdata[5];
-            if(wen[6]) crmd_plv[6]<=wdata[6];
-            if(wen[7]) crmd_plv[7]<=wdata[7];
-            if(wen[8]) crmd_plv[8]<=wdata[8];
+            if(wen[0]) crmd_plv[0]  <= wdata[0];
+            if(wen[1]) crmd_plv[1]  <= wdata[1];
+            if(wen[2]) crmd_ie[2]   <= wdata[2];
+            if(wen[3]) crmd_da[3]   <= wdata[3];
+            if(wen[4]) crmd_pg[4]   <= wdata[4];
+            if(wen[5]) crmd_datf[5] <= wdata[5];
+            if(wen[6]) crmd_datf[6] <= wdata[6];
+            if(wen[7]) crmd_datm[7] <= wdata[7];
+            if(wen[8]) crmd_datm[8] <= wdata[8];
         end else if(restore_state) begin
             crmd_plv <= prmd_pplv;
             crmd_ie <= prmd_pie;
@@ -1069,15 +1066,10 @@ module csr
             endcase
     
     assign privilege = crmd_plv;
-    assign coreid = csr_cpuid;
     assign era_out = csr_era;
     assign eentry = csr_eentry;
     assign tlbrentry = csr_tlbrentry;
-    assign ie = crmd_ie;
-    assign lie = ecfg_lie;
-    assign software_int0 = estat_is_0[0];
-    assign software_int1 = estat_is_0[1];
-    assign intercore_int = 0;//TODO
+    assign has_interrupt = crmd_ie&&(ecfg_lie&{csr_estat[`ESTAT_IS]})!=0;
     assign translate_mode = {crmd_pg,crmd_da};
     assign direct_i_mat = crmd_datf;
     assign direct_d_mat = crmd_datm;

@@ -8,9 +8,9 @@ module exe_log2_plus_one
     always @* begin
         b = in;
         a = 0;
-        if(b>=65536)begin a = a+16; b = b>>16; end
-        if(b>=256)  begin a = a+ 8; b = b>>8;  end
-        if(b>=16)   begin a = a+ 4; b = b>>4;  end
+        if(b>=65536)begin a = a+16; b = b[31:16];end
+        if(b>=256)  begin a = a+ 8; b = b[15:8]; end
+        if(b>=16)   begin a = a+ 4; b = b[7:4];  end
         case(b[3:0])
             4'h0: a = a+0;
             4'h1: a = a+1;
@@ -20,8 +20,6 @@ module exe_log2_plus_one
             4'h5: a = a+3;
             4'h6: a = a+3;
             4'h7: a = a+3;
-            4'h8: a = a+4;
-            4'h9: a = a+4;
             4'h8: a = a+4;
             4'h9: a = a+4;
             4'ha: a = a+4;

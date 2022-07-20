@@ -50,6 +50,7 @@
 //ESTAT
 `define ESTAT_IS_0  1:0     //中断状态位
 `define ESTAT_IS_1  12:2
+`define ESTAT_IS    12:0
 `define ESTAT_ZERO_0 15:13
 `define ESTAT_ECODE 21:16
 `define ESTAT_ESUBCODE 30:22
