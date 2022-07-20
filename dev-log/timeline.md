@@ -1,5 +1,9 @@
 # Timeline
 
+## 2022-07-20
+
+Test func_lab6 passed.
+
 ## 2022-07-19
 
 Test #6 fully passed.

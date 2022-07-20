@@ -84,10 +84,10 @@ wire[31:0]alu_result_mid;
 wire[0:0]mul_en_mid;
 wire[4:0]mul_rd_mid;
 wire[0:0]mul_sel_mid;
-wire[35:0]mul_rs0_mid;
-wire[35:0]mul_rs1_mid;
-wire[35:0]mul_rs2_mid;
-wire[35:0]mul_rs3_mid;
+wire[31:0]mul_rs0_mid;
+wire[31:0]mul_rs1_mid;
+wire[31:0]mul_rs2_mid;
+wire[31:0]mul_rs3_mid;
 wire[6:0]mem_exp_mid;
 wire[4:0]mem_rd_mid;
 wire[0:0]mem_en_mid;
@@ -96,7 +96,7 @@ wire[0:0]eu1_alu_en_mid;
 wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
 wire[0:0]flush_mid;
-wire[0:0]mul_sign_mid;
+wire[31:0]mul_ad_mid;
 wire [31:0]branch_pc_mid;
 wire [31:0]branch_addr_calculated_mid;
 wire [0:0]branch_status_mid;
@@ -108,7 +108,7 @@ reg[0:0]eu0_en_0;
 reg[0:0]eu0_mul_en_0;
 reg [31:0]inst0_mid;
 reg [31:0]inst1_mid;
-reg [0:0]mul_sign_exe1;
+// reg [0:0]mul_sign_exe1;
 //reg[0:0]eu0_mem_en_0;
 reg[0:0]eu1_en_0;
 reg[4:0]eu0_rd_0;
@@ -121,10 +121,11 @@ reg[4:0]mem_rd_exe1;
 reg[0:0]mem_en_exe1;
 reg[1:0]mem_width_exe1;
 reg[0:0]mul_sel_exe1;
-reg[35:0]mul_sr0_exe1;
-reg[35:0]mul_sr1_exe1;
-reg[35:0]mul_sr2_exe1;
-reg[35:0]mul_sr3_exe1;
+reg[31:0]mul_sr0_exe1;
+reg[31:0]mul_sr1_exe1;
+reg[31:0]mul_sr2_exe1;
+reg[31:0]mul_sr3_exe1;
+reg[31:0]mul_ajustice_exe1;
 reg[4:0]mul_rd_exe1;
 reg[6:0]exp_exe1;
 reg[31:0]eu0_pc_exe1;
@@ -174,7 +175,7 @@ always @(posedge clk) begin
         category_out<=0;
         ex_pc_tar<=0;
         flush<=0;
-        mul_sign_exe1<=0;
+        mul_ajustice_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
@@ -199,7 +200,7 @@ always @(posedge clk) begin
         category_out<=category_out_mid;
         ex_pc_tar<=ex_pc_tar_mid;
         flush<=flush_mid;
-        mul_sign_exe1<=mul_sign_mid;
+        mul_ajustice_exe1<=mul_ad_mid;
     end
     // else if(!stall_because_cache)
     //     eu0_en_0<=0;
@@ -364,27 +365,27 @@ mul_0  u_mul_0 (
     .mul_sign                ( eu0_uop_in[`UOP_SIGN]     ),
     .mul_sr0                 ( eu0_sr0       ),
     .mul_sr1                 ( eu0_sr1       ),
-    .mul_sign_out            (mul_sign_mid),
 
 
     .mul_en_out              ( mul_en_mid    ),
     .mul_rd_out              ( mul_rd_mid    ),
     .mul_sel_out             ( mul_sel_mid   ),
-    .mul_mid_rs0             ( mul_rs0_mid   ),
-    .mul_mid_rs1             ( mul_rs1_mid   ),
-    .mul_mid_rs2             ( mul_rs2_mid   ),
-    .mul_mid_rs3             ( mul_rs3_mid   )
+    .mul_mid_rs_hh           ( mul_rs0_mid   ),
+    .mul_mid_rs_hl           ( mul_rs1_mid   ),
+    .mul_mid_rs_lh           ( mul_rs2_mid   ),
+    .mul_mid_rs_ll           ( mul_rs3_mid   ),
+    .mul_mid_rs_ad           ( mul_ad_mid    )
 );
 
 mul_1  u_mul_1 (
-    .mul_mid_sr0             ( mul_sr0_exe1   ),
-    .mul_mid_sr1             ( mul_sr1_exe1   ),
-    .mul_mid_sr2             ( mul_sr2_exe1   ),
-    .mul_mid_sr3             ( mul_sr3_exe1   ),
-    .mul_sel                 ( mul_sel_exe1       ),
-    .mul_en_in               ( eu0_mul_en_0     ),
-    .mul_rd_in               ( mul_rd_exe1     ),
-    .mul_sign(mul_sign_exe1),
+    .mul_mid_sr_hh           ( mul_sr0_exe1   ),
+    .mul_mid_sr_hl           ( mul_sr1_exe1   ),
+    .mul_mid_sr_lh           ( mul_sr2_exe1   ),
+    .mul_mid_sr_ll           ( mul_sr3_exe1   ),
+    .mul_mid_rs_ad           ( mul_ajustice_exe1),
+    .mul_sel                 ( mul_sel_exe1   ),
+    .mul_en_in               ( eu0_mul_en_0   ),
+    .mul_rd_in               ( mul_rd_exe1    ),
 
     .mul_rd_out              ( mul_rd_out    ),
     .mul_en_out              ( mul_en_out    ),
