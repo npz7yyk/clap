@@ -39,14 +39,14 @@ module exe(
     output reg [31:0]eu1_inst,
     //向issue段输出
     output stall,
-    output flush,
+    output reg flush,
     //向分支预测输出
     output [31:0]branch_pc,
-    output [31:0]branch_addr_calculated,
-    output branch_status,
-    output branch_valid,
-    output [1:0]category_out,
-    output [31:0]ex_pc_tar,
+    output reg [31:0]branch_addr_calculated,
+    output reg branch_status,
+    output reg branch_valid,
+    output reg [1:0]category_out,
+    output reg [31:0]ex_pc_tar,
     //向cache输出
     output [0:0] valid,                 //    valid request
     output [0:0] op,                    //    write: 1, read: 0
@@ -62,7 +62,7 @@ module exe(
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU           //    read data to CPU
 );
-assign branch_pc=eu0_pc_in;
+
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
 assign eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
@@ -84,10 +84,10 @@ wire[31:0]alu_result_mid;
 wire[0:0]mul_en_mid;
 wire[4:0]mul_rd_mid;
 wire[0:0]mul_sel_mid;
-wire[35:0]mul_rs0_mid;
-wire[35:0]mul_rs1_mid;
-wire[35:0]mul_rs2_mid;
-wire[35:0]mul_rs3_mid;
+wire[31:0]mul_rs0_mid;
+wire[31:0]mul_rs1_mid;
+wire[31:0]mul_rs2_mid;
+wire[31:0]mul_rs3_mid;
 wire[6:0]mem_exp_mid;
 wire[4:0]mem_rd_mid;
 wire[0:0]mem_en_mid;
@@ -95,9 +95,20 @@ wire[1:0]mem_width_mid;
 wire[0:0]eu1_alu_en_mid;
 wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
+wire[0:0]flush_mid;
+wire[31:0]mul_ad_mid;
+wire [31:0]branch_pc_mid;
+wire [31:0]branch_addr_calculated_mid;
+wire [0:0]branch_status_mid;
+wire [0:0]branch_valid_mid;
+wire [1:0]category_out_mid;
+wire [31:0]ex_pc_tar_mid;
 //中段寄存器
 reg[0:0]eu0_en_0;
 reg[0:0]eu0_mul_en_0;
+reg [31:0]inst0_mid;
+reg [31:0]inst1_mid;
+// reg [0:0]mul_sign_exe1;
 //reg[0:0]eu0_mem_en_0;
 reg[0:0]eu1_en_0;
 reg[4:0]eu0_rd_0;
@@ -110,10 +121,12 @@ reg[4:0]mem_rd_exe1;
 reg[0:0]mem_en_exe1;
 reg[1:0]mem_width_exe1;
 reg[0:0]mul_sel_exe1;
-reg[35:0]mul_sr0_exe1;
-reg[35:0]mul_sr1_exe1;
-reg[35:0]mul_sr2_exe1;
-reg[35:0]mul_sr3_exe1;
+reg[31:0]mul_sr0_exe1;
+reg[31:0]mul_sr1_exe1;
+reg[31:0]mul_sr2_exe1;
+reg[31:0]mul_sr3_exe1;
+reg[31:0]mul_ajustice_exe1;
+reg[4:0]mul_rd_exe1;
 reg[6:0]exp_exe1;
 reg[31:0]eu0_pc_exe1;
 //exe1组合输出
@@ -129,12 +142,18 @@ wire[0:0]mem_en_out;
 wire[0:0]div_en_out;
 wire[31:0]div_result;
 wire[4:0]div_addr_out;
-reg [31:0]inst0_mid,inst1_mid;
+wire[0:0]div_en_out_quick;
+wire[31:0]div_result_quick;
+wire[4:0]div_addr_out_quick;
+//末段寄存器
+reg [0:0]eu0_en_1_internal;
+reg [0:0]eu1_en_1_internal;
 //中段寄存器更新
+assign branch_pc=eu0_pc_exe1;
 always @(posedge clk) begin
     //eu0
-    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div)begin
-        eu0_en_0<=0;
+    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
+        eu0_en_0 <= 0;
         eu0_mul_en_0<=0;
         eu0_rd_0<=0;
         data_mid00<=0;
@@ -150,11 +169,17 @@ always @(posedge clk) begin
         exp_exe1<=0;
         eu0_pc_exe1<=0;
         inst0_mid<=0;
+        branch_addr_calculated<=0;
+        branch_status<=0;
+        branch_valid<=0;
+        category_out<=0;
+        ex_pc_tar<=0;
+        flush<=0;
+        mul_ajustice_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid;
-        //|mul_rd_mid|mem_rd_mid;
         data_mid00<=br_rd_data_mid|alu_result_mid;
         mem_exp_exe1<=mem_exp_mid;
         mem_rd_exe1<=mem_rd_mid;
@@ -165,28 +190,41 @@ always @(posedge clk) begin
         mul_sr1_exe1<=mul_rs1_mid;
         mul_sr2_exe1<=mul_rs2_mid;
         mul_sr3_exe1<=mul_rs3_mid;
+        mul_rd_exe1<=mul_rd_mid;
         exp_exe1<=eu0_exp_in;
         eu0_pc_exe1<=eu0_pc_in;
         inst0_mid<=eu0_uop_in[`UOP_ORIGINAL_INST];
+        branch_addr_calculated<=branch_addr_calculated_mid;
+        branch_status<=branch_status_mid;
+        branch_valid<=branch_valid_mid;
+        category_out<=category_out_mid;
+        ex_pc_tar<=ex_pc_tar_mid;
+        flush<=flush_mid;
+        mul_ajustice_exe1<=mul_ad_mid;
     end
+    // else if(!stall_because_cache)
+    //     eu0_en_0<=0;
     //eu1
     if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
         eu1_en_0<=0;
         eu1_rd_0<=0;
         data_mid10<=0;
         inst1_mid<=0;
-    end else if(!stall)begin
+    end else if(!flush&&!stall)begin
         eu1_en_0<=eu1_alu_en_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
         data_mid10<=eu1_alu_result_mid;
         eu1_pc_exe1<=eu1_pc_in;
         inst1_mid<=eu1_uop_in[`UOP_ORIGINAL_INST];
     end
+    // else if(!stall_because_cache)
+    //     eu1_en_0<=0;
 end
 //末段寄存器更新
 always @(posedge clk) begin
     //eu0
     if(!rstn||flush_by_writeback)begin
+        eu0_en_1_internal<=0;
         en_out0<=0;
         data_out0<=0;
         addr_out0<=0;
@@ -194,26 +232,37 @@ always @(posedge clk) begin
         eu0_pc_out<=0;
         eu0_inst<=0;
     end else if(!stall_because_cache)begin
-        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out;
-        data_out0<=data_mid00|mul_result|div_result|mem_data_out;
-        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out;
+        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick;
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick;
+        //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1;
         eu0_inst<=inst0_mid;
+    end 
+    else begin
+        en_out0<=0;
     end
     //eu1
-    if(!rstn||flush_by_writeback||stall_because_div)begin
+    if(!rstn||flush_by_writeback)begin
+        eu1_en_1_internal<=0;
         en_out1<=0;
         data_out1<=0;
         addr_out1<=0;
         eu1_pc_out<=0;
         eu1_inst<=0;
-    end else if(!stall_because_cache)begin
-        en_out1<=eu1_en_0;
+    end else if(!stall_because_cache&&!flush)begin
+        eu1_en_1_internal<=eu1_en_0;
+        // en_out1<=eu1_en_0;
+        en_out1<=eu1_en_0&&!stall_because_div;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
         eu1_pc_out<=eu1_pc_exe1;
         eu1_inst<=inst1_mid;
+    end
+    else begin
+        en_out1<=0;
     end
 end
 
@@ -228,7 +277,7 @@ hazard  u_hazard (
     .eu0_mem_en_0                ( mem_en_exe1               ),
 
     //.eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
-    .eu0_rd                  ( eu0_rd_0                ),
+    .eu0_rd                  ( mul_rd_exe1|mem_rd_exe1                ),
     .stall_because_cache     ( stall_because_cache   ),
     .stall_because_div       ( stall_because_div     ),
 
@@ -244,14 +293,14 @@ forward  u_forward (
     .data01                  ( data01           ),
     .data10                  ( data10           ),
     .data11                  ( data11           ),
-    .eu0_en_0                ( eu0_en_0         ),
+    .eu0_en_0                ( eu0_en_0|div_en_out_quick         ),
     .eu1_en_0                ( eu1_en_0         ),
-    .eu0_rd_0                ( eu0_rd_0         ),
+    .eu0_rd_0                ( eu0_rd_0|div_addr_out_quick         ),
     .eu1_rd_0                ( eu1_rd_0         ),
-    .data_forward00          ( data_mid00   ),
+    .data_forward00          ( data_mid00|div_result_quick   ),
     .data_forward10          ( data_mid10   ),
-    .eu0_en_1                ( en_out0         ),
-    .eu1_en_1                ( en_out1         ),
+    .eu0_en_1                ( eu0_en_1_internal         ),
+    .eu1_en_1                ( eu1_en_1_internal         ),
     .eu0_rd_1                ( addr_out0         ),
     .eu1_rd_1                ( addr_out1         ),
     .data_forward01          ( data_out0   ),
@@ -287,12 +336,12 @@ branch #(
     .br_rd_data              ( br_rd_data_mid               ),
     .br_rd_addr_out          ( br_rd_addr_mid           ),
     .br_en_out               ( br_en_mid                ),
-    .flush                   ( flush                    ),
-    .branch_addr_calculated  ( branch_addr_calculated   ),
-    .ex_pc_tar(ex_pc_tar),
-    .branch_valid            (branch_valid),
-    .branch_status           (branch_status),
-    .category_out(category_out)
+    .flush                   ( flush_mid                    ),
+    .branch_addr_calculated  ( branch_addr_calculated_mid   ),
+    .ex_pc_tar               (ex_pc_tar_mid),
+    .branch_valid            (branch_valid_mid),
+    .branch_status           (branch_status_mid),
+    .category_out            (category_out_mid)
 );
 wire[31:0]eu0_alu_sr1;
 assign eu0_alu_sr1=eu0_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu0_imm_in:eu0_sr1;
@@ -317,23 +366,26 @@ mul_0  u_mul_0 (
     .mul_sr0                 ( eu0_sr0       ),
     .mul_sr1                 ( eu0_sr1       ),
 
+
     .mul_en_out              ( mul_en_mid    ),
     .mul_rd_out              ( mul_rd_mid    ),
     .mul_sel_out             ( mul_sel_mid   ),
-    .mul_mid_rs0             ( mul_rs0_mid   ),
-    .mul_mid_rs1             ( mul_rs1_mid   ),
-    .mul_mid_rs2             ( mul_rs2_mid   ),
-    .mul_mid_rs3             ( mul_rs3_mid   )
+    .mul_mid_rs_hh           ( mul_rs0_mid   ),
+    .mul_mid_rs_hl           ( mul_rs1_mid   ),
+    .mul_mid_rs_lh           ( mul_rs2_mid   ),
+    .mul_mid_rs_ll           ( mul_rs3_mid   ),
+    .mul_mid_rs_ad           ( mul_ad_mid    )
 );
 
 mul_1  u_mul_1 (
-    .mul_mid_sr0             ( mul_sr0_exe1   ),
-    .mul_mid_sr1             ( mul_sr1_exe1   ),
-    .mul_mid_sr2             ( mul_sr2_exe1   ),
-    .mul_mid_sr3             ( mul_sr3_exe1   ),
-    .mul_sel                 ( mul_sel_exe1       ),
-    .mul_en_in               ( eu0_mul_en_0     ),
-    .mul_rd_in               ( eu0_rd_0     ),
+    .mul_mid_sr_hh           ( mul_sr0_exe1   ),
+    .mul_mid_sr_hl           ( mul_sr1_exe1   ),
+    .mul_mid_sr_lh           ( mul_sr2_exe1   ),
+    .mul_mid_sr_ll           ( mul_sr3_exe1   ),
+    .mul_mid_rs_ad           ( mul_ajustice_exe1),
+    .mul_sel                 ( mul_sel_exe1   ),
+    .mul_en_in               ( eu0_mul_en_0   ),
+    .mul_rd_in               ( mul_rd_exe1    ),
 
     .mul_rd_out              ( mul_rd_out    ),
     .mul_en_out              ( mul_en_out    ),
@@ -396,7 +448,10 @@ div  u_div (
     .div_en_out              ( div_en_out               ),
     .stall_because_div       ( stall_because_div        ),
     .div_result              ( div_result               ),
-    .div_addr_out            ( div_addr_out   )
+    .div_addr_out            ( div_addr_out   ),
+    .div_en_out_quick              ( div_en_out_quick               ),
+    .div_result_quick              ( div_result_quick               ),
+    .div_addr_out_quick            ( div_addr_out_quick   )
 );
 wire[31:0]eu1_alu_sr1;
 assign eu1_alu_sr1=eu1_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu1_imm_in:eu1_sr1;

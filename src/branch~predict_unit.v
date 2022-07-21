@@ -161,12 +161,12 @@ module predict_unit #(
     always @(*) begin
         if (exist1) begin
             if (past_vld1) branch1 = branch_past1;
-            else branch1 = back1;
+            else branch1 = info1[1] ? 1'b1 : back1;
         end else branch1 = 1'b0;
 
         if (exist2) begin
             if (past_vld2) branch2 = branch_past2;
-            else branch2 = back2;
+            else branch2 = info2[1] ? 1'b1 : back2;
         end else branch2 = 1'b0;
     end
 

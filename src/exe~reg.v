@@ -61,7 +61,7 @@ module register_file(
 reg[31:0]register_file[31:0];
 
 always @(posedge clk) begin
-    if (write_en_0) begin
+    if (write_en_0&&(write_addr_0!=write_addr_1||write_en_1==0)) begin
         register_file[write_addr_0]<=write_addr_0==0?0:write_data_0;
     end
     if (write_en_1) begin

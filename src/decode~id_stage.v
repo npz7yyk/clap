@@ -73,7 +73,7 @@ module id_stage
     pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
     assign pc_for_predict = pc_in;
     assign jmpdist0 = pc_in + pc_offset0;
-    assign jmpdist1 = pc_in+4 + pc_offset1;
+    assign jmpdist1 = (pc_in[2]?pc_in:pc_in+4) + pc_offset1;
     assign feedback_valid = input_valid;
     wire should_jmp0 = category0=='b10 || category0=='b01&&pc_offset0[31];
     wire should_jmp1 = category1=='b10 || category1=='b01&&pc_offset1[31];

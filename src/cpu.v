@@ -209,6 +209,215 @@ module core_top(
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
 
+    localparam TLBIDX_WIDTH = 4;
+    //CSR
+    wire  csr_store_state;
+    wire  csr_restore_state;
+    wire  [6:0]  csr_expcode_in;
+    wire  csr_expcode_wen;
+    wire  [31:0]  csr_era_in;
+    wire  csr_era_wen;
+    wire  [31:0]  csr_badv_in;
+    wire  csr_badv_wen;
+    wire  [31:0]  csr_pgd_in;
+    wire  csr_pgd_wen;
+    wire  [TLBIDX_WIDTH-1:0]  tlb_index_in;
+    wire  tlb_index_we;
+    wire  [5:0]  tlb_ps_in;
+    wire  tlb_ps_we;
+    wire  tlb_ne_in;
+    wire  tlb_ne_we;
+    wire  [18:0]  tlb_vppn_in;
+    wire  tlb_vppn_we;
+    wire  tlb_valid_0_in;
+    wire  tlb_valid_1_in;
+    wire  tlb_valid_0_wen;
+    wire  tlb_valid_1_wen;
+    wire  tlb_dirty_0_in;
+    wire  tlb_dirty_1_in;
+    wire  tlb_dirty_0_wen;
+    wire  tlb_dirty_1_wen;
+    wire  [1:0]  tlb_priviledge_0_in;
+    wire  [1:0]  tlb_priviledge_1_in;
+    wire  tlb_priviledge_0_wen;
+    wire  tlb_priviledge_1_wen;
+    wire  tlb_mat_0_in;
+    wire  tlb_mat_1_in;
+    wire  tlb_mat_0_wen;
+    wire  tlb_mat_1_wen;
+    wire  tlb_global_0_in;
+    wire  tlb_global_1_in;
+    wire  tlb_global_0_wen;
+    wire  tlb_global_1_wen;
+    wire  [23:0]  tlb_ppn_0_in;
+    wire  [23:0]  tlb_ppn_1_in;
+    wire  tlb_ppn_0_wen;
+    wire  tlb_ppn_1_wen;
+    wire  [9:0]  asid_in;
+    wire  asid_wen;
+    wire  llbit_set;
+    wire  llbit_clear_by_eret;
+    wire  llbit_clear_by_other;
+
+    wire  [1:0]  privilege;
+    wire  [31:0]  csr_era_out;
+    wire  [31:0]  csr_eentry;
+    wire  [31:0]  csr_tlbrentry;
+    wire  has_interrupt;
+    wire  [1:0]  translate_mode;
+    wire  direct_i_mat;
+    wire  direct_d_mat;
+    wire  dmw0_plv0;
+    wire  dmw0_plv3;
+    wire  dmw0_mat;
+    wire  [31:29]  dmw0_vseg;
+    wire  [31:29]  dmw0_pseg;
+    wire  dmw1_plv0;
+    wire  dmw1_plv3;
+    wire  dmw1_mat;
+    wire  [31:29]  dmw1_vseg;
+    wire  [31:29]  dmw1_pseg;
+    wire  [TLBIDX_WIDTH-1:0]  tlb_index_out;
+    wire  [5:0]  tlb_ps_out;
+    wire  tlb_ne_out;
+    wire  [18:0]  tlb_vppn_out;
+    wire  tlb_valid_0_out;
+    wire  tlb_valid_1_out;
+    wire  tlb_dirty_0_out;
+    wire  tlb_dirty_1_out;
+    wire  [1:0]  tlb_priviledge_0_out;
+    wire  [1:0]  tlb_priviledge_1_out;
+    wire  tlb_mat_0_out;
+    wire  tlb_mat_1_out;
+    wire  tlb_global_0_out;
+    wire  tlb_global_1_out;
+    wire  [23:0]  tlb_ppn_0_out;
+    wire  [23:0]  tlb_ppn_1_out;
+    wire  [9:0]  asid_out;
+    wire  [31:0]  pgdl_out;
+    wire  [31:0]  pgdh_out;
+    wire  llbit;
+    wire  [31:0]  tid;
+    wire  [31:0]  cache_tag;
+
+    csr  u_csr (
+        .clk                     ( aclk                   ),
+        .rstn                    ( aresetn                ),
+
+        .privilege               ( privilege              ),
+
+        //software query port (exe stage)
+        .software_query_en       ( /*TODO*/               ),
+        .addr                    ( /*TODO*/               ),
+        .rdata                   ( /*TODO*/               ),
+        .wen                     ( /*TODO*/               ),
+        .wdata                   ( /*TODO*/               ),
+
+        //exception
+        .store_state             ( csr_store_state        ),
+        .restore_state           ( csr_restore_state      ),
+        .expcode_in              ( csr_expcode_in         ),
+        .expcode_wen             ( csr_expcode_wen        ),
+        .era_out                 ( csr_era_out            ),
+        .era_in                  ( csr_era_in             ),
+        .era_wen                 ( csr_era_wen            ),
+        .badv_in                 ( csr_badv_in            ),
+        .badv_wen                ( csr_badv_wen           ),
+        .eentry                  ( csr_eentry             ),
+        .tlbrentry               ( csr_tlbrentry          ),
+        .pgd_in                  ( csr_pgd_in             ),
+        .pgd_wen                 ( csr_pgd_wen            ),
+
+        //interrupt
+        .hardware_int            ( intrpt                 ),
+        .has_interrupt           ( has_interrupt          ),
+
+        //MMU
+        .translate_mode          ( translate_mode         ),
+        .direct_i_mat            ( direct_i_mat           ),
+        .direct_d_mat            ( direct_d_mat           ),
+
+        .dmw0_plv0               ( dmw0_plv0              ),
+        .dmw0_plv3               ( dmw0_plv3              ),
+        .dmw0_mat                ( dmw0_mat               ),
+        .dmw0_vseg               ( dmw0_vseg              ),
+        .dmw0_pseg               ( dmw0_pseg              ),
+        .dmw1_plv0               ( dmw1_plv0              ),
+        .dmw1_plv3               ( dmw1_plv3              ),
+        .dmw1_mat                ( dmw1_mat               ),
+        .dmw1_vseg               ( dmw1_vseg              ),
+        .dmw1_pseg               ( dmw1_pseg              ),
+
+        .tlb_index_out           ( tlb_index_out          ),
+        .tlb_ps_out              ( tlb_ps_out             ),
+        .tlb_ne_out              ( tlb_ne_out             ),
+        .tlb_vppn_out            ( tlb_vppn_out           ),
+        .tlb_valid_0_out         ( tlb_valid_0_out        ),
+        .tlb_valid_1_out         ( tlb_valid_1_out        ),
+        .tlb_dirty_0_out         ( tlb_dirty_0_out        ),
+        .tlb_dirty_1_out         ( tlb_dirty_1_out        ),
+        .tlb_priviledge_0_out    ( tlb_priviledge_0_out   ),
+        .tlb_priviledge_1_out    ( tlb_priviledge_1_out   ),
+        .tlb_mat_0_out           ( tlb_mat_0_out          ),
+        .tlb_mat_1_out           ( tlb_mat_1_out          ),
+        .tlb_global_0_out        ( tlb_global_0_out       ),
+        .tlb_global_1_out        ( tlb_global_1_out       ),
+        .tlb_ppn_0_out           ( tlb_ppn_0_out          ),
+        .tlb_ppn_1_out           ( tlb_ppn_1_out          ),
+
+        .asid_out                ( asid_out               ),
+        .asid_in                 ( asid_in                ),
+        .asid_wen                ( asid_wen               ),
+
+        .pgdl_out                ( pgdl_out               ),
+        .pgdh_out                ( pgdh_out               ),
+
+        .tlb_index_in            ( tlb_index_in           ),
+        .tlb_index_we            ( tlb_index_we           ),
+        .tlb_ps_in               ( tlb_ps_in              ),
+        .tlb_ps_we               ( tlb_ps_we              ),
+        .tlb_ne_in               ( tlb_ne_in              ),
+        .tlb_ne_we               ( tlb_ne_we              ),
+        .tlb_vppn_in             ( tlb_vppn_in            ),
+        .tlb_vppn_we             ( tlb_vppn_we            ),
+        .tlb_valid_0_in          ( tlb_valid_0_in         ),
+        .tlb_valid_1_in          ( tlb_valid_1_in         ),
+        .tlb_valid_0_wen         ( tlb_valid_0_wen        ),
+        .tlb_valid_1_wen         ( tlb_valid_1_wen        ),
+        .tlb_dirty_0_in          ( tlb_dirty_0_in         ),
+        .tlb_dirty_1_in          ( tlb_dirty_1_in         ),
+        .tlb_dirty_0_wen         ( tlb_dirty_0_wen        ),
+        .tlb_dirty_1_wen         ( tlb_dirty_1_wen        ),
+        .tlb_priviledge_0_in     ( tlb_priviledge_0_in    ),
+        .tlb_priviledge_1_in     ( tlb_priviledge_1_in    ),
+        .tlb_priviledge_0_wen    ( tlb_priviledge_0_wen   ),
+        .tlb_priviledge_1_wen    ( tlb_priviledge_1_wen   ),
+        .tlb_mat_0_in            ( tlb_mat_0_in           ),
+        .tlb_mat_1_in            ( tlb_mat_1_in           ),
+        .tlb_mat_0_wen           ( tlb_mat_0_wen          ),
+        .tlb_mat_1_wen           ( tlb_mat_1_wen          ),
+        .tlb_global_0_in         ( tlb_global_0_in        ),
+        .tlb_global_1_in         ( tlb_global_1_in        ),
+        .tlb_global_0_wen        ( tlb_global_0_wen       ),
+        .tlb_global_1_wen        ( tlb_global_1_wen       ),
+        .tlb_ppn_0_in            ( tlb_ppn_0_in           ),
+        .tlb_ppn_1_in            ( tlb_ppn_1_in           ),
+        .tlb_ppn_0_wen           ( tlb_ppn_0_wen          ),
+        .tlb_ppn_1_wen           ( tlb_ppn_1_wen          ),
+        
+        //ll bit
+        .llbit                   ( llbit                  ),
+        .llbit_set               ( llbit_set              ),
+        .llbit_clear_by_eret     ( llbit_clear_by_eret    ),
+        .llbit_clear_by_other    ( llbit_clear_by_other   ),
+        
+        //timer
+        .tid                     ( tid                    ),
+
+        //cache tag
+        .cache_tag               ( cache_tag              )
+    );
+
     wire data_valid;
     wire if_buf_full;
     wire cache_ready;
@@ -649,8 +858,8 @@ module core_top(
     writeback the_writeback
     (
         //to run difftest, one instruction cannot be written back for multiple times
-        .eu0_valid(ex_eu0_en&~ex_stall),
-        .eu1_valid(ex_eu1_en&~ex_stall),
+        .eu0_valid(ex_eu0_en),
+        .eu1_valid(ex_eu1_en),
         .eu0_data(ex_eu0_data),.eu1_data(ex_eu1_data),
         .eu0_rd(ex_eu0_rd),    .eu1_rd(ex_eu1_rd),
         .eu0_pc(ex_eu0_pc),    .eu1_pc(ex_eu1_pc),
