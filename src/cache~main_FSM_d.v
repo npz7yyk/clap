@@ -17,6 +17,7 @@ module main_FSM_d(
     input [3:0] hit,
     input [63:0] mem_we_normal,
     input [3:0] visit_type,
+    input [31:0] addr_rbuf,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -32,6 +33,7 @@ module main_FSM_d(
     output reg [3:0] tagv_we,
     output reg w_dirty_data,
     output reg [3:0] dirty_we,
+
     output reg r_req,
     output reg r_data_ready,
     output reg w_req,
@@ -39,15 +41,20 @@ module main_FSM_d(
     output reg [2:0] r_size,
     output reg [7:0] w_length,
     output reg [2:0] w_size,
+
     output reg data_valid,
-    output reg cache_ready
+    output reg cache_ready,
+
+    input [4:0] cacop_code,
+    input cacop_en,
+    output reg tagv_clear
     );
-    parameter IDLE          = 3'd0;
-    parameter LOOKUP        = 3'd1;
-    parameter MISS          = 3'd2;
-    parameter REPLACE       = 3'd3;
-    parameter REFILL        = 3'd4;
-    parameter WAIT_WRITE    = 3'd5;
+    parameter IDLE          = 6'b000001;
+    parameter LOOKUP        = 6'b000010;
+    parameter MISS          = 6'b000100;
+    parameter REPLACE       = 6'b001000;
+    parameter REFILL        = 6'b010000;
+    parameter WAIT_WRITE    = 6'b100000;
 
     parameter READ          = 1'd0;
     parameter WRITE         = 1'd1;
@@ -55,6 +62,10 @@ module main_FSM_d(
     parameter BYTE          = 4'b0001;
     parameter HALF          = 4'b0011;
     parameter WORD          = 4'b1111;
+
+    parameter STORE_TAG         = 2'b00;
+    parameter INDEX_INVALIDATE  = 2'b01;
+    parameter HIT_INVALIDATE    = 2'b10;
 
 
     reg [2:0] un_visit_type;
@@ -66,8 +77,17 @@ module main_FSM_d(
         default: un_visit_type = 3'b000;
         endcase
     end
+    reg [3:0] tagv_we_inst;
+    always @(*) begin
+        case(addr_rbuf[1:0])
+        2'd0: tagv_we_inst = 4'b0001;
+        2'd1: tagv_we_inst = 4'b0010;
+        2'd2: tagv_we_inst = 4'b0100;
+        2'd3: tagv_we_inst = 4'b1000;
+        endcase
+    end
 
-    reg[2:0] crt, nxt;
+    reg[5:0] crt, nxt;
 
     always @(posedge clk) begin
         if(!rstn) crt <= 0;
@@ -81,13 +101,41 @@ module main_FSM_d(
             else nxt = IDLE;
         end
         LOOKUP: begin
-            if(uncache) begin
+            // check instruction
+            if(cacop_en && cacop_code == STORE_TAG) begin 
+                if(valid) nxt = LOOKUP;
+                else nxt = IDLE;
+            end 
+
+            else if(cacop_en && cacop_code == INDEX_INVALIDATE) begin 
+                if(dirty_data) nxt = MISS;
+                else begin
+                    if(valid) nxt = LOOKUP;
+                    else nxt = IDLE;
+                end
+            end
+
+            else if(cacop_en && cacop_code == HIT_INVALIDATE) begin
+                if(cache_hit && dirty_data) nxt = MISS;
+                else begin
+                    if(valid) nxt = LOOKUP;
+                    else nxt = IDLE;
+                end
+            end
+
+            // check uncache
+            else if(uncache) begin
                 if(op == READ) nxt = REPLACE;
                 else nxt = MISS;
             end
-            else if(valid && cache_hit) nxt = LOOKUP;
-            else if(!valid && cache_hit) nxt = IDLE;
 
+            // check cache_hit
+            else if(cache_hit) begin
+                if(valid) nxt = LOOKUP;
+                else nxt = IDLE;
+            end
+
+            // all not
             else begin
                 if(op == WRITE && dirty_data && vld) nxt = MISS;
                 else nxt = REPLACE;
@@ -95,7 +143,7 @@ module main_FSM_d(
         end
         MISS: begin
             if(w_rdy_AXI) begin
-                if(uncache) nxt = WAIT_WRITE;
+                if(uncache || (cacop_en && (cacop_code == 5'b01001 || cacop_code == 5'b10001))) nxt = WAIT_WRITE;
                 else nxt = REPLACE;
             end
             else nxt = MISS;
@@ -131,6 +179,7 @@ module main_FSM_d(
         way_visit = 0;  cache_ready = 0;    pbuf_we = 0;
         r_size = 3'b010;                    w_size = 3'b010;
         r_length = 8'd15;                   w_length = 8'd15;
+        tagv_clear = 0;
         case(crt)
         IDLE: begin
             rbuf_we     = 1;
@@ -140,7 +189,29 @@ module main_FSM_d(
             rdata_sel       = 1;
             wrt_data_sel    = 1;
             pbuf_we         = 1;
-            if(!cache_hit || uncache) begin
+            if(cacop_en && cacop_code == 5'b00001) begin
+                tagv_clear          = 1;
+                tagv_we             = tagv_we_inst;
+                dirty_we            = tagv_we_inst;
+                w_dirty_data        = 1'b0;
+                data_valid          = 1;
+            end 
+            else if(cacop_en && cacop_code == 5'b01001) begin
+                tagv_clear          = 1;
+                tagv_we             = tagv_we_inst;
+                dirty_we            = tagv_we_inst;
+                w_dirty_data        = 1'b0;
+                if(!dirty_data) data_valid = 1;
+            end
+            else if(cacop_en && cacop_code == 5'b10001) begin
+                tagv_clear          = 1;
+                tagv_we             = hit;
+                dirty_we            = hit;
+                w_dirty_data        = 1'b0;
+                if(!(cache_hit && dirty_data)) data_valid = 1;
+            end
+
+            else if(!cache_hit || uncache) begin
                 mbuf_we     = 1;
                 wbuf_AXI_we = 1;
             end
@@ -190,7 +261,7 @@ module main_FSM_d(
         end
         WAIT_WRITE: begin
             if(uncache && (wrt_AXI_finish || op == READ) || 
-              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf))begin
+              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf) )begin
                 data_valid      = 1;
                 rbuf_we         = 1;
                 wbuf_AXI_reset  = 1;

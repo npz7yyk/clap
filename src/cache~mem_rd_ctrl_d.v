@@ -9,6 +9,8 @@ module mem_rd_ctrl_d(
     input uncache_rbuf,
     input signed_ext,
     input [3:0] miss_way_sel,
+    input cacop_en_rbuf,
+    input [4:0]cacop_code_rbuf,
     output reg [511:0] miss_sel_data,
     output reg [31:0] r_data
     );
@@ -114,7 +116,18 @@ module mem_rd_ctrl_d(
         endcase
     end
     always @(*) begin
-        if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};
+        if(cacop_en_rbuf && cacop_code_rbuf == 5'b01001) begin
+            case(addr_rbuf[1:0])
+            2'd0: miss_sel_data = mem_dout[511:0];
+            2'd1: miss_sel_data = mem_dout[1023:512];
+            2'd2: miss_sel_data = mem_dout[1535:1024];
+            2'd3: miss_sel_data = mem_dout[2047:1536];
+            endcase
+        end
+        else if(cacop_en_rbuf && cacop_code_rbuf == 5'b10001) begin
+            miss_sel_data = way_data;
+        end
+        else if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};
         else begin
             case(miss_way_sel)
             M_SEL0: miss_sel_data = mem_dout[511:0];

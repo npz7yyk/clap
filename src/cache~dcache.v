@@ -37,20 +37,24 @@ module dcache(
     //back
     output                  b_ready,
     input                   b_valid,
-
-    output            [6:0] exception
+    //exception 
+    output            [6:0] exception,
+    //cacop
+    input [4:0] cacop_code,
+    input cacop_en
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
-    wire vld, vld_mbuf, pbuf_we;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
+    wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf;
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit, hit_mbuf;
+    wire [4:0] cacop_code_rbuf;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
     wire [2047:0] mem_dout;
-    wire signed_ext_rbuf, uncache_rbuf;
+    wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
 
     assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf ? addr_pbuf : w_addr_mbuf;
@@ -64,12 +68,12 @@ module dcache(
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type
-    register#(71) req_buf(
+    register#(77) req_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
-        .din        ({signed_ext, addr, w_data_CPU, op, write_type, uncache}),
-        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf, uncache_rbuf})
+        .din        ({signed_ext, addr, w_data_CPU, op, write_type, uncache, cacop_code, cacop_en}),
+        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf, uncache_rbuf, cacop_code_rbuf, cacop_en_rbuf})
     );
     /* physical addr buffer */
     register#(32) phy_buf(
@@ -138,6 +142,7 @@ module dcache(
     /* TagV list */
     TagV_memory_d tagv_mem(
         .clk            (clk),
+        .tagv_clear     (tagv_clear),
         .r_addr         (addr),
         .w_addr         (addr_pbuf),
         .tag            (p_addr[31:12]),
@@ -194,6 +199,8 @@ module dcache(
         .uncache_rbuf       (uncache_rbuf),
         .r_data_AXI         (w_line_AXI),
         .r_data_sel         (r_data_sel),
+        .cacop_en_rbuf      (cacop_en_rbuf),
+        .cacop_code_rbuf    (cacop_code_rbuf),
         .miss_way_sel       (way_replace),
         .miss_sel_data      (miss_sel_data),
         .r_data             (r_data_CPU)
@@ -219,6 +226,7 @@ module dcache(
         .mem_we_normal      (mem_we_normal),
         .uncache            (uncache_rbuf),
         .visit_type         (write_type_rbuf),
+        .addr_rbuf          (addr_rbuf),
 
         .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),
@@ -242,6 +250,10 @@ module dcache(
         .w_size             (w_size),
         .r_data_ready       (r_data_ready),
         .data_valid         (data_valid),
-        .cache_ready        (cache_ready)
+        .cache_ready        (cache_ready),
+
+        .cacop_code         (cacop_code_rbuf),
+        .cacop_en           (cacop_en_rbuf),
+        .tagv_clear         (tagv_clear)
     );
 endmodule
