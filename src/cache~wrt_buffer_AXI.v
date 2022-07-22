@@ -73,6 +73,7 @@ module wrt_buffer_AXI(
             bready = 1;
             wvalid = 1;
             wlast = 1;
+            wvalid = 1;
         end
         FINISH: begin
             wrt_AXI_finish = 1;
