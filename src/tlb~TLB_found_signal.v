@@ -9,6 +9,7 @@ module TLB_found_signal#(
     input  [       TLBNUM-1:0]  all_v0,
     input  [       TLBNUM-1:0]  found0,
     input                       odd0_bit,
+
     input  [    TLBNUM*20-1:0]  all_pfn1,
     input  [     TLBNUM*2-1:0]  all_mat1,
     input  [     TLBNUM*2-1:0]  all_plv1,
@@ -18,15 +19,18 @@ module TLB_found_signal#(
     input                       odd1_bit,
 
     output                      found_v0, 
-    output                      found_v1,
     output                      found_d0, 
-    output                      found_d1,
     output    [            1:0] found_mat0, 
-    output    [            1:0] found_mat1,
     output    [            1:0] found_plv0, 
-    output    [            1:0] found_plv1,
     output    [           19:0] found_pfn0, 
-    output    [           19:0] found_pfn1
+    output reg[            3:0] found_index0,
+
+    output                      found_v1,
+    output                      found_d1,
+    output    [            1:0] found_mat1,
+    output    [            1:0] found_plv1,
+    output    [           19:0] found_pfn1,
+    output reg[            3:0] found_index1
 
     );
     genvar i;
@@ -42,6 +46,48 @@ module TLB_found_signal#(
         assign found_mat1   = found1[i] ? (!odd1_bit ? all_mat0[2*i+1:2*i] : all_mat1[2*i+1:2*i]) : 0;
         assign found_plv1   = found1[i] ? (!odd1_bit ? all_plv0[2*i+1:2*i] : all_plv1[2*i+1:2*i]) : 0;
         assign found_pfn1   = found1[i] ? (!odd1_bit ? all_pfn0[20*i+19:20*i] : all_pfn1[20*i+19:20*i]) : 0;
+    end
+
+    always @(*) begin
+        case(found0)
+        16'h0001: found_index0 = 4'd0;
+        16'h0002: found_index0 = 4'd1;
+        16'h0004: found_index0 = 4'd2;
+        16'h0008: found_index0 = 4'd3;
+        16'h0010: found_index0 = 4'd4;
+        16'h0020: found_index0 = 4'd5;
+        16'h0040: found_index0 = 4'd6;
+        16'h0080: found_index0 = 4'd7;
+        16'h0100: found_index0 = 4'd8;
+        16'h0200: found_index0 = 4'd9;
+        16'h0400: found_index0 = 4'd10;
+        16'h0800: found_index0 = 4'd11;
+        16'h1000: found_index0 = 4'd12;
+        16'h2000: found_index0 = 4'd13;
+        16'h4000: found_index0 = 4'd14;
+        16'h8000: found_index0 = 4'd15;
+        default:  found_index0 = 0;
+        endcase
+
+        case(found1)
+        16'h0001: found_index1 = 4'd0;
+        16'h0002: found_index1 = 4'd1;
+        16'h0004: found_index1 = 4'd2;
+        16'h0008: found_index1 = 4'd3;
+        16'h0010: found_index1 = 4'd4;
+        16'h0020: found_index1 = 4'd5;
+        16'h0040: found_index1 = 4'd6;
+        16'h0080: found_index1 = 4'd7;
+        16'h0100: found_index1 = 4'd8;
+        16'h0200: found_index1 = 4'd9;
+        16'h0400: found_index1 = 4'd10;
+        16'h0800: found_index1 = 4'd11;
+        16'h1000: found_index1 = 4'd12;
+        16'h2000: found_index1 = 4'd13;
+        16'h4000: found_index1 = 4'd14;
+        16'h8000: found_index1 = 4'd15;
+        default:  found_index1 = 0;
+        endcase
     end
     // always @(*) begin
     //     found_v0 = 0;

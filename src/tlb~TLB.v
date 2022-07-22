@@ -12,7 +12,7 @@ module TLB#(
     input  [               1:0] s0_mem_type,
     input                       s0_en,
     output                      s0_found,
-    //output [$clog2(TLBNUM)-1:0] s0_index,
+    output [$clog2(TLBNUM)-1:0] s0_index,
     output     [           19:0] s0_pfn,
     output     [            1:0] s0_mat,
     output     [           31:0] s0_paddr,
@@ -28,7 +28,7 @@ module TLB#(
     input  [               1:0] s1_mem_type,
     input                       s1_en,
     output                      s1_found,
-    //output [$clog2(TLBNUM)-1:0] s1_index,
+    output [$clog2(TLBNUM)-1:0] s1_index,
     output     [          19:0] s1_pfn,
     output     [           1:0] s1_mat,
     output     [          31:0] s1_paddr,
@@ -83,6 +83,7 @@ module TLB#(
     wire [1:0] found_mat0, found_mat1;
     wire [1:0] found_plv0, found_plv1;
     wire [19:0] found_pfn0, found_pfn1;
+    wire [3:0] found_index0, found_index1;
 
     wire [19:0] s0_vpn_rbuf, s1_vpn_rbuf;
     wire [7:0] s0_asid_rbuf, s1_asid_rbuf;
@@ -216,7 +217,8 @@ module TLB#(
     assign s1_pfn   = found_pfn1;
     assign s0_mat   = found_mat0;
     assign s1_mat   = found_mat1;
-
+    assign s0_index = found_index0;
+    assign s1_index = found_index1;
 
     TLB_found_signal found_signal(
     .all_pfn0       (all_pfn0),
@@ -242,7 +244,9 @@ module TLB#(
     .found_plv0     (found_plv0), 
     .found_plv1     (found_plv1),
     .found_pfn0     (found_pfn0), 
-    .found_pfn1     (found_pfn1)
+    .found_pfn1     (found_pfn1),
+    .found_index0   (found_index0),
+    .found_index1   (found_index1)
     );
 
     TLB_out addr_output(
