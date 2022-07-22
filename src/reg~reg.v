@@ -123,6 +123,18 @@ always @(posedge clk) begin
                     read_data00<=0;
                 end
             endcase
+        end else if(eu0_uop_in[`ITYPE_IDX_CSR]) begin
+            if(eu0_rj_in==0)begin
+                read_data00<=0;
+            end else if(eu0_rj_in==1)begin
+                read_data00<=32'h1111;
+            end if (eu0_rj_in==write_addr_0&&write_en_0) begin
+                read_data00<=write_data_0;
+            end else if (eu0_rj_in==write_addr_1&&write_en_1) begin
+                read_data00<=write_data_1;
+            end else begin
+                read_data00<=register_file[eu0_rj_in];
+            end 
         end else begin
             if(eu0_rj_in==0)begin
                 read_data00<=0;

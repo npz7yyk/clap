@@ -40,6 +40,7 @@ module exe(
     //向issue段输出
     output stall,
     output reg flush,
+    output empty,
     //向分支预测输出
     output [31:0]branch_pc,
     output reg [31:0]branch_addr_calculated,
@@ -148,8 +149,13 @@ wire[4:0]div_addr_out_quick;
 //末段寄存器
 reg [0:0]eu0_en_1_internal;
 reg [0:0]eu1_en_1_internal;
-//中段寄存器更新
+
 assign branch_pc=eu0_pc_exe1;
+
+assign empty=!eu0_en_0&&!mem_en_exe1&&!eu0_mul_en_0&&!en_out0&&!eu1_en_0&&!en_out1&&!stall;
+
+//中段寄存器更新
+
 always @(posedge clk) begin
     //eu0
     if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
