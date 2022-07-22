@@ -71,6 +71,7 @@ module wrt_buffer_AXI(
         end
         WAIT_FINISH: begin
             bready = 1;
+            w_last = 1;
         end
         FINISH: begin
             wrt_AXI_finish = 1;
