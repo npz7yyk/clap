@@ -6,6 +6,8 @@ module data_mem(
     input [31:0] addr,
     input [31:0] w_data_CPU,
     input [3:0] write_type,
+    input cacop_en,
+    input [4:0] cacop_code,
     output data_valid,
     output [31:0] r_data_CPU,
     output [6:0] exp
@@ -40,7 +42,7 @@ module data_mem(
         .addr           (addr),
         .p_addr         (p_addr),
         .op             (op),
-        .uncache        (1'b1),
+        .uncache        (1'b0),
         .write_type     (write_type),
         .w_data_CPU     (w_data_CPU),
         .signed_ext     (1'b1),
@@ -72,7 +74,9 @@ module data_mem(
         .b_ready        (b_ready),
         .b_valid        (b_valid),
 
-        .exception      (exp)
+        .exception      (exp),
+        .cacop_en       (cacop_en),
+        .cacop_code     (cacop_code)
     );
     AXI_memory main_mem(
         .s_aclk             (clk),

@@ -825,7 +825,10 @@ module core_top(
         .w_strb         (d_axi_wstrb),
         .w_data_AXI     (d_axi_wdata),
         .w_rdy          (d_axi_awready),
-        .b_valid        (d_axi_bvalid)
+        .b_valid        (d_axi_bvalid),
+
+        .cacop_code     (5'b0),
+        .cacop_en       (1'b0)
     );
 
     TLB the_tlb(

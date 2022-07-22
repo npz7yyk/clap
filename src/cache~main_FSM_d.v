@@ -67,6 +67,9 @@ module main_FSM_d(
     parameter INDEX_INVALIDATE  = 2'b01;
     parameter HIT_INVALIDATE    = 2'b10;
 
+    parameter DCACHE_OP = 3'b001;
+    parameter ICACHE_OP = 3'b000;
+
 
     reg [2:0] un_visit_type;
     always @(*) begin
@@ -90,7 +93,7 @@ module main_FSM_d(
     reg[5:0] crt, nxt;
 
     always @(posedge clk) begin
-        if(!rstn) crt <= 0;
+        if(!rstn) crt <= IDLE;
         else crt <= nxt;
     end
 
@@ -102,12 +105,12 @@ module main_FSM_d(
         end
         LOOKUP: begin
             // check instruction
-            if(cacop_en && cacop_code == STORE_TAG) begin 
+            if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
                 if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
             end 
 
-            else if(cacop_en && cacop_code == INDEX_INVALIDATE) begin 
+            else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin 
                 if(dirty_data) nxt = MISS;
                 else begin
                     if(valid) nxt = LOOKUP;
@@ -115,7 +118,7 @@ module main_FSM_d(
                 end
             end
 
-            else if(cacop_en && cacop_code == HIT_INVALIDATE) begin
+            else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
                 if(cache_hit && dirty_data) nxt = MISS;
                 else begin
                     if(valid) nxt = LOOKUP;
@@ -159,7 +162,14 @@ module main_FSM_d(
             else nxt = REFILL;
         end
         WAIT_WRITE: begin
-            if(uncache && (wrt_AXI_finish || op == READ) || 
+            if(cacop_en) begin
+                if(wrt_AXI_finish) begin
+                    if(valid) nxt = LOOKUP;
+                    else nxt = IDLE;
+                end
+                else nxt = WAIT_WRITE;
+            end
+            else if(uncache && (wrt_AXI_finish || op == READ) || 
               !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf)) begin
                 if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
@@ -189,26 +199,37 @@ module main_FSM_d(
             rdata_sel       = 1;
             wrt_data_sel    = 1;
             pbuf_we         = 1;
-            if(cacop_en && cacop_code == 5'b00001) begin
+            if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin
                 tagv_clear          = 1;
                 tagv_we             = tagv_we_inst;
                 dirty_we            = tagv_we_inst;
                 w_dirty_data        = 1'b0;
                 data_valid          = 1;
             end 
-            else if(cacop_en && cacop_code == 5'b01001) begin
+            else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin
                 tagv_clear          = 1;
                 tagv_we             = tagv_we_inst;
                 dirty_we            = tagv_we_inst;
                 w_dirty_data        = 1'b0;
-                if(!dirty_data) data_valid = 1;
+                if(!dirty_data) begin
+                    data_valid      = 1;
+                    rbuf_we         = 1;
+                    wbuf_AXI_reset  = 1;
+                    cache_ready     = 1;
+                end
+
             end
-            else if(cacop_en && cacop_code == 5'b10001) begin
+            else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
                 tagv_clear          = 1;
                 tagv_we             = hit;
                 dirty_we            = hit;
                 w_dirty_data        = 1'b0;
-                if(!(cache_hit && dirty_data)) data_valid = 1;
+                if(!(cache_hit && dirty_data)) begin
+                    data_valid      = 1;
+                    rbuf_we         = 1;
+                    wbuf_AXI_reset  = 1;
+                    cache_ready     = 1;
+                end
             end
 
             else if(!cache_hit || uncache) begin
@@ -260,7 +281,15 @@ module main_FSM_d(
             end
         end
         WAIT_WRITE: begin
-            if(uncache && (wrt_AXI_finish || op == READ) || 
+            if(cacop_en) begin
+                if(wrt_AXI_finish) begin
+                    data_valid      = 1;
+                    rbuf_we         = 1;
+                    wbuf_AXI_reset  = 1;
+                    cache_ready     = 1;
+                end
+            end
+            else if(uncache && (wrt_AXI_finish || op == READ) || 
               !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf) )begin
                 data_valid      = 1;
                 rbuf_we         = 1;
