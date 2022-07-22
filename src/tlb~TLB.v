@@ -6,7 +6,7 @@ module TLB#(
     input  [               1:0] ad_mode,
     //search port pc
     input  [              31:0] s0_vaddr,
-    input  [              19:0] s0_vpn,
+    //input  [              19:0] s0_vpn,
     input  [               7:0] s0_asid,
     input  [               1:0] s0_plv,
     input  [               1:0] s0_mem_type,
@@ -22,7 +22,7 @@ module TLB#(
 
     //search port data
     input  [              31:0] s1_vaddr,
-    input  [              19:0] s1_vpn,
+    //input  [              19:0] s1_vpn,
     input  [               7:0] s1_asid,
     input  [               1:0] s1_plv,
     input  [               1:0] s1_mem_type,
@@ -110,14 +110,14 @@ module TLB#(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s0_en),
-        .din            ({s0_vpn, s0_asid, s0_plv, s0_mem_type}),
+        .din            ({s0_vaddr[31:12], s0_asid, s0_plv, s0_mem_type}),
         .dout           ({s0_vpn_rbuf, s0_asid_rbuf, s0_plv_rbuf, s0_mem_type_rbuf})
     );
     register#(32) req1_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s1_en),
-        .din            ({s1_vpn, s1_asid, s1_plv, s1_mem_type}),
+        .din            ({s1_vaddr[31:12], s1_asid, s1_plv, s1_mem_type}),
         .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
     );
     register#(2) mode_buffer(
@@ -203,6 +203,7 @@ module TLB#(
         .all_g      (all_g),
         .all_asid   (all_asid),
         .all_vpn2   (all_vpn2),
+        .all_ps     (all_ps),
         .s0_asid    (s0_asid_rbuf),
         .s1_asid    (s1_asid_rbuf),
         .s0_vpn2    (s0_vpn_rbuf[19:1]),

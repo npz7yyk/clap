@@ -5,6 +5,7 @@ module TLB_found_compare#(
     input  [   TLBNUM-1:0] all_g,
     input  [ TLBNUM*8-1:0] all_asid,
     input  [TLBNUM*19-1:0] all_vpn2,
+    input  [ TLBNUM*6-1:0] all_ps;
     input  [          7:0] s0_asid,
     input  [          7:0] s1_asid,
     input  [         18:0] s0_vpn2,
@@ -16,10 +17,10 @@ module TLB_found_compare#(
     for(i = 0; i < TLBNUM; i = i + 1) begin
         assign found0[i] = all_e[i] && 
                            (all_g[i] || (all_asid[8*i+7:8*i] == s0_asid)) && 
-                           (all_vpn2[19*i+18:19*i] == s0_vpn2);
+                           (all_vpn2[19*i+32-all_ps[6*i+5:6*i]:19*i] == s0_vpn2[18:all_ps[6*i+5:6*i]-12]);
         
         assign found1[i] = all_e[i] && 
                            (all_g[i] || (all_asid[8*i+7:8*i] == s1_asid)) && 
-                           (all_vpn2[19*i+18:19*i] == s1_vpn2);
+                           (all_vpn2[19*i+32-all_ps[6*i+5:6*i]:19*i] == s1_vpn2[18:all_ps[6*i+5:6*i]-12]);
     end 
 endmodule
