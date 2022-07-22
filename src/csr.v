@@ -271,6 +271,9 @@ module csr
         end else if(restore_state) begin
             crmd_plv <= prmd_pplv;
             crmd_ie <= prmd_pie;
+        end else if(store_state) begin
+            crmd_plv <= 0;
+            crmd_ie <= 0;
         end
     
     //PRMD

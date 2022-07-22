@@ -427,6 +427,7 @@ module core_top(
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
+    wire flush_by_issue;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     always @(posedge aclk) begin
         if(~aresetn)
@@ -503,7 +504,7 @@ module core_top(
     icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
-        .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
+        .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback|flush_by_issue),
         .valid          (~if_buf_full),
         .pc_in          (pc),
         .p_addr         (p_pc),
@@ -557,7 +558,7 @@ module core_top(
     
     id_stage the_decoder (
         .clk(aclk), .rstn(aresetn),
-        .flush(set_pc_by_executer||set_pc_by_writeback),
+        .flush(set_pc_by_executer||set_pc_by_writeback||flush_by_issue),
         .read_en(id_read_en),
         .full(if_buf_full),
         .input_valid(data_valid),
@@ -607,6 +608,8 @@ module core_top(
         .exception0(id_exception0),.exception1(id_exception1),
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
+        .flush_by_issue(flush_by_issue),
+        .has_interrupt(has_interrupt),
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
         .eu0_ready(~ex_stall),
@@ -895,7 +898,15 @@ module core_top(
         .debug1_wb_inst(debug1_wb_inst),
 
         .set_pc(set_pc_by_writeback),
-        .pc(pc_writeback)
+        .pc(pc_writeback),
+
+        .eentry(csr_eentry),
+        .tlbrentry(csr_tlbrentry),
+        .era(csr_era_in),
+        .era_wen(csr_era_wen),
+        .store_state(csr_store_state),
+        .expcode_out(csr_expcode_in),
+        .expcode_wen(csr_expcode_wen)
     );
 
 `ifdef VERILATOR

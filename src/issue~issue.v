@@ -16,6 +16,7 @@
 // limitations under the License.
 
 `include "uop.vh"
+`include "exception.vh"
 
 module is_stage
 (
@@ -30,6 +31,8 @@ module is_stage
     input [6:0] exception0,exception1,
     input [31:0] pc0,pc_next0,
     input [31:0] pc1,pc_next1,
+    output flush_by_issue,
+    input has_interrupt,
     ////输出信号////
     //execute unit #0
     output eu0_en,
@@ -55,11 +58,14 @@ module is_stage
     reg [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
     
-    wire first_nop = uop0[`UOP_TYPE] == 0 && exception0==0;
-    wire second_nop = uop1[`UOP_TYPE] == 0 && exception1==0;
+    wire [6:0] exception0_Ustut79un = has_interrupt?`EXP_INT:exception0;
+    wire [6:0] exception1_Ustut79un = exception1;
+
+    wire first_nop = uop0[`UOP_TYPE] == 0 && exception0_Ustut79un==0;
+    wire second_nop = uop1[`UOP_TYPE] == 0 && exception1_Ustut79un==0;
     
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {pc_next0,pc0,exception0,imm0,rd0,rk0,rj0,uop0};
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {pc_next1,pc1,exception1,imm1,rd1,rk1,rj1,uop1};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {pc_next0,pc0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0};
+    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {pc_next1,pc1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1};
 
     wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
     wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
@@ -86,7 +92,7 @@ module is_stage
         else num_read = 2'b11;
 
     always @(posedge clk)
-        if(~rstn || flush)
+        if(~rstn || flush || flush_by_issue)
             fifo0 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: //一输出
@@ -98,7 +104,7 @@ module is_stage
         endcase
     
     always @(posedge clk)
-        if(~rstn || flush)
+        if(~rstn || flush || flush_by_issue)
             fifo1 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: begin//一输出
@@ -128,6 +134,7 @@ module is_stage
     assign {eu1_pc_next,eu1_pc,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = fifo1;
     assign eu1_en = eu1_en_0Ucym1r;
     assign eu0_en = eu0_en_0Ucym1r && (eu0_uop[`UOP_TYPE]!=0 || eu0_exception!=0);
+    assign flush_by_issue = eu0_en_0Ucym1r && eu0_exception!=0;
     
     always @* begin
         eu1_en_0Ucym1r = 0;

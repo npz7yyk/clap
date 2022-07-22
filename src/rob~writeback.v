@@ -1,5 +1,5 @@
+`include "exception.vh"
 
-//TODO: handle exception
 module writeback
 (   
     input eu0_valid,eu1_valid,
@@ -13,6 +13,8 @@ module writeback
     output wen0,wen1,
     output [4:0] waddr0,waddr1,
     output [31:0] wdata0,wdata1,
+
+    //debug port
     output [31:0] debug0_wb_pc,
     output [ 3:0] debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
@@ -27,11 +29,17 @@ module writeback
 
     //connect to PC
     output set_pc,
-    output [31:0] pc
-);
+    output [31:0] pc,
 
-    assign pc=0;
-    assign set_pc=0;
+    //CSR
+    input [31:0] eentry,tlbrentry,
+    output [31:0] era,
+    output era_wen,
+    output store_state,
+    output [6:0] expcode_out,
+    output expcode_wen
+    //TODO: badv, pgd
+);
     assign wen0 = eu0_valid && eu0_exception==0;
     assign wen1 = eu1_valid;
     assign waddr0 = eu0_rd;
@@ -39,6 +47,13 @@ module writeback
     assign wdata0 = eu0_data;
     assign wdata1 = eu1_data;
     
+    wire has_exception = eu0_valid && eu0_exception!=0;
+    assign set_pc = has_exception;
+    assign store_state = has_exception;
+    assign expcode_wen = has_exception;
+    assign pc = eu0_exception==`EXP_TLBR?tlbrentry:eentry;
+    assign era = eu0_pc;
+    assign expcode_out = eu0_exception;
 
     assign debug0_wb_pc = eu0_pc;
     assign debug0_wb_rf_wen = {4{wen0}};
