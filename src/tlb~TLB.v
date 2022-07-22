@@ -77,6 +77,7 @@ module TLB#(
     wire [31:0] s0_addr_buf, s1_addr_buf;
 
     wire [TLBNUM-1:0] found0, found1;
+    wire [5:0] found_ps0, found_ps1;
 
     wire found_v0, found_v1;
     wire found_d0, found_d1;
@@ -203,7 +204,6 @@ module TLB#(
         .all_g      (all_g),
         .all_asid   (all_asid),
         .all_vpn2   (all_vpn2),
-        .all_ps     (all_ps),
         .s0_asid    (s0_asid_rbuf),
         .s1_asid    (s1_asid_rbuf),
         .s0_vpn2    (s0_vpn_rbuf[19:1]),
@@ -222,32 +222,35 @@ module TLB#(
     assign s1_index = found_index1;
 
     TLB_found_signal found_signal(
-    .all_pfn0       (all_pfn0),
-    .all_mat0       (all_mat0),
-    .all_plv0       (all_plv0),
-    .all_d0         (all_d0),
-    .all_v0         (all_v0),
-    .found0         (found0),
-    .odd0_bit       (s0_vpn_rbuf[0]),
-    .all_pfn1       (all_pfn1),
-    .all_mat1       (all_mat1),
-    .all_plv1       (all_plv1),
-    .all_d1         (all_d1),
-    .all_v1         (all_v1),
-    .found1         (found1),
-    .odd1_bit       (s1_vpn_rbuf[0]),
-    .found_v0       (found_v0), 
-    .found_v1       (found_v1),
-    .found_d0       (found_d0), 
-    .found_d1       (found_d1),
-    .found_mat0     (found_mat0), 
-    .found_mat1     (found_mat1),
-    .found_plv0     (found_plv0), 
-    .found_plv1     (found_plv1),
-    .found_pfn0     (found_pfn0), 
-    .found_pfn1     (found_pfn1),
-    .found_index0   (found_index0),
-    .found_index1   (found_index1)
+        .all_ps         (all_ps),
+        .all_pfn0       (all_pfn0),
+        .all_mat0       (all_mat0),
+        .all_plv0       (all_plv0),
+        .all_d0         (all_d0),
+        .all_v0         (all_v0),
+        .found0         (found0),
+        .odd0_bit       (s0_vpn_rbuf[0]),
+        .all_pfn1       (all_pfn1),
+        .all_mat1       (all_mat1),
+        .all_plv1       (all_plv1),
+        .all_d1         (all_d1),
+        .all_v1         (all_v1),
+        .found1         (found1),
+        .odd1_bit       (s1_vpn_rbuf[0]),
+        .found_v0       (found_v0), 
+        .found_v1       (found_v1),
+        .found_d0       (found_d0), 
+        .found_d1       (found_d1),
+        .found_mat0     (found_mat0), 
+        .found_mat1     (found_mat1),
+        .found_plv0     (found_plv0), 
+        .found_plv1     (found_plv1),
+        .found_pfn0     (found_pfn0), 
+        .found_pfn1     (found_pfn1),
+        .found_index0   (found_index0),
+        .found_index1   (found_index1),
+        .found_ps0      (found_ps0),
+        .found_ps1      (found_ps1)
     );
 
     TLB_out addr_output(
@@ -256,6 +259,8 @@ module TLB#(
         .s1_addr    (s1_addr_buf),
         .s0_pfn     (s0_pfn),
         .s1_pfn     (s1_pfn),
+        .found_ps0  (found_ps0),
+        .found_ps1  (found_ps1),
         .s0_paddr   (s0_paddr),
         .s1_paddr   (s1_paddr)
     );
