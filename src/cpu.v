@@ -1,4 +1,5 @@
 `include "uop.vh"
+`include "exception.vh"
 
 module core_top(
     input           aclk,
@@ -427,7 +428,6 @@ module core_top(
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
-    reg [6:0] pc_exception;
     always @(posedge aclk) begin
         if(~aresetn)
             //龙芯架构32位精简版参考手册 v1.00 p. 53
@@ -499,6 +499,7 @@ module core_top(
     wire [31:0] p_pc;
     wire if_known;
     wire first_inst_jmp;
+    wire [6:0] if_exception;
     icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
@@ -512,6 +513,7 @@ module core_top(
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc),
         .cache_ready    (cache_ready),
+        .exception      (if_exception),
         
         .r_req          (i_axi_arvalid),
         .r_addr         (i_axi_araddr),
@@ -573,7 +575,7 @@ module core_top(
         .pc_in(if_pc),.pc_next_in(if_pc_next),
         .pc0_out(id_pc0),.pc1_out(id_pc1),
         .pc_next0_out(id_pc_next0),.pc_next1_out(id_pc_next1),
-        .exception_in(0),//TODO: 处理icache阶段的exception
+        .exception_in(if_exception),
         .exception0_out(id_exception0),.exception1_out(id_exception1),
        
         .feedback_valid(id_feedback_valid),
@@ -834,10 +836,17 @@ module core_top(
     TLB the_tlb(
         .clk(aclk),
         .rstn(aresetn),
-        .ad_mode(2'b0),
+        .ad_mode(translate_mode),
+
         .s0_vaddr(pc),
-        .s1_vaddr(ex_mem_addr),
         .s0_paddr(p_pc),
+        .s0_asid(asid_out),
+        .s0_plv(privilege),
+        .s0_mem_type(2'b00),
+        .s0_en(~if_buf_full),
+        // .s0_exception()
+
+        .s1_vaddr(ex_mem_addr),
         .s1_paddr(ex_mem_paddr)
     );
 
