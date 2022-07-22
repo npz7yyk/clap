@@ -102,7 +102,6 @@ module core_top(
     wire [0:0]  i_axi_rlast;        wire [0:0]  d_axi_rlast;
     wire [0:0]  i_axi_rvalid;       wire [0:0]  d_axi_rvalid;
     wire [0:0]  i_axi_rready;       wire [0:0]  d_axi_rready;
-    //CPU是slave，RAM才是master
     axi_interconnect #(
         .S_COUNT(2),
         .M_COUNT(1),
@@ -301,7 +300,7 @@ module core_top(
     wire  [31:0]  tid;
     wire  [31:0]  cache_tag;
 
-    csr  u_csr (
+    csr  the_csr (
         .clk                     ( aclk                   ),
         .rstn                    ( aresetn                ),
 
@@ -419,7 +418,6 @@ module core_top(
         .cache_tag               ( cache_tag              )
     );
 
-    wire data_valid;
     wire if_buf_full;
     wire cache_ready;
     wire pc_stall_n=cache_ready & ~if_buf_full;
@@ -450,37 +448,37 @@ module core_top(
     wire ex_feedback_valid,ex_did_jump;
     wire pred_known;
     wire pd_branch,pd_reason;
-    reg id_feedback_valid_reg;
-    reg [31:0] id_pc_for_predict_reg;
-    reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
-    reg [1:0] id_category0_reg,id_category1_reg;
-    always @(posedge aclk)
-        if(~aresetn) begin
-            id_feedback_valid_reg<=0;
-            id_pc_for_predict_reg<=0;
-            id_jmpdist0_reg<=0;
-            id_jmpdist1_reg<=0;
-            id_category0_reg<=0;
-            id_category1_reg<=0;
-        end
-        else begin
-            id_feedback_valid_reg <= id_feedback_valid;
-            id_pc_for_predict_reg <= id_pc_for_predict;
-            id_jmpdist0_reg <= id_jmpdist0;
-            id_jmpdist1_reg <= id_jmpdist1;
-            id_category0_reg <= id_category0;
-            id_category1_reg <= id_category1;
-        end
+    // reg id_feedback_valid_reg;
+    // reg [31:0] id_pc_for_predict_reg;
+    // reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
+    // reg [1:0] id_category0_reg,id_category1_reg;
+    // always @(posedge aclk)
+    //     if(~aresetn) begin
+    //         id_feedback_valid_reg<=0;
+    //         id_pc_for_predict_reg<=0;
+    //         id_jmpdist0_reg<=0;
+    //         id_jmpdist1_reg<=0;
+    //         id_category0_reg<=0;
+    //         id_category1_reg<=0;
+    //     end
+    //     else begin
+    //         id_feedback_valid_reg <= id_feedback_valid;
+    //         id_pc_for_predict_reg <= id_pc_for_predict;
+    //         id_jmpdist0_reg <= id_jmpdist0;
+    //         id_jmpdist1_reg <= id_jmpdist1;
+    //         id_category0_reg <= id_category0;
+    //         id_category1_reg <= id_category1;
+    //     end
     branch_unit the_branch_predict
     (
         .clk(aclk),.rstn(aresetn),
 
         .ifVld(pc_stall_n),.ifPC(pc),
 
-        .idVld(id_feedback_valid_reg),
-        .idPC(id_pc_for_predict_reg),
-        .idPCTar1(id_jmpdist0_reg), .idPCTar2(id_jmpdist1_reg),
-        .idType1(id_category0_reg), .idType2(id_category1_reg),
+        .idVld(id_feedback_valid),
+        .idPC(id_pc_for_predict),
+        .idPCTar1(id_jmpdist0), .idPCTar2(id_jmpdist1),
+        .idType1(id_category0), .idType2(id_category1),
         
         .exVld(ex_feedback_valid),
         .exPC(ex_branch_pc),
@@ -495,12 +493,13 @@ module core_top(
         .pdReason(pd_reason)
     );
 
+    wire data_valid_qt4WxiD7aL7;
     wire [63:0] r_data_CPU;
-    wire [31:0] if_pc,if_pc_next;
+    wire [31:0] if_pc_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7;
     wire [31:0] p_pc;
-    wire if_known;
-    wire first_inst_jmp;
-    wire [6:0] if_exception;
+    wire if_known_qt4WxiD7aL7;
+    wire first_inst_jmp_qt4WxiD7aL7;
+    wire [6:0] if_exception_qt4WxiD7aL7;
     icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
@@ -509,12 +508,12 @@ module core_top(
         .pc_in          (pc),
         .p_addr         (p_pc),
         .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
-        .cookie_out     ({first_inst_jmp,if_known,if_pc_next}),
-        .data_valid     (data_valid),
+        .cookie_out     ({first_inst_jmp_qt4WxiD7aL7,if_known_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7}),
+        .data_valid     (data_valid_qt4WxiD7aL7),
         .r_data_CPU     (r_data_CPU),
-        .pc_out         (if_pc),
+        .pc_out         (if_pc_qt4WxiD7aL7),
         .cache_ready    (cache_ready),
-        .exception      (if_exception),
+        .exception      (if_exception_qt4WxiD7aL7),
         
         .r_req          (i_axi_arvalid),
         .r_addr         (i_axi_araddr),
@@ -548,6 +547,13 @@ module core_top(
     assign i_axi_arlock = 0;
     assign i_axi_arcache = 0;
     assign i_axi_arprot = 3'b100;
+
+    wire [31:0] if_inst0,if_inst1;
+    wire data_valid;
+    wire [31:0] if_pc,if_pc_next;
+    wire if_known;
+    wire first_inst_jmp;
+    wire [6:0] if_exception;
     
     wire [1:0] id_read_en;
     wire [`WIDTH_UOP-1:0] id_uop0,id_uop1;
@@ -555,6 +561,31 @@ module core_top(
     wire [4:0] id_rd0,id_rd1,id_rk0,id_rk1,id_rj0,id_rj1;
     wire [6:0] id_exception0,id_exception1;
     wire [31:0] id_pc0,id_pc1,id_pc_next0,id_pc_next1;
+
+    decode_unit_input_reg duir
+    (
+        .clk(aclk),
+        .rstn(aresetn),
+        .flush(set_pc_by_decoder||set_pc_by_executer||set_pc_by_writeback||flush_by_issue),
+        
+        .input_valid_in(data_valid_qt4WxiD7aL7),
+        .inst0_in(r_data_CPU[31:0]),
+        .inst1_in(r_data_CPU[63:32]),
+        .known_in(if_known_qt4WxiD7aL7),
+        .first_inst_jmp_in(first_inst_jmp_qt4WxiD7aL7),
+        .exception_in(if_exception_qt4WxiD7aL7),
+        .pc_in(if_pc_qt4WxiD7aL7),
+        .pc_next_in(if_pc_next_qt4WxiD7aL7),
+
+        .input_valid_out(data_valid),
+        .inst0_out(if_inst0),
+        .inst1_out(if_inst1),
+        .known_out(if_known),
+        .first_inst_jmp_out(first_inst_jmp),
+        .exception_out(if_exception),
+        .pc_out(if_pc),
+        .pc_next_out(if_pc_next)
+    );
     
     id_stage the_decoder (
         .clk(aclk), .rstn(aresetn),
@@ -562,8 +593,8 @@ module core_top(
         .read_en(id_read_en),
         .full(if_buf_full),
         .input_valid(data_valid),
-        .inst0(r_data_CPU[31:0]),
-        .inst1(r_data_CPU[63:32]),
+        .inst0(if_inst0),
+        .inst1(if_inst1),
         .unknown0(~if_known),.unknown1(~if_known),
         .first_inst_jmp(first_inst_jmp),
         

@@ -119,12 +119,14 @@ module id_stage
     wire [2:0] tail1_plus_1 = tail1+1;
     wire [2:0] tail0_plus_2 = tail0+2;
     wire [2:0] tail1_plus_2 = tail1+2;
+    wire [2:0] tail0_plus_3 = tail0+3;
+    wire [2:0] tail1_plus_3 = tail1+3;
     wire full0 = tail0_plus_1==head0;
     wire full1 = tail1_plus_1==head1;
     assign empty = empty0&&empty1;
     assign really_full = full0||full1;
     //在还剩2 words容量时发出full，因为i-cache不支持stall
-    assign full  = really_full || tail0_plus_2==head0 || tail1_plus_2==head1;
+    assign full  = really_full || tail0_plus_2==head0 || tail1_plus_2==head1 || tail0_plus_3==head0 || tail1_plus_3==head1;
     
     wire valid_either = valid0 ^ valid1;
     wire valid_both   = valid0 && valid1;
