@@ -151,9 +151,6 @@ wire[0:0]mem_en_out;
 wire[0:0]div_en_out;
 wire[31:0]div_result;
 wire[4:0]div_addr_out;
-wire[0:0]div_en_out_quick;
-wire[31:0]div_result_quick;
-wire[4:0]div_addr_out_quick;
 wire priv_en_out;
 wire [31:0] priv_pc;
 wire flush_mid;
@@ -170,10 +167,7 @@ assign correct_pc_next = flush_because_br?branch_addr_calculated:priv_pc;
 assign branch_pc=eu0_pc_exe1;
 assign flush = flush_because_br||flush_because_priv;
 
-// assign empty=!eu0_en_0&&!mem_en_exe1&&!eu0_mul_en_0&&!en_out0&&!eu1_en_0&&!en_out1&&!stall;
-
 //中段寄存器更新
-
 always @(posedge clk) begin
     //eu0
     if(!rstn||flush_by_writeback||stall2||flush)begin
@@ -252,11 +246,11 @@ always @(posedge clk) begin
         eu0_pc_out<=0;
         eu0_inst<=0;
     end else if(!stall_because_cache)begin
-        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick|priv_en_out;
-        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick|priv_en_out;
+        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
-        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick|priv_data_out;
-        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick|priv_addr_out;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1;
         eu0_inst<=inst0_mid;
@@ -321,11 +315,11 @@ forward  u_forward (
     .eu1_rd_0                ( eu1_rd_0         ),
     .data_forward00          ( data_mid00   ),
     .data_forward10          ( data_mid10   ),
-    .eu0_en_1                ( eu0_en_1_internal         ),
+    .eu0_en_1                ( eu0_en_1_internal|div_en_out         ),
     .eu1_en_1                ( eu1_en_1_internal         ),
-    .eu0_rd_1                ( addr_out0         ),
+    .eu0_rd_1                ( addr_out0|div_addr_out         ),
     .eu1_rd_1                ( addr_out1         ),
-    .data_forward01          ( data_out0   ),
+    .data_forward01          ( data_out0|div_result   ),
     .data_forward11          ( data_out1   ),
 
     .eu0_sr0                 ( eu0_sr0          ),
@@ -455,8 +449,8 @@ mem1  u_mem1 (
 
 div  u_div (
     .clk                     ( clk                      ),
-    .rstn                    ( rstn&&!flush_by_writeback),
-    .div_en_in               ( eu0_div_en&&!stall       ),
+    .rstn                    ( rstn&&!flush_by_writeback ),
+    .div_en_in               ( eu0_div_en&&!stall        ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
@@ -466,10 +460,7 @@ div  u_div (
     .div_en_out              ( div_en_out               ),
     .stall_because_div       ( stall_because_div        ),
     .div_result              ( div_result               ),
-    .div_addr_out            ( div_addr_out   ),
-    .div_en_out_quick              ( div_en_out_quick               ),
-    .div_result_quick              ( div_result_quick               ),
-    .div_addr_out_quick            ( div_addr_out_quick   )
+    .div_addr_out            ( div_addr_out   )
 );
 
 //特权指令
