@@ -61,8 +61,16 @@ module exe(
     //从cache输入
     //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
-    input [ 31:0 ] r_data_CPU           //    read data to CPU
+    input [ 31:0 ] r_data_CPU,           //    read data to CPU
+    //CSR
+    output csr_software_query_en,
+    output [13:0] csr_addr,
+    input [31:0] csr_rdata,//read first
+    output  [31:0] csr_wen,      //bit write enable
+    output  [31:0] csr_wdata
 );
+
+
 
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
@@ -154,6 +162,23 @@ assign branch_pc=eu0_pc_exe1;
 
 assign empty=!eu0_en_0&&!mem_en_exe1&&!eu0_mul_en_0&&!en_out0&&!eu1_en_0&&!en_out1&&!stall;
 
+//CSR
+assign csr_software_query_en=eu0_en_0&eu0_uop_in[`ITYPE_IDX_CSR];
+assign csr_addr=eu0_imm_in[13:0];
+assign csr_wen=eu0_rj_in;
+assign csr_wdata=data00;
+reg [4:0]csr_rd_exe1;
+reg csr_en_exe1;
+reg [31:0]csr_pc_exe1;
+reg [31:0]csr_inst_exe1;
+always @(posedge clk) begin
+    csr_rd_exe1<=eu0_rd_in;
+    csr_en_exe1<=csr_software_query_en;
+    csr_pc_exe1<=eu0_pc_in;
+    csr_inst_exe1<=eu0_uop_in;
+end
+
+
 //中段寄存器更新
 
 always @(posedge clk) begin
@@ -239,13 +264,13 @@ always @(posedge clk) begin
         eu0_inst<=0;
     end else if(!stall_because_cache)begin
         eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick;
-        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick;
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick|csr_en_exe1;
         //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
-        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick;
-        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick|csr_rdata;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick|csr_rd_exe1;
         exp_out<=exp_exe1|mem_exp_out;
-        eu0_pc_out<=eu0_pc_exe1;
-        eu0_inst<=inst0_mid;
+        eu0_pc_out<=eu0_pc_exe1|csr_pc_exe1;
+        eu0_inst<=inst0_mid|csr_inst_exe1;
     end 
     else begin
         en_out0<=0;
@@ -299,11 +324,11 @@ forward  u_forward (
     .data01                  ( data01           ),
     .data10                  ( data10           ),
     .data11                  ( data11           ),
-    .eu0_en_0                ( eu0_en_0|div_en_out_quick         ),
+    .eu0_en_0                ( eu0_en_0        ),
     .eu1_en_0                ( eu1_en_0         ),
-    .eu0_rd_0                ( eu0_rd_0|div_addr_out_quick         ),
+    .eu0_rd_0                ( eu0_rd_0         ),
     .eu1_rd_0                ( eu1_rd_0         ),
-    .data_forward00          ( data_mid00|div_result_quick   ),
+    .data_forward00          ( data_mid00   ),
     .data_forward10          ( data_mid10   ),
     .eu0_en_1                ( eu0_en_1_internal         ),
     .eu1_en_1                ( eu1_en_1_internal         ),

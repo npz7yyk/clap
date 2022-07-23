@@ -61,6 +61,7 @@ always @(posedge clk) begin
             div_result_quick<=div_op? div_sr0:0;
             div_en_out_quick<=1;
             div_addr_out_quick<=div_addr_in;
+            stall_because_div<=1;
         end else begin
             op<=div_op;
             addr<=div_addr_in;
