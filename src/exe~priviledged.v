@@ -28,7 +28,7 @@ module exe_privliedged(
     output reg [31:0] csr_wen,      //bit write enable
     output reg [31:0] csr_wdata,
 
-    input era,
+    input [31:0] era,
     output reg restore_state
 
     //cache
@@ -55,12 +55,12 @@ module exe_privliedged(
         case(state)
         S_INIT: begin
             next_state = 0;
-            next_state[$clog2(S_INIT)] = !(is_csr||is_cache||is_tlb||is_idle||is_ertn);
-            next_state[$clog2(S_CSR)] = is_csr;
-            next_state[$clog2(S_CACOP)] = is_cache;
-            next_state[$clog2(S_TLB)] = is_tlb;
-            next_state[$clog2(S_IDLE)] = is_idle;
-            next_state[$clog2(S_ERTN)] = is_ertn;
+            next_state[$clog2(S_INIT)] = !(en_in&&(is_csr||is_cache||is_tlb||is_idle||is_ertn));
+            next_state[$clog2(S_CSR)] = en_in&&is_csr;
+            next_state[$clog2(S_CACOP)] = en_in&&is_cache;
+            next_state[$clog2(S_TLB)] = en_in&&is_tlb;
+            next_state[$clog2(S_IDLE)] = en_in&&is_idle;
+            next_state[$clog2(S_ERTN)] = en_in&&is_ertn;
         end
         S_CSR: next_state = S_DONE_CSR;
         S_ERTN: next_state = S_DONE_ERTN;

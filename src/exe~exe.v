@@ -65,7 +65,7 @@ module exe(
     input [31:0] csr_rdata,//read first
     output  [31:0] csr_wen,      //bit write enable
     output  [31:0] csr_wdata,
-    input era,
+    input [31:0] era,
     output restore_state
 );
 
@@ -195,7 +195,8 @@ always @(posedge clk) begin
         flush_because_br<=0;
         mul_ajustice_exe1<=0;
     end else if(!stall)begin
-        eu0_en_0<=br_en_mid|alu_en_mid;
+        //在存在异常时，将eu0_en_0置位，否则异常会被丢弃
+        eu0_en_0<=br_en_mid||alu_en_mid||eu0_en_in&&eu0_exp_in!=0;
         eu0_mul_en_0<=mul_en_mid;
         eu0_rd_0<=br_rd_addr_mid|alu_rd_mid;
         data_mid00<=br_rd_data_mid|alu_result_mid;
@@ -269,7 +270,7 @@ always @(posedge clk) begin
     end else if(!stall_because_cache&&!flush)begin
         eu1_en_1_internal<=eu1_en_0;
         // en_out1<=eu1_en_0;
-        en_out1<=eu1_en_0&&!stall_because_div;
+        en_out1<=eu1_en_0&&!stall_because_div&&!stall_because_priv;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
         eu1_pc_out<=eu1_pc_exe1;
@@ -450,7 +451,7 @@ mem1  u_mem1 (
 div  u_div (
     .clk                     ( clk                      ),
     .rstn                    ( rstn&&!flush_by_writeback ),
-    .div_en_in               ( eu0_div_en&&!stall        ),
+    .div_en_in               ( eu0_div_en&&!stall&&!flush        ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
@@ -468,7 +469,7 @@ exe_privliedged exe_privliedged
 (
     .clk(clk),.rstn(rstn&&!flush_by_writeback),
     
-    .en_in(eu0_priv_en&&!stall),
+    .en_in(eu0_priv_en&&!stall&&!flush),
     .pc_next(eu0_pc_next_in),
     .addr_in(eu0_rd_in),
     .imm(eu0_imm_in),

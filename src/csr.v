@@ -158,12 +158,12 @@ module csr
     reg [`EENTRY_VA] eentry_va;
     wire [31:0] csr_eentry;
     assign csr_eentry[`EENTRY_ZERO] = 0;
-    assign csr_eentry[`EENTRY_VA]   = csr_eentry;
+    assign csr_eentry[`EENTRY_VA]   = eentry_va;
     //TLBRENTRY
-    reg [`EENTRY_VA] tlbrentry_pa;
+    reg [`TLBRENTRY_PA] tlbrentry_pa;
     wire [31:0] csr_tlbrentry;
     assign csr_tlbrentry[`TLBRENTRY_ZERO] = 0;
-    assign csr_tlbrentry[`TLBRENTRY_PA]   = csr_eentry;
+    assign csr_tlbrentry[`TLBRENTRY_PA]   = tlbrentry_pa;
     //CPUID
     wire [31:0] csr_cpuid = COREID;
     //SAVE0~3

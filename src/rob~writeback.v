@@ -51,6 +51,7 @@ module writeback
     assign set_pc = has_exception;
     assign store_state = has_exception;
     assign expcode_wen = has_exception;
+    assign era_wen     = has_exception;
     assign pc = eu0_exception==`EXP_TLBR ? tlbrentry:eentry;
     assign era = eu0_pc;
     assign expcode_out = eu0_exception;

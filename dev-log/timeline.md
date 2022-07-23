@@ -1,5 +1,15 @@
 # Timeline
 
+## 2022-07-23
+
+Test func_lab8 passed.
+
+However, because
+
+> 为了加速性能测试，重置后DATF, DATM等于1，但这不符合 龙芯架构32位精简版参考手册 p. 53
+
+therefore, the value read from CSR 0 is different from the standard CPU's.
+
 ## 2022-07-22
 
 Test func_lab7 passed.
