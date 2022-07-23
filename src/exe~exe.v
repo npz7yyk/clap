@@ -70,8 +70,6 @@ module exe(
     output  [31:0] csr_wdata
 );
 
-
-
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
 assign eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
@@ -151,9 +149,6 @@ wire[0:0]mem_en_out;
 wire[0:0]div_en_out;
 wire[31:0]div_result;
 wire[4:0]div_addr_out;
-wire[0:0]div_en_out_quick;
-wire[31:0]div_result_quick;
-wire[4:0]div_addr_out_quick;
 //末段寄存器
 reg [0:0]eu0_en_1_internal;
 reg [0:0]eu1_en_1_internal;
@@ -171,12 +166,7 @@ reg [4:0]csr_rd_exe1;
 reg csr_en_exe1;
 reg [31:0]csr_pc_exe1;
 reg [31:0]csr_inst_exe1;
-always @(posedge clk) begin
-    csr_rd_exe1<=eu0_rd_in;
-    csr_en_exe1<=csr_software_query_en;
-    csr_pc_exe1<=eu0_pc_in;
-    csr_inst_exe1<=eu0_uop_in;
-end
+
 
 
 //中段寄存器更新
@@ -207,6 +197,12 @@ always @(posedge clk) begin
         ex_pc_tar<=0;
         flush<=0;
         mul_ajustice_exe1<=0;
+
+
+        csr_rd_exe1<=eu0_rd_in;
+        csr_en_exe1<=csr_software_query_en;
+        csr_pc_exe1<=eu0_pc_in;
+        csr_inst_exe1<=eu0_uop_in;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
         eu0_mul_en_0<=mul_en_mid;
@@ -232,6 +228,11 @@ always @(posedge clk) begin
         ex_pc_tar<=ex_pc_tar_mid;
         flush<=flush_mid;
         mul_ajustice_exe1<=mul_ad_mid;
+
+        csr_rd_exe1<=0;
+        csr_en_exe1<=0;
+        csr_pc_exe1<=0;
+        csr_inst_exe1<=0;
     end
     // else if(!stall_because_cache)
     //     eu0_en_0<=0;
@@ -263,11 +264,11 @@ always @(posedge clk) begin
         eu0_pc_out<=0;
         eu0_inst<=0;
     end else if(!stall_because_cache)begin
-        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick;
-        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick|csr_en_exe1;
+        eu0_en_1_internal<=eu0_en_0|mul_en_out|mem_en_out|div_en_out;
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|csr_en_exe1;
         //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
-        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick|csr_rdata;
-        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick|csr_rd_exe1;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out|csr_rdata;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|csr_rd_exe1;
         exp_out<=exp_exe1|mem_exp_out;
         eu0_pc_out<=eu0_pc_exe1|csr_pc_exe1;
         eu0_inst<=inst0_mid|csr_inst_exe1;
@@ -330,11 +331,11 @@ forward  u_forward (
     .eu1_rd_0                ( eu1_rd_0         ),
     .data_forward00          ( data_mid00   ),
     .data_forward10          ( data_mid10   ),
-    .eu0_en_1                ( eu0_en_1_internal         ),
+    .eu0_en_1                ( eu0_en_1_internal|div_en_out         ),
     .eu1_en_1                ( eu1_en_1_internal         ),
-    .eu0_rd_1                ( addr_out0         ),
+    .eu0_rd_1                ( addr_out0|div_addr_out         ),
     .eu1_rd_1                ( addr_out1         ),
-    .data_forward01          ( data_out0   ),
+    .data_forward01          ( data_out0|div_result   ),
     .data_forward11          ( data_out1   ),
 
     .eu0_sr0                 ( eu0_sr0          ),
@@ -468,7 +469,7 @@ mem1  u_mem1 (
 
 div  u_div (
     .clk                     ( clk                      ),
-    .rstn                    ( rstn||flush_by_writeback ),
+    .rstn                    ( rstn&&!flush_by_writeback ),
     .div_en_in               ( eu0_div_en&&!stall        ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
@@ -479,10 +480,7 @@ div  u_div (
     .div_en_out              ( div_en_out               ),
     .stall_because_div       ( stall_because_div        ),
     .div_result              ( div_result               ),
-    .div_addr_out            ( div_addr_out   ),
-    .div_en_out_quick              ( div_en_out_quick               ),
-    .div_result_quick              ( div_result_quick               ),
-    .div_addr_out_quick            ( div_addr_out_quick   )
+    .div_addr_out            ( div_addr_out   )
 );
 wire[31:0]eu1_alu_sr1;
 assign eu1_alu_sr1=eu1_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu1_imm_in:eu1_sr1;
