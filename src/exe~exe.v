@@ -39,11 +39,11 @@ module exe(
     output reg [31:0]eu1_inst,
     //向issue段输出
     output stall,
-    output reg flush,
-    output empty,
+    output flush,
+    // output empty,
     //向分支预测输出
     output [31:0]branch_pc,
-    output reg [31:0]branch_addr_calculated,
+    output [31:0]correct_pc_next,
     output reg branch_status,
     output reg branch_valid,
     output reg [1:0]category_out,
@@ -53,30 +53,30 @@ module exe(
     output [0:0] op,                    //    write: 1, read: 0
     output [31:0]addr,
     output [0:0]signed_ext,
-    // output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
-    // output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
-    // output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
     output [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ] w_data_CPU,         //    write data
     //从cache输入
-    //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,           //    read data to CPU
+
     //CSR
     output csr_software_query_en,
     output [13:0] csr_addr,
     input [31:0] csr_rdata,//read first
     output  [31:0] csr_wen,      //bit write enable
-    output  [31:0] csr_wdata
+    output  [31:0] csr_wdata,
+    input era,
+    output restore_state
 );
 
-
+wire stall2;
 
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
 assign eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
 assign eu0_br_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_BR];
 assign eu0_mem_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MEM];
+assign eu0_priv_en=eu0_en_in&&eu0_uop_in[`UOP_PRIVILEDGED];
 assign eu1_alu_en=eu1_en_in&eu1_uop_in[`ITYPE_IDX_ALU];
 
 wire[31:0]eu0_sr0;
@@ -104,7 +104,6 @@ wire[1:0]mem_width_mid;
 wire[0:0]eu1_alu_en_mid;
 wire[4:0]eu1_alu_rd_mid;
 wire[31:0]eu1_alu_result_mid;
-wire[0:0]flush_mid;
 wire[31:0]mul_ad_mid;
 wire [31:0]branch_pc_mid;
 wire [31:0]branch_addr_calculated_mid;
@@ -144,6 +143,7 @@ wire[0:0]mul_en_out;
 wire[31:0]mul_result;
 wire[0:0]stall_because_cache;
 wire[0:0]stall_because_div;
+wire stall_because_priv;
 wire[6:0]mem_exp_out;
 wire[4:0]mem_rd_out;
 wire[31:0]mem_data_out;
@@ -154,36 +154,29 @@ wire[4:0]div_addr_out;
 wire[0:0]div_en_out_quick;
 wire[31:0]div_result_quick;
 wire[4:0]div_addr_out_quick;
+wire priv_en_out;
+wire [31:0] priv_pc;
+wire flush_mid;
+reg flush_because_br;
+wire flush_because_priv;
+wire [31:0] priv_data_out;
+wire [4:0] priv_addr_out;
+reg [31:0] branch_addr_calculated;
 //末段寄存器
 reg [0:0]eu0_en_1_internal;
 reg [0:0]eu1_en_1_internal;
+assign correct_pc_next = flush_because_br?branch_addr_calculated:priv_pc;
 
 assign branch_pc=eu0_pc_exe1;
+assign flush = flush_because_br||flush_because_priv;
 
-assign empty=!eu0_en_0&&!mem_en_exe1&&!eu0_mul_en_0&&!en_out0&&!eu1_en_0&&!en_out1&&!stall;
-
-//CSR
-assign csr_software_query_en=eu0_en_0&eu0_uop_in[`ITYPE_IDX_CSR];
-assign csr_addr=eu0_imm_in[13:0];
-assign csr_wen=eu0_rj_in;
-assign csr_wdata=data00;
-reg [4:0]csr_rd_exe1;
-reg csr_en_exe1;
-reg [31:0]csr_pc_exe1;
-reg [31:0]csr_inst_exe1;
-always @(posedge clk) begin
-    csr_rd_exe1<=eu0_rd_in;
-    csr_en_exe1<=csr_software_query_en;
-    csr_pc_exe1<=eu0_pc_in;
-    csr_inst_exe1<=eu0_uop_in;
-end
-
+// assign empty=!eu0_en_0&&!mem_en_exe1&&!eu0_mul_en_0&&!en_out0&&!eu1_en_0&&!en_out1&&!stall;
 
 //中段寄存器更新
 
 always @(posedge clk) begin
     //eu0
-    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
+    if(!rstn||flush_by_writeback||stall2||flush)begin
         eu0_en_0 <= 0;
         eu0_mul_en_0<=0;
         eu0_rd_0<=0;
@@ -205,7 +198,7 @@ always @(posedge clk) begin
         branch_valid<=0;
         category_out<=0;
         ex_pc_tar<=0;
-        flush<=0;
+        flush_because_br<=0;
         mul_ajustice_exe1<=0;
     end else if(!stall)begin
         eu0_en_0<=br_en_mid|alu_en_mid;
@@ -230,13 +223,11 @@ always @(posedge clk) begin
         branch_valid<=branch_valid_mid;
         category_out<=category_out_mid;
         ex_pc_tar<=ex_pc_tar_mid;
-        flush<=flush_mid;
+        flush_because_br<=flush_mid;
         mul_ajustice_exe1<=mul_ad_mid;
     end
-    // else if(!stall_because_cache)
-    //     eu0_en_0<=0;
     //eu1
-    if(!rstn||flush_by_writeback||stall&&!stall_because_cache&&!stall_because_div||flush)begin
+    if(!rstn||flush_by_writeback||stall2||flush)begin
         eu1_en_0<=0;
         eu1_rd_0<=0;
         data_mid10<=0;
@@ -248,8 +239,6 @@ always @(posedge clk) begin
         eu1_pc_exe1<=eu1_pc_in;
         inst1_mid<=eu1_uop_in[`UOP_ORIGINAL_INST];
     end
-    // else if(!stall_because_cache)
-    //     eu1_en_0<=0;
 end
 //末段寄存器更新
 always @(posedge clk) begin
@@ -263,20 +252,20 @@ always @(posedge clk) begin
         eu0_pc_out<=0;
         eu0_inst<=0;
     end else if(!stall_because_cache)begin
-        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick;
-        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick|csr_en_exe1;
+        eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_en_out_quick|priv_en_out;
+        en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|div_addr_out_quick|priv_en_out;
         //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
-        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick|csr_rdata;
-        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick|csr_rd_exe1;
+        data_out0<=data_mid00|mul_result|div_result|mem_data_out|div_result_quick|priv_data_out;
+        addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|div_addr_out_quick|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
-        eu0_pc_out<=eu0_pc_exe1|csr_pc_exe1;
-        eu0_inst<=inst0_mid|csr_inst_exe1;
+        eu0_pc_out<=eu0_pc_exe1;
+        eu0_inst<=inst0_mid;
     end 
     else begin
         en_out0<=0;
     end
     //eu1
-    if(!rstn||flush_by_writeback)begin
+    if(!rstn||flush_by_writeback||flush_because_priv)begin
         eu1_en_1_internal<=0;
         en_out1<=0;
         data_out1<=0;
@@ -311,8 +300,10 @@ hazard  u_hazard (
     .eu0_rd                  ( mul_rd_exe1|mem_rd_exe1                ),
     .stall_because_cache     ( stall_because_cache   ),
     .stall_because_div       ( stall_because_div     ),
+    .stall_because_priv      ( stall_because_priv    ),
 
-    .stall                   ( stall                 )
+    .stall                   ( stall                 ),
+    .stall2                  ( stall2                )
 );
 
 forward  u_forward (
@@ -364,10 +355,10 @@ branch #(
     .branch_imm              ( eu0_imm_in               ),
     
 
-    .br_rd_data              ( br_rd_data_mid               ),
+    .br_rd_data              ( br_rd_data_mid           ),
     .br_rd_addr_out          ( br_rd_addr_mid           ),
     .br_en_out               ( br_en_mid                ),
-    .flush                   ( flush_mid                    ),
+    .flush                   ( flush_mid         ),
     .branch_addr_calculated  ( branch_addr_calculated_mid   ),
     .ex_pc_tar               (ex_pc_tar_mid),
     .branch_valid            (branch_valid_mid),
@@ -439,9 +430,6 @@ mem0  u_mem0 (
     .op                      ( op              ),
     .addr(addr),
     .signed_ext(signed_ext),
-    // .index                   ( index           ),
-    // .tag                     ( tag             ),
-    // .offset                  ( offset          ),
     .write_type              ( write_type      ),
     .w_data_CPU              ( w_data_CPU      ),
     .mem_exp_out             ( mem_exp_mid     ),
@@ -455,7 +443,6 @@ mem1  u_mem1 (
     .mem_rd_in               ( mem_rd_exe1             ),
     .mem_en_in               ( mem_en_exe1             ),
     .mem_width_in            ( mem_width_exe1          ),
-    //.addr_valid              ( addr_valid            ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
 
@@ -468,8 +455,8 @@ mem1  u_mem1 (
 
 div  u_div (
     .clk                     ( clk                      ),
-    .rstn                    ( rstn||flush_by_writeback ),
-    .div_en_in               ( eu0_div_en&&!stall        ),
+    .rstn                    ( rstn&&!flush_by_writeback),
+    .div_en_in               ( eu0_div_en&&!stall       ),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
@@ -484,6 +471,42 @@ div  u_div (
     .div_result_quick              ( div_result_quick               ),
     .div_addr_out_quick            ( div_addr_out_quick   )
 );
+
+//特权指令
+exe_privliedged exe_privliedged
+(
+    .clk(clk),.rstn(rstn&&!flush_by_writeback),
+    
+    .en_in(eu0_priv_en&&!stall),
+    .pc_next(eu0_pc_next_in),
+    .addr_in(eu0_rd_in),
+    .imm(eu0_imm_in),
+    .is_csr(eu0_uop_in[`ITYPE_IDX_CSR]),
+    .is_tlb(eu0_uop_in[`ITYPE_IDX_TLB]),
+    .is_cache(eu0_uop_in[`ITYPE_IDX_CACHE]),
+    .is_idle(eu0_uop_in[`ITYPE_IDX_IDLE]),
+    .is_ertn(eu0_uop_in[`ITYPE_IDX_ERET]),
+    .inst(eu0_uop_in[`UOP_ORIGINAL_INST]),
+    .sr0(eu0_sr0),
+    .sr1(eu0_sr1),
+
+    .en_out (priv_en_out),
+    .pc_target(priv_pc),
+    .flush(flush_because_priv),
+    .stall_because_priv(stall_because_priv),
+    .result(priv_data_out),
+    .addr_out(priv_addr_out),
+
+    .csr_software_query_en(csr_software_query_en),
+    .csr_addr(csr_addr),
+    .csr_rdata(csr_rdata),
+    .csr_wen(csr_wen),
+    .csr_wdata(csr_wdata),
+
+    .era(era),
+    .restore_state(restore_state)
+);
+
 wire[31:0]eu1_alu_sr1;
 assign eu1_alu_sr1=eu1_uop_in[`UOP_SRC2]==`CTRL_SRC2_IMM?eu1_imm_in:eu1_sr1;
 alu  u_alu1 (

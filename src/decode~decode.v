@@ -126,6 +126,8 @@ module decoder
         end
         else if(is_sra) alu_op=`CTRL_ALU_SRA;
     end
+
+    assign uop[`UOP_PRIVILEDGED] = type_[`ITYPE_IDX_CACHE] | type_[`ITYPE_IDX_TLB] | type_[`ITYPE_IDX_CSR] | type_[`ITYPE_IDX_ERET] | type_[`ITYPE_IDX_IDLE];
     
     reg [3:0] cond;
     reg br_invalid;
@@ -188,7 +190,6 @@ module decoder
         (type_[`ITYPE_IDX_CACHE]||
         type_[`ITYPE_IDX_TLB]||
         type_[`ITYPE_IDX_IDLE]||
-        type_[`ITYPE_IDX_CSR]||
         is_preload||
         type_[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE]&&!uop[`UOP_MEM_ATM]||
         //除了jilr和bl之外的分支
@@ -199,8 +200,7 @@ module decoder
     
     //源地址1
     assign rj =
-        (type_[`ITYPE_IDX_CSR]||
-        type_[`ITYPE_IDX_TLB]||
+        (type_[`ITYPE_IDX_TLB]||
         type_[`ITYPE_IDX_IDLE]||
         is_pcadd||is_lui||is_b_or_bl)?0:
         inst[9:5];

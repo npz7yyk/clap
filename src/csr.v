@@ -1033,40 +1033,42 @@ module csr
 
     ///////////////////////////////////////
     //CSR read
-    always @(posedge clk)
+    always @* begin
+        rdata = 0;
         if(software_query_en)
             case(addr)
-            `CSR_CRMD     : rdata <= csr_crmd     ;
-            `CSR_PRMD     : rdata <= csr_prmd     ;
-            `CSR_EUEN     : rdata <= csr_euen     ;
-            `CSR_ECFG     : rdata <= csr_ecfg     ;
-            `CSR_ESTAT    : rdata <= csr_estat    ;
-            `CSR_ERA      : rdata <= csr_era      ;
-            `CSR_BADV     : rdata <= csr_badv     ;
-            `CSR_EENTRY   : rdata <= csr_eentry   ;
-            `CSR_TLBIDX   : rdata <= csr_tlbidx   ;
-            `CSR_TLBEHI   : rdata <= csr_tlbehi   ;
-            `CSR_TLBELO0  : rdata <= csr_tlbelo0  ;
-            `CSR_TLBELO1  : rdata <= csr_tlbelo1  ;
-            `CSR_ASID     : rdata <= csr_asid     ;
-            `CSR_PGDL     : rdata <= csr_pgdl     ;
-            `CSR_PGDH     : rdata <= csr_pgdh     ;
-            `CSR_PGD      : rdata <= csr_pgd      ;
-            `CSR_CPUID    : rdata <= csr_cpuid    ;
-            `CSR_SAVE0    : rdata <= csr_save0    ;
-            `CSR_SAVE1    : rdata <= csr_save1    ;
-            `CSR_SAVE2    : rdata <= csr_save2    ;
-            `CSR_SAVE3    : rdata <= csr_save3    ;
-            `CSR_TID      : rdata <= csr_tid      ;
-            `CSR_TCFG     : rdata <= csr_tcfg     ;
-            `CSR_TVAL     : rdata <= csr_tval     ;
-            `CSR_TICLR    : rdata <= csr_ticlr    ;
-            `CSR_LLBCTL   : rdata <= csr_llbctl   ;
-            `CSR_TLBRENTRY: rdata <= csr_tlbrentry;
-            `CSR_CTAG     : rdata <= csr_ctag     ;
-            `CSR_DMW0     : rdata <= csr_dmw0     ;
-            `CSR_DMW1     : rdata <= csr_dmw1     ;
+            `CSR_CRMD     : rdata = csr_crmd     ;
+            `CSR_PRMD     : rdata = csr_prmd     ;
+            `CSR_EUEN     : rdata = csr_euen     ;
+            `CSR_ECFG     : rdata = csr_ecfg     ;
+            `CSR_ESTAT    : rdata = csr_estat    ;
+            `CSR_ERA      : rdata = csr_era      ;
+            `CSR_BADV     : rdata = csr_badv     ;
+            `CSR_EENTRY   : rdata = csr_eentry   ;
+            `CSR_TLBIDX   : rdata = csr_tlbidx   ;
+            `CSR_TLBEHI   : rdata = csr_tlbehi   ;
+            `CSR_TLBELO0  : rdata = csr_tlbelo0  ;
+            `CSR_TLBELO1  : rdata = csr_tlbelo1  ;
+            `CSR_ASID     : rdata = csr_asid     ;
+            `CSR_PGDL     : rdata = csr_pgdl     ;
+            `CSR_PGDH     : rdata = csr_pgdh     ;
+            `CSR_PGD      : rdata = csr_pgd      ;
+            `CSR_CPUID    : rdata = csr_cpuid    ;
+            `CSR_SAVE0    : rdata = csr_save0    ;
+            `CSR_SAVE1    : rdata = csr_save1    ;
+            `CSR_SAVE2    : rdata = csr_save2    ;
+            `CSR_SAVE3    : rdata = csr_save3    ;
+            `CSR_TID      : rdata = csr_tid      ;
+            `CSR_TCFG     : rdata = csr_tcfg     ;
+            `CSR_TVAL     : rdata = csr_tval     ;
+            `CSR_TICLR    : rdata = csr_ticlr    ;
+            `CSR_LLBCTL   : rdata = csr_llbctl   ;
+            `CSR_TLBRENTRY: rdata = csr_tlbrentry;
+            `CSR_CTAG     : rdata = csr_ctag     ;
+            `CSR_DMW0     : rdata = csr_dmw0     ;
+            `CSR_DMW1     : rdata = csr_dmw1     ;
             endcase
+    end
     
     assign privilege = crmd_plv;
     assign era_out = csr_era;

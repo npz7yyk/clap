@@ -300,6 +300,12 @@ module core_top(
     wire  [31:0]  tid;
     wire  [31:0]  cache_tag;
 
+    wire csr_software_query_en;
+    wire [13:0] csr_addr;
+    wire [31:0] csr_rdata;
+    wire [31:0] csr_wen;
+    wire [31:0] csr_wdata;
+
     csr  the_csr (
         .clk                     ( aclk                   ),
         .rstn                    ( aresetn                ),
@@ -307,11 +313,11 @@ module core_top(
         .privilege               ( privilege              ),
 
         //software query port (exe stage)
-        .software_query_en       ( /*TODO*/               ),
-        .addr                    ( /*TODO*/               ),
-        .rdata                   ( /*TODO*/               ),
-        .wen                     ( /*TODO*/               ),
-        .wdata                   ( /*TODO*/               ),
+        .software_query_en       ( csr_software_query_en  ),
+        .addr                    ( csr_addr               ),
+        .rdata                   ( csr_rdata              ),
+        .wen                     ( csr_wen                ),
+        .wdata                   ( csr_wdata              ),
 
         //exception
         .store_state             ( csr_store_state        ),
@@ -812,7 +818,7 @@ module core_top(
         .branch_valid            ( ex_feedback_valid ),
         .branch_pc               ( ex_branch_pc ),
         .category_out            ( ex_br_category ),
-        .branch_addr_calculated  ( pc_executer   ),
+        .correct_pc_next         ( pc_executer   ),
         .ex_pc_tar               ( ex_pc_tar),
 
         .valid                   ( ex_mem_valid                    ),
@@ -822,7 +828,15 @@ module core_top(
         .write_type              ( ex_mem_write_type               ),
         .w_data_CPU              ( ex_mem_w_data_CPU               ),
         .data_valid             ( ex_mem_data_valid),
-        .r_data_CPU             ( ex_mem_r_data_CPU)
+        .r_data_CPU             ( ex_mem_r_data_CPU),
+
+        .csr_software_query_en(csr_software_query_en),
+        .csr_addr   (csr_addr),
+        .csr_rdata  (csr_rdata),
+        .csr_wen    (csr_wen),
+        .csr_wdata  (csr_wdata),
+        .era(csr_era_out),
+        .restore_state(csr_restore_state)
     );
 
     dcache the_dcache

@@ -15,7 +15,8 @@ module hazard (
     //从exe1段内输入
     input stall_because_cache,
     input stall_because_div,
-    output stall
+    input stall_because_priv,
+    output stall,stall2
 );
 
 assign stall_because_mul= eu0_rd!=0
@@ -28,9 +29,6 @@ assign stall_because_mem= eu0_rd!=0
                         &&((eu0_rd==eu0_rj||eu0_rd==eu0_rk)&&eu0_en_in
                         ||(eu0_rd==eu1_rj||eu0_rd==eu1_rk)&&eu1_en_in);
 
-
-assign stall=stall_because_div
-            ||stall_because_mem
-            ||stall_because_mul
-            ||stall_because_cache;
+assign stall2=stall_because_mem||stall_because_mul;
+assign stall=stall2||stall_because_div||stall_because_cache||stall_because_priv;
 endmodule
