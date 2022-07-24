@@ -57,7 +57,7 @@ module mem1 (
     output [4:0]mem_rd_out,
     output [31:0]mem_data_out,
     output [0:0]mem_en_out,
-    output [6:0]cache_badv_out,
+    output [31:0]cache_badv_out,
     //向全局输出
     output stall_because_cache
 );

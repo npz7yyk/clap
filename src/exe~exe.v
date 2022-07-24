@@ -74,7 +74,7 @@ module exe(
 );
 
 wire stall2;
-wire[6:0]cache_badv_out;
+wire[31:0]cache_badv_out;
 
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
@@ -450,7 +450,7 @@ mem1  u_mem1 (
     .mem_width_in            ( mem_width_exe1          ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
-    .cache_badv_in           ( cache_badv_in            ),
+    .cache_badv_in           ( cache_badv            ),
     .cache_exception         ( cache_exception       ),
 
     .mem_exp_out             ( mem_exp_out           ),
