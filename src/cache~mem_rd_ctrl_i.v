@@ -4,6 +4,7 @@ module mem_rd_ctrl_i(
     input [2047:0] mem_dout,
     input [511:0] r_data_AXI,
     input rdata_sel,
+    input uncache_rbuf,
     output reg [63:0] r_data
     );
     parameter HIT0 = 4'b0001;
@@ -46,9 +47,14 @@ module mem_rd_ctrl_i(
         endcase
     end
     always @(*)begin
-        case(rdata_sel)
-        1'b0: r_data = r_word_AXI;
-        1'b1: r_data = r_data_mem;
-        endcase
+        if(uncache_rbuf) begin
+            r_data = r_data_AXI[511:448];
+        end
+        else begin
+            case(rdata_sel)
+            1'b0: r_data = r_word_AXI;
+            1'b1: r_data = r_data_mem;
+            endcase
+        end
     end
 endmodule

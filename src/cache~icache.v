@@ -66,6 +66,7 @@ module icache
     );
     
     ret_buf_i ret_buf(    
+        .clk            (clk),
         .r_data_AXI     (r_data_AXI),
         .ret_valid      (ret_valid),
         .ret_last       (ret_last),
@@ -110,6 +111,7 @@ module icache
         .mem_dout       (mem_dout),
         .r_data_AXI     (mem_din),
         .rdata_sel      (rdata_sel),
+        .uncache_rbuf   (uncache_rbuf),
         .r_data         (r_data_CPU)
     );
     wire data_valid_oIzprAXodb8T;
