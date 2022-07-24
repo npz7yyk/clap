@@ -11,10 +11,10 @@ module cache_exception_d(
         exception = 0;
         case(type_)
         WORD: begin
-            if(addr_rbuf[1:0]) exception = `EXP_ADEF;
+            if(addr_rbuf[1:0]) exception = `EXP_ADEM;
         end
         HALF: begin
-            if(addr_rbuf[0]) exception = `EXP_ADEF;
+            if(addr_rbuf[0]) exception = `EXP_ADEM;
         end
         endcase
     end
