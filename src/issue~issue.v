@@ -31,7 +31,6 @@ module is_stage
     input [6:0] exception0,exception1,
     input [31:0] pc0,pc_next0,
     input [31:0] pc1,pc_next1,
-    output flush_by_issue,
     input has_interrupt,
     ////输出信号////
     //execute unit #0
@@ -92,7 +91,7 @@ module is_stage
         else num_read = 2'b11;
 
     always @(posedge clk)
-        if(~rstn || flush || flush_by_issue)
+        if(~rstn || flush)
             fifo0 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: //一输出
@@ -104,7 +103,7 @@ module is_stage
         endcase
     
     always @(posedge clk)
-        if(~rstn || flush || flush_by_issue)
+        if(~rstn || flush)
             fifo1 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: begin//一输出
@@ -134,7 +133,6 @@ module is_stage
     assign {eu1_pc_next,eu1_pc,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = fifo1;
     assign eu1_en = eu1_en_0Ucym1r;
     assign eu0_en = eu0_en_0Ucym1r && (eu0_uop[`UOP_TYPE]!=0 || eu0_exception!=0);
-    assign flush_by_issue = eu0_en_0Ucym1r && eu0_exception!=0;
     
     always @* begin
         eu1_en_0Ucym1r = 0;

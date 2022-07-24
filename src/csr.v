@@ -145,7 +145,10 @@ module csr
     reg [`ESTAT_ESUBCODE] estat_subecode;
     wire [31:0] csr_estat;
     assign csr_estat[`ESTAT_IS_0] = estat_is_0;
-    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,hardware_int};
+    //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
+    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
+    //从样例CPU看，TI放在IS[12]
+    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -255,9 +258,8 @@ module csr
             crmd_ie <= 0;
             crmd_da <= 1;
             crmd_pg <= 0;
-            // FIXME: 为了加速性能测试，重置后DATF, DATM等于1，但这不符合 龙芯架构32位精简版参考手册 p. 53
-            crmd_datf <= 1;
-            crmd_datm <= 1;
+            crmd_datf <= 0;
+            crmd_datm <= 0;
         end else if(software_query_en&&addr==`CSR_CRMD) begin
             if(wen[0]) crmd_plv[0]  <= wdata[0];
             if(wen[1]) crmd_plv[1]  <= wdata[1];
@@ -324,7 +326,7 @@ module csr
             if(wen[1]) estat_is_0[1]<=wdata[1];
         end else if(expcode_wen) begin
             estat_ecode <= expcode_in[5:0];
-            estat_subecode <= expcode_in[6];
+            estat_subecode <= expcode_in[5:0]==0 ? 0:expcode_in[6];
         end
     
     //ERA
@@ -928,7 +930,7 @@ module csr
         if(~rstn) begin
             tcfg_en <= 0;
             tcfg_initval <= 0;
-        end else if(software_query_en&&addr==`CSR_TID) begin
+        end else if(software_query_en&&addr==`CSR_TCFG) begin
             if(wen[ 0]) tcfg_en[ 0]     <=wdata[ 0];
             if(wen[ 1]) tcfg_peridic[ 1]<=wdata[ 1];
             if(wen[ 2]) tcfg_initval[ 2]<=wdata[ 2];
@@ -965,7 +967,7 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TID&&wen[`TCFG_INITVAL])
+        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL])
             just_set_timer<=1;
         else just_set_timer<=0;
     
@@ -979,7 +981,8 @@ module csr
         //FIXME: 设置TCFG.InitVal后自动重置定时器，这在手册中未提及
         else if(csr_tval==0||just_set_timer) begin
             time_out <= 0;
-            if(tcfg_peridic) csr_tval<={tcfg_initval[`TCFG_INITVAL],2'd0};
+            //计时器的初始值比标准大1，否则给定时器设置0无法触发中断
+            if(tcfg_peridic||just_set_timer) csr_tval<={tcfg_initval[`TCFG_INITVAL],2'd1};
         end else if(tcfg_en) begin
             csr_tval<=csr_tval-1;
             time_out<=csr_tval==1;

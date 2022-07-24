@@ -431,7 +431,6 @@ module core_top(
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
-    wire flush_by_issue;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     always @(posedge aclk) begin
         if(~aresetn)
@@ -509,7 +508,7 @@ module core_top(
     icache #(34) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
-        .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback|flush_by_issue),
+        .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
         .valid          (~if_buf_full),
         .pc_in          (pc),
         .p_addr         (p_pc),
@@ -572,7 +571,7 @@ module core_top(
     (
         .clk(aclk),
         .rstn(aresetn),
-        .flush(set_pc_by_decoder||set_pc_by_executer||set_pc_by_writeback||flush_by_issue),
+        .flush(set_pc_by_decoder||set_pc_by_executer||set_pc_by_writeback),
         
         .input_valid_in(data_valid_qt4WxiD7aL7),
         .inst0_in(r_data_CPU[31:0]),
@@ -595,7 +594,7 @@ module core_top(
     
     id_stage the_decoder (
         .clk(aclk), .rstn(aresetn),
-        .flush(set_pc_by_executer||set_pc_by_writeback||flush_by_issue),
+        .flush(set_pc_by_executer||set_pc_by_writeback),
         .read_en(id_read_en),
         .full(if_buf_full),
         .input_valid(data_valid),
@@ -645,7 +644,6 @@ module core_top(
         .exception0(id_exception0),.exception1(id_exception1),
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
-        .flush_by_issue(flush_by_issue),
         .has_interrupt(has_interrupt),
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
