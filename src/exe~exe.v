@@ -74,6 +74,7 @@ module exe(
 );
 
 wire stall2;
+wire[6:0]cache_badv_out;
 
 assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
@@ -259,7 +260,7 @@ always @(posedge clk) begin
         data_out0<=data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
-        badv_out<=badv_exe1|cache_badv;
+        badv_out<=badv_exe1|cache_badv_out;
         eu0_pc_out<=eu0_pc_exe1;
         eu0_inst<=inst0_mid;
     end 
@@ -449,11 +450,14 @@ mem1  u_mem1 (
     .mem_width_in            ( mem_width_exe1          ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
+    .cache_badv              ( cache_badv_in            ),
+    .cache_exception         ( cache_exception       ),
 
     .mem_exp_out             ( mem_exp_out           ),
     .mem_rd_out              ( mem_rd_out            ),
     .mem_data_out            ( mem_data_out          ),
     .mem_en_out              ( mem_en_out            ),
+    .cache_badv_out          ( cache_badv_out        ),
     .stall_because_cache     ( stall_because_cache   )
 );
 

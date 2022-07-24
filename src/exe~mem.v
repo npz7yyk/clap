@@ -50,6 +50,8 @@ module mem1 (
     //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
+    input [31:0] cache_badv,
+    input [6:0] cache_exception,
     //向exe2后输出
     output [6:0]mem_exp_out,
     output [4:0]mem_rd_out,
