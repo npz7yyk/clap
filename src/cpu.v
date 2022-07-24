@@ -868,7 +868,7 @@ module core_top(
         .rstn           (aresetn),
         .valid          (ex_mem_valid),
         .op             (ex_mem_op),
-        .uncache        (1'b0),
+        .uncache        (~direct_d_mat),
         .addr           (ex_mem_addr),
         .p_addr         (ex_mem_paddr),
         .signed_ext     (ex_signed_ext),

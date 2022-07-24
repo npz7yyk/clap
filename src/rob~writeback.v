@@ -45,13 +45,6 @@ module writeback
     output [31:0] pgd,
     output pgd_wen
 );
-    assign wen0 = eu0_valid && eu0_exception==0;
-    assign wen1 = eu1_valid;
-    assign waddr0 = eu0_rd;
-    assign waddr1 = eu1_rd;
-    assign wdata0 = eu0_data;
-    assign wdata1 = eu1_data;
-    
     wire has_exception = eu0_valid && eu0_exception!=0;
     reg set_badv;
     always @* begin
@@ -75,6 +68,14 @@ module writeback
     assign badv_wen = set_badv;
     assign pgd_wen = set_badv;
 
+    assign wen0 = eu0_valid && eu0_exception==0;
+    //第一条指令出现异常时，第二条指令不能被写回
+    assign wen1 = eu1_valid && !has_exception;
+    assign waddr0 = eu0_rd;
+    assign waddr1 = eu1_rd;
+    assign wdata0 = eu0_data;
+    assign wdata1 = eu1_data;
+    
     assign debug0_wb_pc = eu0_pc;
     assign debug0_wb_rf_wen = {4{wen0}};
     assign debug0_wb_rf_wnum = eu0_rd;
