@@ -23,8 +23,12 @@ module pre_decoder
     output [1:0] category,
     output reg [31:0] pc_offset
 );
-    assign category[1]=inst[30:27]=='b1010|inst[30:26]=='b10011;
-    assign category[0]=inst[30]&~(inst[29:27]=='b010);
+    assign category[1]=inst[31:27]=='b01010||inst[31:26]=='b010011;
+    assign category[0]=inst[31:30]=='b01&&(
+        inst[29:26]=='b0011 || inst[29:26]=='b0110 ||
+        inst[29:26]=='b0111 || inst[29:26]=='b1000 ||
+        inst[29:26]=='b1001 || inst[29:26]=='b1010 ||
+        inst[29:26]=='b1011 );
     always @*
         case(category)
             2'b00,2'b11: pc_offset = 4;
