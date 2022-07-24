@@ -50,23 +50,22 @@ module mem1 (
     //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
-    input [31:0] cache_badv,
+    input [31:0] cache_badv_in,
     input [6:0] cache_exception,
     //向exe2后输出
     output [6:0]mem_exp_out,
     output [4:0]mem_rd_out,
     output [31:0]mem_data_out,
     output [0:0]mem_en_out,
+    output [6:0]cache_badv_out,
     //向全局输出
     output stall_because_cache
 );
     assign stall_because_cache=mem_en_in&!data_valid;
-    assign mem_exp_out=mem_exp_in;
-    //assign mem_data_out=mem_en_out?(data_valid?r_data_CPU:0):0;
+    assign mem_exp_out=mem_exp_in|cache_exception;
     assign mem_data_out={32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
-    //assign mem_rd_out=mem_en_out?mem_rd_in:0;
     assign mem_rd_out={5{mem_en_out}}&mem_rd_in;
     assign mem_en_out=mem_en_in;
-
+    assign cache_badv_out=cache_badv_in;
 
 endmodule
