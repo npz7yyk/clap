@@ -10,8 +10,8 @@ module hazard (
     //从exe0段后输入
     input eu0_mul_en_0,
     input eu0_mem_en_0,
-    input eu0_exp_out,
-    input eu0_exp_exe1,
+    input [6:0] eu0_exp_out,
+    input [6:0] eu0_exp_exe1,
     input [4:0]eu0_rd,
     //从exe1段内输入
     input stall_because_cache,

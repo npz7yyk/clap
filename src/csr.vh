@@ -1,3 +1,4 @@
+// -*- Verilog -*-
 `define CSR_CRMD        14'h000 //当前模式信息 
 `define CSR_PRMD        14'h001 //例外前模式信息
 `define CSR_EUEN        14'h002 //拓展部件使能

@@ -57,6 +57,7 @@ module is_stage
     reg [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
     
+    //FIXME: 无效的指令也可能带上中断
     wire [6:0] exception0_Ustut79un = has_interrupt?`EXP_INT:exception0;
     wire [6:0] exception1_Ustut79un = exception1;
 

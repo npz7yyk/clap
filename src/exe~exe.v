@@ -290,8 +290,8 @@ hazard  u_hazard (
     .eu0_mul_en_0                ( eu0_mul_en_0               ),
     .eu0_mem_en_0                ( mem_en_exe1               ),
 
-    .eu0_exp_in              (exp_out),
-    .eu0_exp_exe1            (eu0_exp_exe1),
+    .eu0_exp_out              (exp_out),
+    .eu0_exp_exe1            (exp_exe1),
     .eu0_rd                  ( mul_rd_exe1|mem_rd_exe1                ),
     .stall_because_cache     ( stall_because_cache   ),
     .stall_because_div       ( stall_because_div     ),
@@ -414,7 +414,7 @@ mul_1  u_mul_1 (
 mem0  u_mem0 (
     .mem_rd_in               ( eu0_rd_in             ),
     .mem_data_in             ( eu0_sr1           ),
-    .mem_en_in               ( eu0_mem_en             ),
+    .mem_en_in               ( eu0_mem_en&&!stall&&!flush ),
     .mem_sr                  ( eu0_sr0                ),
     .mem_imm                 ( eu0_imm_in               ),
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]             ),
