@@ -62,7 +62,7 @@ module mem1 (
     output stall_because_cache
 );
     assign stall_because_cache=mem_en_in&!data_valid;
-    assign mem_exp_out=mem_exp_in|cache_exception;
+    assign mem_exp_out={7{mem_en_in}}&(mem_exp_in|cache_exception);
     assign mem_data_out={32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
     assign mem_rd_out={5{mem_en_out}}&mem_rd_in;
     assign mem_en_out=mem_en_in;
