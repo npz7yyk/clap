@@ -65,7 +65,7 @@ module mul_0(
     assign mul_mid_rs_ad = adjustice;
 
     assign mul_en_out  = mul_en_in;
-    assign mul_rd_out  = mul_en_in?mul_rd_in:0;
+    assign mul_rd_out  = {5{mul_en_in}}&mul_rd_in;
     assign mul_sel_out = mul_sel_in;
 endmodule
 
@@ -88,5 +88,5 @@ module mul_1 (
     assign result_full = {mul_mid_sr_hh,mul_mid_sr_ll} + {15'b0,mul_sr1_plus_sr2,16'b0};
     assign result = {32{mul_en_out}}&(mul_sel?result_full[63:32]+mul_mid_rs_ad:result_full[31:0]);
     assign mul_en_out = mul_en_in;
-    assign mul_rd_out = mul_en_out?mul_rd_in:0;
+    assign mul_rd_out = {5{mul_en_out}}&mul_rd_in;
 endmodule

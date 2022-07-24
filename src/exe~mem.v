@@ -60,11 +60,10 @@ module mem1 (
 );
     assign stall_because_cache=mem_en_in&!data_valid;
     assign mem_exp_out=mem_exp_in;
-    //assign mem_data_out =mem_width_in=='b01 ?{24'b0,r_data_CPU[7:0]}:
-    //                     mem_width_in=='b10 ?{16'b0,r_data_CPU[15:0]}:
-    //                     r_data_CPU[31:0];
-    assign mem_data_out=mem_en_out?(data_valid?r_data_CPU:0):0;
-    assign mem_rd_out=mem_en_out?mem_rd_in:0;
+    //assign mem_data_out=mem_en_out?(data_valid?r_data_CPU:0):0;
+    assign mem_data_out={32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
+    //assign mem_rd_out=mem_en_out?mem_rd_in:0;
+    assign mem_rd_out={5{mem_en_out}}&mem_rd_in;
     assign mem_en_out=mem_en_in;
 
 

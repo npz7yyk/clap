@@ -171,29 +171,29 @@ assign flush = flush_because_br||flush_because_priv;
 always @(posedge clk) begin
     //eu0
     if(!rstn||flush_by_writeback||stall2||flush)begin
-        eu0_en_0 <= 0;
-        eu0_mul_en_0<=0;
-        eu0_rd_0<=0;
-        data_mid00<=0;
-        mem_exp_exe1<=0;
-        mem_rd_exe1<=0;
-        mem_en_exe1<=0;
-        mem_width_exe1<=0;
-        mul_sel_exe1<=0;
-        mul_sr0_exe1<=0;
-        mul_sr1_exe1<=0;
-        mul_sr2_exe1<=0;
-        mul_sr3_exe1<=0;
-        exp_exe1<=0;
-        eu0_pc_exe1<=0;
-        inst0_mid<=0;
-        branch_addr_calculated<=0;
-        branch_status<=0;
-        branch_valid<=0;
-        category_out<=0;
-        ex_pc_tar<=0;
-        flush_because_br<=0;
-        mul_ajustice_exe1<=0;
+        {eu0_en_0,
+        eu0_mul_en_0,
+        eu0_rd_0,
+        data_mid00,
+        mem_exp_exe1,
+        mem_rd_exe1,
+        mem_en_exe1,
+        mem_width_exe1,
+        mul_sel_exe1,
+        mul_sr0_exe1,
+        mul_sr1_exe1,
+        mul_sr2_exe1,
+        mul_sr3_exe1,
+        exp_exe1,
+        eu0_pc_exe1,
+        inst0_mid,
+        branch_addr_calculated,
+        branch_status,
+        branch_valid,
+        category_out,
+        ex_pc_tar,
+        flush_because_br,
+        mul_ajustice_exe1}<=0;
     end else if(!stall)begin
         //在存在异常时，将eu0_en_0置位，否则异常会被丢弃
         eu0_en_0<=br_en_mid||alu_en_mid||eu0_en_in&&eu0_exp_in!=0;
@@ -249,7 +249,6 @@ always @(posedge clk) begin
     end else if(!stall_because_cache)begin
         eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
-        //en_out0<=(eu0_en_0|mul_en_out|mem_en_out)&&!stall_because_div;
         data_out0<=data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
