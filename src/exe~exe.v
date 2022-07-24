@@ -25,7 +25,7 @@ module exe(
     input [31:0]eu1_pc_in,
     input [31:0]data10,
     input [31:0]data11,
-    //向exe2段后输出
+    //向exe1段后输出
     output reg [0:0]en_out0,
     output reg [0:0]en_out1,
     output reg [31:0]data_out0,
@@ -290,14 +290,16 @@ hazard  u_hazard (
     .eu0_mul_en_0                ( eu0_mul_en_0               ),
     .eu0_mem_en_0                ( mem_en_exe1               ),
 
-    //.eu0_uop_type            ( eu0_uop_in[`UOP_TYPE]          ),
+    .eu0_exp_in              (exp_out),
+    .eu0_exp_exe1            (eu0_exp_exe1),
     .eu0_rd                  ( mul_rd_exe1|mem_rd_exe1                ),
     .stall_because_cache     ( stall_because_cache   ),
     .stall_because_div       ( stall_because_div     ),
     .stall_because_priv      ( stall_because_priv    ),
 
     .stall                   ( stall                 ),
-    .stall2                  ( stall2                )
+    .stall2                  ( stall2                ),
+    .stall4                  ( stall4)
 );
 
 forward  u_forward (
