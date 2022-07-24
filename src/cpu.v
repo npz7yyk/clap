@@ -759,6 +759,7 @@ module core_top(
         .flush                   ( set_pc_by_executer||set_pc_by_writeback ),
         
         .stable_counter(stable_counter),
+        .counter_id(tid),
         .eu0_en_in     (is_eu0_en     ), .eu1_en_in     (is_eu1_en     ),
         .eu0_uop_in    (is_eu0_uop    ), .eu1_uop_in    (is_eu1_uop    ),
         .eu0_rd_in     (is_eu0_rd     ), .eu1_rd_in     (is_eu1_rd     ),

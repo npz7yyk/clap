@@ -199,13 +199,13 @@ module decoder
         type_[`ITYPE_IDX_BR]&&!is_jilr&&inst[29:26]!='b0101)?0:
             //bl 向r1写PC+4
             inst[30:26]==('b10101)?1:
-            inst[4:0];
+            (inst[4:0]|{5{is_time}}&inst[9:5]);
     
     //源地址1
     assign rj =
         (type_[`ITYPE_IDX_TLB]||
         type_[`ITYPE_IDX_IDLE]||
-        is_pcadd||is_lui||is_b_or_bl)?0:
+        is_pcadd||is_lui||is_b_or_bl||is_time)?0:
         inst[9:5];
     
     //源地址2
