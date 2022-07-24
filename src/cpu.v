@@ -511,6 +511,7 @@ module core_top(
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
         .valid          (~if_buf_full),
+        .uncache        (~direct_i_mat),
         .pc_in          (pc),
         .p_addr         (p_pc),
         .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
@@ -521,6 +522,7 @@ module core_top(
         .cache_ready    (cache_ready),
         .exception      (if_exception_qt4WxiD7aL7),
         .badv           (if_badv_qt4WxiD7aL7),
+        .r_length       (i_axi_arlen),
         
         .r_req          (i_axi_arvalid),
         .r_addr         (i_axi_araddr),
@@ -549,7 +551,7 @@ module core_top(
     assign i_axi_bresp = 0;
     assign i_axi_arid = 0;
     assign i_axi_arburst = 2'b01;
-    assign i_axi_arlen = 8'd15;
+    //assign i_axi_arlen = 8'd15;
     assign i_axi_arsize = 3'b010;
     assign i_axi_arlock = 0;
     assign i_axi_arcache = 0;
