@@ -450,7 +450,7 @@ mem1  u_mem1 (
     .mem_width_in            ( mem_width_exe1          ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
-    .cache_badv              ( cache_badv_in            ),
+    .cache_badv_in           ( cache_badv_in            ),
     .cache_exception         ( cache_exception       ),
 
     .mem_exp_out             ( mem_exp_out           ),
