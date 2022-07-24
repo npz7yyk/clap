@@ -183,9 +183,9 @@ module id_stage
     wire is_break0,is_break1;
     decoder decoder0
     (
-        .pcnext_pc_inst(pop_sel==0?
-            empty0?{32'd4,32'd0,`INST_NOP}:fetch_buffer0[head0]:
-            empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
+        .nempty_pcnext_pc_inst(pop_sel==0?
+            empty0?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
         .exception(exception0_ICQlsmuv),
@@ -199,9 +199,9 @@ module id_stage
          {7{is_break0}}&`EXP_BRK);
     decoder decoder1
     (
-        .pcnext_pc_inst(pop_sel==1?
-            empty0?{32'd4,32'd0,`INST_NOP}:fetch_buffer0[head0]:
-            empty1?{32'd4,32'd0,`INST_NOP}:fetch_buffer1[head1]),
+        .nempty_pcnext_pc_inst(pop_sel==1?
+            empty0?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
         .exception(exception1_ICQlsmuv),
