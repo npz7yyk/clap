@@ -4,6 +4,7 @@ module main_FSM_i(
     input cache_hit,
     input r_rdy_AXI,
     input fill_finish,
+    input uncache,
     input [3:0] lru_way_sel,
     input [3:0] hit,
 
@@ -13,6 +14,7 @@ module main_FSM_i(
     output reg rdata_sel,
     output reg rbuf_we,
     output reg way_sel_en,
+    output reg [7:0] r_length,
     output reg [3:0] mem_we,
     output reg [3:0] tagv_we,
     output reg r_req,
@@ -39,7 +41,8 @@ module main_FSM_i(
             else nxt = IDLE;
         end
         LOOKUP: begin
-            if(valid && cache_hit) nxt = LOOKUP;
+            if(uncache) nxt = REPLACE;
+            else if(valid && cache_hit) nxt = LOOKUP;
             else if(!valid && cache_hit) nxt = IDLE;
             else nxt = REPLACE;
         end
@@ -70,6 +73,7 @@ module main_FSM_i(
         way_visit = 0;
         cache_ready = 0;
         pbuf_we = 0;
+        r_length = 8'd15;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -78,29 +82,36 @@ module main_FSM_i(
         LOOKUP: begin
             rdata_sel = 1;
             pbuf_we = 1;
-            if(!cache_hit) begin
+            if(!cache_hit || uncache) begin
                 mbuf_we = 1;
             end
             else begin
-                data_valid = 1;
-                rbuf_we = 1;
-                way_visit = hit;
-                way_sel_en = 1;
-                cache_ready = 1;
+                if(!uncache) begin
+                    data_valid = 1;
+                    rbuf_we = 1;
+                    way_visit = hit;
+                    way_sel_en = 1;
+                    cache_ready = 1;
+                end
             end
         end
         REPLACE: begin
             r_req = 1;
+            if(uncache) begin
+                r_length = 8'd1;
+            end
         end
         REFILL: begin
             r_data_ready = 1;
             if(fill_finish) begin
-                mem_we = lru_way_sel;
-                tagv_we = lru_way_sel;
+                if(!uncache) begin
+                    mem_we = lru_way_sel;
+                    tagv_we = lru_way_sel;
+                    way_visit = lru_way_sel;
+                    way_sel_en = 1;
+                end
                 data_valid = 1;
                 rbuf_we = 1;
-                way_visit = lru_way_sel;
-                way_sel_en = 1;
                 cache_ready = 1;
             end
         end

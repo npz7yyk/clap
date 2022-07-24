@@ -7,6 +7,7 @@ module icache
     input [31:0] pc_in,
     input [31:0] p_addr,
     input [COOKIE_WIDHT-1:0] cookie_in,
+    input uncache,
     //output addr_valid,         // read: addr has been accepted; write: addr and data have been accepted
     output data_valid,          // read: data has returned; write: data has been written in
     output [63:0] r_data_CPU,   // read data to CPU
@@ -18,6 +19,7 @@ module icache
     output r_req,               // send read request
     output r_data_ready,
     //output [2:0] r_type,        // read type, 0: 8bit, 1: 16bit, 2: 32bit, 4: cache line
+    output [7:0] r_length,
     output [31:0] r_addr,       // start location of read
     input r_rdy,                // AXI signal, means "shake hands success"
     input ret_valid,            // return data is valid
@@ -35,20 +37,20 @@ module icache
     wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;
     wire way_sel_en;
-
-    assign r_addr = {addr_pbuf[31:6], 6'b0};
+    wire uncache_rbuf;
+    assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
     assign badv = addr_rbuf[31:0];
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
     always @(posedge clk)
         if(flush) valid_reg <= 0;
         else if(rbuf_we) valid_reg <= valid;
-    register#(32+COOKIE_WIDHT) req_buf(
+    register#(33+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (rbuf_we),
-        .din    ({cookie_in,pc_in}),
-        .dout   (addr_rbuf)
+        .din    ({cookie_in,pc_in, uncache}),
+        .dout   ({addr_rbuf, uncache_rbuf})
     );
     register#(32) phy_buf(
         .clk        (clk),
@@ -56,15 +58,14 @@ module icache
         .we         (pbuf_we),
         .din        (p_addr),
         .dout       (addr_pbuf)
-    );
+    );     
 
     cache_excption_i exp_cope(
         .addr_rbuf      (addr_rbuf[31:0]),
         .exception      (exception)
     );
     
-    ret_buf_i ret_buf(
-        .clk            (clk),
+    ret_buf_i ret_buf(    
         .r_data_AXI     (r_data_AXI),
         .ret_valid      (ret_valid),
         .ret_last       (ret_last),
@@ -132,7 +133,10 @@ module icache
         .r_req          (r_req),
         .r_data_ready   (r_data_ready),
         .data_valid     (data_valid_oIzprAXodb8T),
-        .cache_ready    (cache_ready)
+        .cache_ready    (cache_ready),
+
+        .uncache        (uncache_rbuf),
+        .r_length       (r_length)
     );
 
     assign data_valid = data_valid_oIzprAXodb8T&valid_reg;
