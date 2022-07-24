@@ -49,7 +49,9 @@ module id_stage
     output [4:0] rk0,rk1,       //微操作的rk段
     ////传递信号////
     input [6:0]  exception_in,
+    input [31:0] badv_in,
     output [6:0] exception0_out,exception1_out,   //指令无效（此时保证uop.TYPE=0）
+    output [31:0] badv0_out,badv1_out,
     input [31:0] pc_in,         //第一条指令的PC，当PC不是8的倍数时，认为第二条指令无效
     input [31:0] pc_next_in,    //下一条指令的PC
     output [31:0] pc0_out,pc1_out,
@@ -106,8 +108,8 @@ module id_stage
     wire empty;            //FIFO空
     
     //用交叠法实现伪双端口循环队列，浪费12.5%的空间，以简化push/pop逻辑
-    //[31:0] 指令; [63:32] pc；[95:64] pc_next
-    reg [102:0] fetch_buffer0[0:7],fetch_buffer1[0:7];
+    //[31:0] 指令; [63:32] pc；[95:64] pc_next; [102:96] exception; [134:103] badv
+    reg [134:0] fetch_buffer0[0:7],fetch_buffer1[0:7];
     reg [2:0] head0,head1;      //队头指针
     reg [2:0] tail0,tail1;      //队尾指针
     reg push_sel;   //进行push操作时，inst0被push到fetch_buffer0还是fetch_buffer1
@@ -144,8 +146,8 @@ module id_stage
     wire [31:0] real_pc_next0 = first_inst_jmp||set_pc_due_to_inst0||pc_in[2]?pc_next_after_predecode:pc_in+4;
     wire [31:0] real_pc_next1 = pc_next_after_predecode;
     
-    wire [102:0] real_0_concat = {exception_in,real_pc_next0,real_pc0,real_inst0};
-    wire [102:0] real_1_concat = {exception_in,real_pc_next1,real_pc1,real_inst1};
+    wire [134:0] real_0_concat = {badv_in,exception_in,real_pc_next0,real_pc0,real_inst0};
+    wire [134:0] real_1_concat = {badv_in,exception_in,real_pc_next1,real_pc1,real_inst1};
     
     //fetch_buffer0需要进行push操作
     wire push0 = valid_both || push_sel==0&&valid_either;
@@ -183,12 +185,13 @@ module id_stage
     wire is_break0,is_break1;
     decoder decoder0
     (
-        .nempty_pcnext_pc_inst(pop_sel==0?
-            empty0?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
-            empty1?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
+        .nempty_badv_exception_pcnext_pc_inst(pop_sel==0?
+            empty0?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
         .exception(exception0_ICQlsmuv),
+        .badv(badv0_out),
         .invalid_instruction(invalid0),
         .is_syscall(is_syscall0),
         .is_break(is_break0)
@@ -199,12 +202,13 @@ module id_stage
          {7{is_break0}}&`EXP_BRK);
     decoder decoder1
     (
-        .nempty_pcnext_pc_inst(pop_sel==1?
-            empty0?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
-            empty1?{1'b0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
+        .nempty_badv_exception_pcnext_pc_inst(pop_sel==1?
+            empty0?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
         .exception(exception1_ICQlsmuv),
+        .badv(badv1_out),
         .invalid_instruction(invalid1),
         .is_syscall(is_syscall1),
         .is_break(is_break1)

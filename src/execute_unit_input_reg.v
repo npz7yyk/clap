@@ -10,13 +10,15 @@ module execute_unit_input_reg
     input [31:0] imm_in,
     input [31:0] pc_in,pc_next_in,
     input [6:0] exception_in,
+    input [31:0] badv_in,
 
     output reg en_out,
     output reg [`WIDTH_UOP-1:0] uop_out,
     output reg [4:0] rd_out,rj_out,rk_out,
     output reg [31:0] imm_out,
     output reg [31:0] pc_out,pc_next_out,
-    output reg [6:0] exception_out
+    output reg [6:0] exception_out,
+    output reg [31:0] badv_out
 );
     always @(posedge clk)
         if(~rstn || flush)begin
@@ -29,6 +31,7 @@ module execute_unit_input_reg
             pc_out          <= 0;
             pc_next_out     <= 4;
             exception_out   <= 0;
+            badv_out        <= 0;
         end
         else if(~stall) begin
             en_out          <= en_in;
@@ -40,5 +43,6 @@ module execute_unit_input_reg
             pc_out          <= pc_in;
             pc_next_out     <= pc_next_in;
             exception_out   <= exception_in;
+            badv_out        <= badv_in;
         end
 endmodule

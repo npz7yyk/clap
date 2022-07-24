@@ -39,6 +39,7 @@ module dcache(
     input                   b_valid,
     //exception 
     output            [6:0] exception,
+    output           [31:0] badv,
     //cacop
     input [4:0] cacop_code,
     input cacop_en
@@ -58,6 +59,7 @@ module dcache(
 
     assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf ? addr_pbuf : w_addr_mbuf;
+    assign badv = addr_rbuf[31:0];
     
     /* exception */
     cache_exception_d exp(

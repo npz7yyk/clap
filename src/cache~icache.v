@@ -23,7 +23,7 @@ module icache
     input ret_valid,            // return data is valid
     input ret_last,             // the last returned data
     input [31:0] r_data_AXI,     // read data from AXI
-
+    output [31:0] badv,
     output [6:0] exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
@@ -37,6 +37,7 @@ module icache
     wire way_sel_en;
 
     assign r_addr = {addr_pbuf[31:6], 6'b0};
+    assign badv = addr_rbuf[31:0];
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
     always @(posedge clk)

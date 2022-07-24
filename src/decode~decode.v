@@ -22,9 +22,10 @@
 //【注意】load、br指令的原本位于rd段的源数据被放到了rk，而rd=0，这样可以保证读取寄存器堆时只需要读rk和rj
 module decoder
 (
-    input [103:0] nempty_pcnext_pc_inst,
+    input [135:0] nempty_badv_exception_pcnext_pc_inst,
     output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
     output [6:0] exception,
+    output [31:0] badv,
     output invalid_instruction,
     output is_syscall,
     output is_break,
@@ -34,11 +35,12 @@ module decoder
     output [4:0] rj,
     output [4:0] rk
 );
-    assign uop[`UOP_NEMPTY] = nempty_pcnext_pc_inst[103];
-    wire [31:0] inst = nempty_pcnext_pc_inst[31:0];
-    assign pc=nempty_pcnext_pc_inst[63:32];
-    assign pc_next=nempty_pcnext_pc_inst[95:64];
-    assign exception=nempty_pcnext_pc_inst[102:96];
+    assign uop[`UOP_NEMPTY] = nempty_badv_exception_pcnext_pc_inst[135];
+    wire [31:0] inst = nempty_badv_exception_pcnext_pc_inst[31:0];
+    assign pc=nempty_badv_exception_pcnext_pc_inst[63:32];
+    assign pc_next=nempty_badv_exception_pcnext_pc_inst[95:64];
+    assign exception=nempty_badv_exception_pcnext_pc_inst[102:96];
+    assign badv=nempty_badv_exception_pcnext_pc_inst[134:103];
     assign uop[`UOP_ORIGINAL_INST] = inst;
     /////////////////////////////
     //鉴别指令类型

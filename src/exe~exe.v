@@ -14,6 +14,7 @@ module exe(
     input [31:0]eu0_pc_in,
     input [31:0]eu0_pc_next_in,
     input [6:0]eu0_exp_in,
+    input [31:0]eu0_badv_in,
     input [31:0]data00,
     input [31:0]data01,
     input [0:0]eu1_en_in,
@@ -33,6 +34,7 @@ module exe(
     output reg [31:0]data_out1,
     output reg [4:0]addr_out1,
     output reg[6:0]exp_out,
+    output reg[31:0]badv_out,
     output reg [31:0]eu0_pc_out,
     output reg [31:0]eu0_inst,
     output reg [31:0]eu1_pc_out,
@@ -58,6 +60,8 @@ module exe(
     //从cache输入
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,           //    read data to CPU
+    input [ 31:0 ] cache_badv,
+    input [ 6:0 ]  cache_exception,
 
     //CSR
     output csr_software_query_en,
@@ -136,6 +140,7 @@ reg[31:0]mul_sr3_exe1;
 reg[31:0]mul_ajustice_exe1;
 reg[4:0]mul_rd_exe1;
 reg[6:0]exp_exe1;
+reg[31:0]badv_exe1;
 reg[31:0]eu0_pc_exe1;
 //exe1组合输出
 wire[4:0]mul_rd_out;
@@ -185,6 +190,7 @@ always @(posedge clk) begin
         mul_sr2_exe1,
         mul_sr3_exe1,
         exp_exe1,
+        badv_exe1,
         eu0_pc_exe1,
         inst0_mid,
         branch_addr_calculated,
@@ -211,6 +217,7 @@ always @(posedge clk) begin
         mul_sr3_exe1<=mul_rs3_mid;
         mul_rd_exe1<=mul_rd_mid;
         exp_exe1<=eu0_exp_in;
+        badv_exe1<=eu0_badv_in;
         eu0_pc_exe1<=eu0_pc_in;
         inst0_mid<=eu0_uop_in[`UOP_ORIGINAL_INST];
         branch_addr_calculated<=branch_addr_calculated_mid;
@@ -252,6 +259,7 @@ always @(posedge clk) begin
         data_out0<=data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
+        badv_out<=badv_exe1|cache_badv;
         eu0_pc_out<=eu0_pc_exe1;
         eu0_inst<=inst0_mid;
     end 

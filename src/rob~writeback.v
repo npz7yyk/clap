@@ -7,6 +7,7 @@ module writeback
     input [4:0] eu0_rd,eu1_rd,
     input [31:0] eu0_pc,eu1_pc,
     input [6:0] eu0_exception,
+    input [31:0] eu0_badv,
     input [31:0] eu0_inst,eu1_inst,
 
     //connect to register file
@@ -37,8 +38,12 @@ module writeback
     output era_wen,
     output store_state,
     output [6:0] expcode_out,
-    output expcode_wen
-    //TODO: badv, pgd
+    output expcode_wen,
+    output [31:0] badv,
+    output badv_wen,
+    input [31:0] pgdl,pgdh,
+    output [31:0] pgd,
+    output pgd_wen
 );
     assign wen0 = eu0_valid && eu0_exception==0;
     assign wen1 = eu1_valid;
@@ -48,6 +53,16 @@ module writeback
     assign wdata1 = eu1_data;
     
     wire has_exception = eu0_valid && eu0_exception!=0;
+    reg set_badv;
+    always @* begin
+        set_badv = 0;
+        if(eu0_valid)
+            case(eu0_exception)
+            `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PIS,
+            `EXP_PIF, `EXP_PME, `EXP_PPI:
+                set_badv = 1;
+            endcase
+    end
     assign set_pc = has_exception;
     assign store_state = has_exception;
     assign expcode_wen = has_exception;
@@ -55,6 +70,10 @@ module writeback
     assign pc = eu0_exception==`EXP_TLBR ? tlbrentry:eentry;
     assign era = eu0_pc;
     assign expcode_out = eu0_exception;
+    assign badv = eu0_badv;
+    assign pgd = eu0_badv[31]?pgdh:pgdl;
+    assign badv_wen = set_badv;
+    assign pgd_wen = set_badv;
 
     assign debug0_wb_pc = eu0_pc;
     assign debug0_wb_rf_wen = {4{wen0}};
