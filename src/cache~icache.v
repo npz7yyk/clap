@@ -39,7 +39,7 @@ module icache
     wire way_sel_en;
     wire uncache_rbuf;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
-    assign badv = addr_rbuf[31:0];
+    assign badv = exception!=0?addr_rbuf[31:0]:0;
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
     always @(posedge clk)
