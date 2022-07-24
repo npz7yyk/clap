@@ -229,6 +229,7 @@ module dcache(
         .uncache            (uncache_rbuf),
         .visit_type         (write_type_rbuf),
         .addr_rbuf          (addr_rbuf),
+        .exception          (exception),
 
         .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),

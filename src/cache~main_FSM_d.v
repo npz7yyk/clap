@@ -18,6 +18,7 @@ module main_FSM_d(
     input [63:0] mem_we_normal,
     input [3:0] visit_type,
     input [31:0] addr_rbuf,
+    input [6:0] exception,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -125,6 +126,9 @@ module main_FSM_d(
                     else nxt = IDLE;
                 end
             end
+            else if(exception != 0) begin
+                nxt = IDLE;
+            end
 
             // check uncache
             else if(uncache) begin
@@ -231,7 +235,7 @@ module main_FSM_d(
                     cache_ready     = 1;
                 end
             end
-
+            else if(exception != 0) data_valid = 1;
             else if(!cache_hit || uncache) begin
                 mbuf_we     = 1;
                 wbuf_AXI_we = 1;
