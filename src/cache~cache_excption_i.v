@@ -4,7 +4,7 @@ module cache_excption_i(
     output reg [6:0] exception
     );
     always @(*) begin
-        if(addr_rbuf[1:0]) exception = `EXP_ADEF;
+        if(addr_rbuf[1:0]) exception = `EXP_ALE;
         else exception = 0;
     end
 endmodule
