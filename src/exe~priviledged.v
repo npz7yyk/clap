@@ -124,6 +124,8 @@ module exe_privliedged(
                 csr_software_query_en<=0;
             end
             S_TLB: begin
+                stall_because_priv<=1;
+                pc_target<=pc_next;
                 if(inst[16:15] == 2'b00) begin
                     case(inst[12:10])
                     3'b010: begin
@@ -149,8 +151,8 @@ module exe_privliedged(
                 else if(inst[16:15] == 2'b11) begin
                     clear_asid <= sr0;
                     clear_vaddr <= sr1;
-                    if(inst[4:0] == 5'd0) clear_mem = 3'd1;
-                    else if(inst[4:0] >= 5'd7) clear_mem = 3'd7;
+                    if(inst[4:0] == 5'd0) clear_mem <= 3'd1;
+                    else if(inst[4:0] >= 5'd7) clear_mem <= 3'd7;
                     else clear_mem <= inst[2:0];
                 end
             end
@@ -170,6 +172,8 @@ module exe_privliedged(
                 tlb_e_we <= 0;
                 tlb_index_we <= 0;
                 tlb_other_we <= 0;
+                stall_because_priv<=0;
+                flush <= 1;
             end
         endcase
 endmodule

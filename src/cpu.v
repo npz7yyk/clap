@@ -878,7 +878,20 @@ module core_top(
         .clear_asid             (clear_asid),
         .clear_mem              (clear_mem)
     );
-
+    assign tlb_ps_we = tlb_other_we;
+    assign tlb_vppn_we = tlb_other_we;
+    assign tlb_valid_0_wen = tlb_other_we;
+    assign tlb_valid_1_wen = tlb_other_we;
+    assign tlb_dirty_0_wen = tlb_other_we;
+    assign tlb_dirty_1_wen = tlb_other_we;
+    assign tlb_priviledge_0_wen = tlb_other_we;
+    assign tlb_priviledge_1_wen =tlb_other_we;
+    assign tlb_mat_0_wen = tlb_other_we;
+    assign tlb_mat_1_wen = tlb_other_we;
+    assign tlb_global_0_wen = tlb_other_we;
+    assign tlb_global_1_wen = tlb_other_we;
+    assign tlb_ppn_0_wen = tlb_other_we;
+    assign tlb_ppn_1_wen = tlb_other_we;
     dcache the_dcache
     (
         .clk            (aclk),
@@ -939,7 +952,7 @@ module core_top(
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
-        .s0_mem_type    (2'd2),
+        .s0_mem_type    (translate_mode),
         .s0_en          (~if_buf_full),
         .s0_exception   (),
 
@@ -958,7 +971,7 @@ module core_top(
         .r_ps           (tlb_ps_in),
         .w_ps           (tlb_ps_out),
         .rs_e           (tlb_e_in),
-        .w_e            (~tlb_e_out),
+        .w_e            (~tlb_ne_out),
 
         //CSR.TLBEHI
         .r_vpn2         (tlb_vppn_in),

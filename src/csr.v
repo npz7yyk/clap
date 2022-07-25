@@ -676,6 +676,10 @@ module csr
             if(wen[28]) tlbidx_ps[28]<=wdata[28];
             if(wen[29]) tlbidx_ps[29]<=wdata[29];
             if(wen[31]) tlbidx_ne[31]<=wdata[31];
+        end else begin
+            if(tlb_index_we) tlbidx_index <= tlb_index_in;
+            if(tlb_ps_we) tlbidx_ps <= tlb_ps_in;
+            if(tlb_ne_we) tlbidx_ne <= tlb_ne_in;
         end
 
     //TLBEHI
