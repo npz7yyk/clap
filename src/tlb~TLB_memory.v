@@ -104,21 +104,21 @@ module TLB_memory#(
         assign all_v1[i]                = tlb_v1  [i];
     end
     
-    assign r_vpn2   =  all_vpn2    [r_index];
-    assign r_asid   =  all_asid    [r_index];
-    assign r_ps     =  all_ps      [r_index];
-    assign r_e      =  all_e       [r_index];
-    assign r_g      =  all_g       [r_index];
-    assign r_pfn0   =  all_pfn0    [r_index];
-    assign r_mat0   =  all_mat0    [r_index];
-    assign r_plv0   =  all_plv0    [r_index];
-    assign r_d0     =  all_d0      [r_index];
-    assign r_v0     =  all_v0      [r_index];
-    assign r_pfn1   =  all_pfn1    [r_index];
-    assign r_mat1   =  all_mat1    [r_index];
-    assign r_plv1   =  all_plv1    [r_index];
-    assign r_d1     =  all_d1      [r_index];
-    assign r_v1     =  all_v1      [r_index];
+    assign r_vpn2   =  {19{all_e[r_index]}} & all_vpn2    [r_index];
+    assign r_asid   =  {10{all_e[r_index]}} & all_asid    [r_index];
+    assign r_ps     =  { 6{all_e[r_index]}} & all_ps      [r_index];
+    assign r_e      =                         all_e       [r_index];
+    assign r_g      =  all_e[r_index]       & all_g       [r_index];
+    assign r_pfn0   =  {20{all_e[r_index]}} & all_pfn0    [r_index];
+    assign r_mat0   =  {2{all_e[r_index]}}  & all_mat0    [r_index];
+    assign r_plv0   =  {2{all_e[r_index]}}  & all_plv0    [r_index];
+    assign r_d0     =  all_e[r_index]       & all_d0      [r_index];
+    assign r_v0     =  all_e[r_index]       & all_v0      [r_index];
+    assign r_pfn1   =  {20{all_e[r_index]}} & all_pfn1    [r_index];
+    assign r_mat1   =  {2{all_e[r_index]}}  & all_mat1    [r_index];
+    assign r_plv1   =  {2{all_e[r_index]}}  & all_plv1    [r_index];
+    assign r_d1     =  all_e[r_index]       & all_d1      [r_index];
+    assign r_v1     =  all_e[r_index]       & all_v1      [r_index];
 
     integer j;
     always @(posedge clk) begin
