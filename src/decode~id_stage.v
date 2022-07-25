@@ -134,7 +134,6 @@ module id_stage
     wire valid_both   = valid0 && valid1;
     
     //真正有效的第一条输入指令， 当valid0时，它就是inst0，否则它是inst1
-    //TODO不把空指令放进FIFO
     wire [31:0] real_inst0 = valid0? inst0:inst1;
     wire [31:0] real_inst1 = inst1;
     
