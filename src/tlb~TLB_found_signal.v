@@ -25,15 +25,15 @@ module TLB_found_signal#(
     output reg[            1:0] found_plv0, 
     output reg[           19:0] found_pfn0, 
     output reg[            5:0] found_ps0,
-    output reg[            3:0] found_index0,
+    //output reg[            3:0] found_index0,
 
     output reg                  found_v1,
     output reg                  found_d1,
     output reg[            1:0] found_mat1,
     output reg[            1:0] found_plv1,
     output reg[           19:0] found_pfn1,
-    output reg[            5:0] found_ps1,
-    output reg[            3:0] found_index1
+    output reg[            5:0] found_ps1
+    //output reg[            3:0] found_index1
 
 
     );
@@ -53,47 +53,47 @@ module TLB_found_signal#(
     //     assign found_pfn1   = found1[i] ? (!odd1_bit ? all_pfn0[20*i+19:20*i] : all_pfn1[20*i+19:20*i]) : 0;
     // end
 
-    always @(*) begin
-        case(found0)
-        16'h0001: found_index0 = 4'd0;
-        16'h0002: found_index0 = 4'd1;
-        16'h0004: found_index0 = 4'd2;
-        16'h0008: found_index0 = 4'd3;
-        16'h0010: found_index0 = 4'd4;
-        16'h0020: found_index0 = 4'd5;
-        16'h0040: found_index0 = 4'd6;
-        16'h0080: found_index0 = 4'd7;
-        16'h0100: found_index0 = 4'd8;
-        16'h0200: found_index0 = 4'd9;
-        16'h0400: found_index0 = 4'd10;
-        16'h0800: found_index0 = 4'd11;
-        16'h1000: found_index0 = 4'd12;
-        16'h2000: found_index0 = 4'd13;
-        16'h4000: found_index0 = 4'd14;
-        16'h8000: found_index0 = 4'd15;
-        default:  found_index0 = 0;
-        endcase
+    // always @(*) begin
+    //     case(found0)
+    //     16'h0001: found_index0 = 4'd0;
+    //     16'h0002: found_index0 = 4'd1;
+    //     16'h0004: found_index0 = 4'd2;
+    //     16'h0008: found_index0 = 4'd3;
+    //     16'h0010: found_index0 = 4'd4;
+    //     16'h0020: found_index0 = 4'd5;
+    //     16'h0040: found_index0 = 4'd6;
+    //     16'h0080: found_index0 = 4'd7;
+    //     16'h0100: found_index0 = 4'd8;
+    //     16'h0200: found_index0 = 4'd9;
+    //     16'h0400: found_index0 = 4'd10;
+    //     16'h0800: found_index0 = 4'd11;
+    //     16'h1000: found_index0 = 4'd12;
+    //     16'h2000: found_index0 = 4'd13;
+    //     16'h4000: found_index0 = 4'd14;
+    //     16'h8000: found_index0 = 4'd15;
+    //     default:  found_index0 = 0;
+    //     endcase
 
-        case(found1)
-        16'h0001: found_index1 = 4'd0;
-        16'h0002: found_index1 = 4'd1;
-        16'h0004: found_index1 = 4'd2;
-        16'h0008: found_index1 = 4'd3;
-        16'h0010: found_index1 = 4'd4;
-        16'h0020: found_index1 = 4'd5;
-        16'h0040: found_index1 = 4'd6;
-        16'h0080: found_index1 = 4'd7;
-        16'h0100: found_index1 = 4'd8;
-        16'h0200: found_index1 = 4'd9;
-        16'h0400: found_index1 = 4'd10;
-        16'h0800: found_index1 = 4'd11;
-        16'h1000: found_index1 = 4'd12;
-        16'h2000: found_index1 = 4'd13;
-        16'h4000: found_index1 = 4'd14;
-        16'h8000: found_index1 = 4'd15;
-        default:  found_index1 = 0;
-        endcase
-    end
+    //     case(found1)
+    //     16'h0001: found_index1 = 4'd0;
+    //     16'h0002: found_index1 = 4'd1;
+    //     16'h0004: found_index1 = 4'd2;
+    //     16'h0008: found_index1 = 4'd3;
+    //     16'h0010: found_index1 = 4'd4;
+    //     16'h0020: found_index1 = 4'd5;
+    //     16'h0040: found_index1 = 4'd6;
+    //     16'h0080: found_index1 = 4'd7;
+    //     16'h0100: found_index1 = 4'd8;
+    //     16'h0200: found_index1 = 4'd9;
+    //     16'h0400: found_index1 = 4'd10;
+    //     16'h0800: found_index1 = 4'd11;
+    //     16'h1000: found_index1 = 4'd12;
+    //     16'h2000: found_index1 = 4'd13;
+    //     16'h4000: found_index1 = 4'd14;
+    //     16'h8000: found_index1 = 4'd15;
+    //     default:  found_index1 = 0;
+    //     endcase
+    // end
     always @(*) begin
         found_v0 = 0;
         found_d0 = 0;

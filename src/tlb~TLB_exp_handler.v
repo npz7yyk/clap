@@ -17,9 +17,9 @@ module TLB_exp_handler(
     output reg [6:0] s1_exception
     );
 
-    parameter FETCH = 2'b0;
-    parameter LOAD = 2'd1;
-    parameter STORE = 2'd2;
+    parameter FETCH = 2'd2;
+    parameter LOAD = 2'd0;
+    parameter STORE = 2'd1;
 
     /* exeption coping */
     always @(*) begin

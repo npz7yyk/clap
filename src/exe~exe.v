@@ -70,7 +70,18 @@ module exe(
     output  [31:0] csr_wen,      //bit write enable
     output  [31:0] csr_wdata,
     input [31:0] era,
-    output restore_state
+    output restore_state,
+
+    //TLB
+    output reg fill_mode,
+    output reg check_mode,
+    output reg tlb_we,
+    output reg tlb_index_we,
+    output reg tlb_e_we,
+    output reg tlb_other_we,
+    output reg [31:0] clear_vaddr,
+    output reg [9:0] clear_asid,
+    output reg [2:0] clear_mem
 );
 
 wire stall2;
@@ -509,7 +520,16 @@ exe_privliedged exe_privliedged
     .csr_wdata(csr_wdata),
 
     .era(era),
-    .restore_state(restore_state)
+    .restore_state(restore_state),
+    .fill_mode(fill_mode),
+    .check_mode(check_mode),
+    .tlb_we(tlb_we),
+    .tlb_index_we(tlb_index_we),
+    .tlb_e_we(tlb_e_we),
+    .tlb_other_we(tlb_other_we),
+    .clear_vaddr(clear_vaddr),
+    .clear_asid(clear_asid),
+    .clear_mem(clear_mem)
 );
 
 wire[31:0]eu1_alu_sr1;

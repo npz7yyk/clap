@@ -354,60 +354,60 @@ module core_top(
         .dmw1_vseg               ( dmw1_vseg              ),
         .dmw1_pseg               ( dmw1_pseg              ),
 
-        .tlb_index_out           ( tlb_index_out          ),
-        .tlb_ps_out              ( tlb_ps_out             ),
-        .tlb_ne_out              ( tlb_ne_out             ),
-        .tlb_vppn_out            ( tlb_vppn_out           ),
-        .tlb_valid_0_out         ( tlb_valid_0_out        ),
-        .tlb_valid_1_out         ( tlb_valid_1_out        ),
-        .tlb_dirty_0_out         ( tlb_dirty_0_out        ),
-        .tlb_dirty_1_out         ( tlb_dirty_1_out        ),
-        .tlb_priviledge_0_out    ( tlb_priviledge_0_out   ),
-        .tlb_priviledge_1_out    ( tlb_priviledge_1_out   ),
-        .tlb_mat_0_out           ( tlb_mat_0_out          ),
-        .tlb_mat_1_out           ( tlb_mat_1_out          ),
-        .tlb_global_0_out        ( tlb_global_0_out       ),
-        .tlb_global_1_out        ( tlb_global_1_out       ),
-        .tlb_ppn_0_out           ( tlb_ppn_0_out          ),
-        .tlb_ppn_1_out           ( tlb_ppn_1_out          ),
+        .tlb_index_out           ( tlb_index_out          ),//
+        .tlb_ps_out              ( tlb_ps_out             ),//
+        .tlb_ne_out              ( tlb_ne_out             ),//
+        .tlb_vppn_out            ( tlb_vppn_out           ),//
+        .tlb_valid_0_out         ( tlb_valid_0_out        ),//
+        .tlb_valid_1_out         ( tlb_valid_1_out        ),//
+        .tlb_dirty_0_out         ( tlb_dirty_0_out        ),//
+        .tlb_dirty_1_out         ( tlb_dirty_1_out        ),//
+        .tlb_priviledge_0_out    ( tlb_priviledge_0_out   ),//
+        .tlb_priviledge_1_out    ( tlb_priviledge_1_out   ),//
+        .tlb_mat_0_out           ( tlb_mat_0_out          ),//
+        .tlb_mat_1_out           ( tlb_mat_1_out          ),//
+        .tlb_global_0_out        ( tlb_global_0_out       ),//
+        .tlb_global_1_out        ( tlb_global_1_out       ),//
+        .tlb_ppn_0_out           ( tlb_ppn_0_out          ),//
+        .tlb_ppn_1_out           ( tlb_ppn_1_out          ),//
 
-        .asid_out                ( asid_out               ),
-        .asid_in                 ( asid_in                ),
+        .asid_out                ( asid_out               ),//
+        .asid_in                 ( asid_in                ),//
         .asid_wen                ( asid_wen               ),
 
         .pgdl_out                ( pgdl_out               ),
         .pgdh_out                ( pgdh_out               ),
 
-        .tlb_index_in            ( tlb_index_in           ),
+        .tlb_index_in            ( tlb_index_in           ),//
         .tlb_index_we            ( tlb_index_we           ),
-        .tlb_ps_in               ( tlb_ps_in              ),
+        .tlb_ps_in               ( tlb_ps_in              ),//
         .tlb_ps_we               ( tlb_ps_we              ),
-        .tlb_ne_in               ( tlb_ne_in              ),
+        .tlb_ne_in               ( tlb_ne_in              ),//
         .tlb_ne_we               ( tlb_ne_we              ),
-        .tlb_vppn_in             ( tlb_vppn_in            ),
+        .tlb_vppn_in             ( tlb_vppn_in            ),//
         .tlb_vppn_we             ( tlb_vppn_we            ),
-        .tlb_valid_0_in          ( tlb_valid_0_in         ),
-        .tlb_valid_1_in          ( tlb_valid_1_in         ),
+        .tlb_valid_0_in          ( tlb_valid_0_in         ),//
+        .tlb_valid_1_in          ( tlb_valid_1_in         ),//
         .tlb_valid_0_wen         ( tlb_valid_0_wen        ),
         .tlb_valid_1_wen         ( tlb_valid_1_wen        ),
-        .tlb_dirty_0_in          ( tlb_dirty_0_in         ),
-        .tlb_dirty_1_in          ( tlb_dirty_1_in         ),
+        .tlb_dirty_0_in          ( tlb_dirty_0_in         ),//
+        .tlb_dirty_1_in          ( tlb_dirty_1_in         ),//
         .tlb_dirty_0_wen         ( tlb_dirty_0_wen        ),
         .tlb_dirty_1_wen         ( tlb_dirty_1_wen        ),
-        .tlb_priviledge_0_in     ( tlb_priviledge_0_in    ),
-        .tlb_priviledge_1_in     ( tlb_priviledge_1_in    ),
+        .tlb_priviledge_0_in     ( tlb_priviledge_0_in    ),//
+        .tlb_priviledge_1_in     ( tlb_priviledge_1_in    ),//
         .tlb_priviledge_0_wen    ( tlb_priviledge_0_wen   ),
         .tlb_priviledge_1_wen    ( tlb_priviledge_1_wen   ),
-        .tlb_mat_0_in            ( tlb_mat_0_in           ),
-        .tlb_mat_1_in            ( tlb_mat_1_in           ),
+        .tlb_mat_0_in            ( tlb_mat_0_in           ),//
+        .tlb_mat_1_in            ( tlb_mat_1_in           ),//
         .tlb_mat_0_wen           ( tlb_mat_0_wen          ),
         .tlb_mat_1_wen           ( tlb_mat_1_wen          ),
-        .tlb_global_0_in         ( tlb_global_0_in        ),
-        .tlb_global_1_in         ( tlb_global_1_in        ),
+        .tlb_global_0_in         ( tlb_global_0_in        ),//
+        .tlb_global_1_in         ( tlb_global_1_in        ),//
         .tlb_global_0_wen        ( tlb_global_0_wen       ),
         .tlb_global_1_wen        ( tlb_global_1_wen       ),
-        .tlb_ppn_0_in            ( tlb_ppn_0_in           ),
-        .tlb_ppn_1_in            ( tlb_ppn_1_in           ),
+        .tlb_ppn_0_in            ( tlb_ppn_0_in           ),//
+        .tlb_ppn_1_in            ( tlb_ppn_1_in           ),//
         .tlb_ppn_0_wen           ( tlb_ppn_0_wen          ),
         .tlb_ppn_1_wen           ( tlb_ppn_1_wen          ),
         
@@ -809,6 +809,10 @@ module core_top(
     wire ex_mem_data_valid;
     wire [31:0] ex_mem_badv;
     wire [6:0] ex_mem_exception;
+    wire fill_mode, check_mode, tlb_we, tlb_other_we;
+    wire [9:0] clear_asid;
+    wire [31:0] clear_vaddr;
+    wire[2:0] clear_mem;
 
     exe  the_exe (
         .clk           (aclk          ),
@@ -862,7 +866,17 @@ module core_top(
         .csr_wen    (csr_wen),
         .csr_wdata  (csr_wdata),
         .era(csr_era_out),
-        .restore_state(csr_restore_state)
+        .restore_state(csr_restore_state),
+
+        .fill_mode              (fill_mode),
+        .check_mode             (check_mode),
+        .tlb_we                 (tlb_we),
+        .tlb_index_we           (tlb_index_we),
+        .tlb_e_we               (tlb_ne_we),
+        .tlb_other_we           (tlb_other_we),
+        .clear_vaddr            (clear_vaddr),
+        .clear_asid             (clear_asid),
+        .clear_mem              (clear_mem)
     );
 
     dcache the_dcache
@@ -908,22 +922,90 @@ module core_top(
         .cacop_code     (5'b0),
         .cacop_en       (1'b0)
     );
+    wire tlb_e_in;
+    wire tlb_g_in;
 
+    assign tlb_global_0_in = tlb_g_in;
+    assign tlb_global_1_in = tlb_g_in;
+    assign tlb_ne_in = ~tlb_e_in;
+    assign tlb_ppn_0_in[23:20] = 0;
+    assign tlb_ppn_1_in[23:20] = 0;
     TLB the_tlb(
-        .clk(aclk),
-        .rstn(aresetn),
-        .ad_mode(translate_mode),
+        .clk            (aclk),
+        .rstn           (aresetn),
+        .ad_mode        (translate_mode),
 
-        .s0_vaddr(pc),
-        .s0_paddr(p_pc),
-        .s0_asid(asid_out),
-        .s0_plv(privilege),
-        .s0_mem_type(2'b00),
-        .s0_en(~if_buf_full),
-        // .s0_exception()
+        .s0_vaddr       (pc),
+        .s0_paddr       (p_pc),
+        .s0_asid        (asid_out),
+        .s0_plv         (privilege),
+        .s0_mem_type    (2'd2),
+        .s0_en          (~if_buf_full),
+        .s0_exception   (),
 
-        .s1_vaddr(ex_mem_addr),
-        .s1_paddr(ex_mem_paddr)
+        .s1_vaddr       (ex_mem_addr),
+        .s1_paddr       (ex_mem_paddr),
+        .s1_asid        (),
+        .s1_plv         (),
+        .s1_mem_type    ({0, ex_mem_op}),
+        .s1_en          (ex_mem_valid),
+        .s1_exception   (),
+
+
+        //CSR.TLBINDEX
+        .r_index        (tlb_index_out),
+        .w_index        (tlb_index_out),
+        .r_ps           (tlb_ps_in),
+        .w_ps           (tlb_ps_out),
+        .rs_e           (tlb_e_in),
+        .w_e            (~tlb_e_out),
+
+        //CSR.TLBEHI
+        .r_vpn2         (tlb_vppn_in),
+        .w_vpn2         (tlb_vppn_out),
+
+        //CSR.TLBLO0
+        .r_v0           (tlb_valid_0_in),
+        .w_v0           (tlb_valid_0_out),
+        .r_d0           (tlb_dirty_0_in),
+        .w_d0           (tlb_dirty_0_out),
+        .r_plv0         (tlb_priviledge_0_in),
+        .w_plv0         (tlb_priviledge_0_out),
+        .r_mat0         (tlb_mat_0_in),
+        .w_mat0         (tlb_mat_0_out),
+        .r_g            (tlb_g_in),
+        .w_g            (tlb_global_0_out & tlb_dirty_1_out),
+        .r_pfn0         (tlb_ppn_0_in[19:0]),
+        .w_pfn0         (tlb_ppn_0_out[19:0]),
+
+        //CSR.TLBO1
+        .r_v1           (tlb_valid_1_in),
+        .w_v1           (tlb_valid_1_out),
+        .r_d1           (tlb_dirty_1_in),
+        .w_d1           (tlb_dirty_1_out),
+        .r_plv1         (tlb_priviledge_1_in),
+        .w_plv1         (tlb_priviledge_1_out),
+        .r_mat1         (tlb_mat_1_in),
+        .w_mat1         (tlb_mat_1_out),
+        .r_pfn1         (tlb_ppn_1_in[19:0]),
+        .w_pfn1         (tlb_ppn_1_out[19:0]),  
+
+        //CSR.ASID      
+        .r_asid         (asid_in),
+        .w_asid         (asid_out),  
+
+        
+        .f_index        (stable_counter[3:0]),
+        .s_vpn2         (tlb_vppn_out),
+        .s_index        (tlb_index_in),
+        .we             (tlb_we),
+
+        .fill_mode      (fill_mode),
+        .check_mode     (check_mode),
+
+        .clear_mem      (clear_mem),
+        .clear_vaddr    (clear_vaddr),
+        .clear_asid     (clear_asid)
     );
 
     assign d_axi_awid = 1;
