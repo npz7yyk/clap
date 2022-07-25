@@ -1,7 +1,6 @@
 // -*- Verilog -*-
 `include "csr.vh"
 
-//TODO: reset all CSRs
 module csr
 #(
     COREID = 0,

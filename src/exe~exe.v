@@ -2,7 +2,6 @@
 module exe(
     input [0:0]clk,   
     input [0:0]rstn,
-    //TODO: flush dcache or ignore data from dcache
     input flush_by_writeback,
     //从rf段后输入
     input [0:0]eu0_en_in,
