@@ -65,6 +65,7 @@ module TLB#(
     output                      r_v1,
 
     input  [              18:0] s_vpn2,
+    input  [               9:0] s_asid,
     output [$clog2(TLBNUM)-1:0] s_index,
     output                      rs_e,
 
@@ -220,6 +221,7 @@ module TLB#(
         .found1     (found1),
 
         .s_vpn2     (s_vpn2),
+        .s_asid     (s_asid),
         .s_e        (s_e),
         .s_index    (s_index)
     );

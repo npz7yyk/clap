@@ -174,6 +174,7 @@ module exe_privliedged(
                 tlb_other_we <= 0;
                 stall_because_priv<=0;
                 flush <= 1;
+                clear_mem <= 0;
             end
         endcase
 endmodule

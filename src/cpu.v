@@ -989,7 +989,7 @@ module core_top(
         .r_mat0         (tlb_mat_0_in),
         .w_mat0         (tlb_mat_0_out),
         .r_g            (tlb_g_in),
-        .w_g            (tlb_global_0_out & tlb_dirty_1_out),
+        .w_g            (tlb_global_0_out & tlb_global_1_out),
         .r_pfn0         (tlb_ppn_0_in[19:0]),
         .w_pfn0         (tlb_ppn_0_out[19:0]),
 
@@ -1013,6 +1013,7 @@ module core_top(
         .f_index        (stable_counter[3:0]),
         .s_vpn2         (tlb_vppn_out),
         .s_index        (tlb_index_in),
+        .s_asid         (asid_out),
         .we             (tlb_we),
 
         .fill_mode      (fill_mode),
