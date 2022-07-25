@@ -157,7 +157,9 @@ reg[31:0]eu0_pc_exe1;
 wire[4:0]mul_rd_out;
 wire[0:0]mul_en_out;
 wire[31:0]mul_result;
-wire[0:0]stall_because_cache;
+//注意stall_because_cache_combine是组合信号，应尽可能少用
+wire stall_because_cache_combine;
+reg stall_because_cache;
 wire[0:0]stall_because_div;
 wire stall_because_priv;
 wire[6:0]mem_exp_out;
@@ -468,8 +470,11 @@ mem1  u_mem1 (
     .mem_data_out            ( mem_data_out          ),
     .mem_en_out              ( mem_en_out            ),
     .cache_badv_out          ( cache_badv_out        ),
-    .stall_because_cache     ( stall_because_cache   )
+    .stall_because_cache_combine     ( stall_because_cache_combine   )
 );
+
+always @(posedge clk)
+    stall_because_cache <= stall_because_cache_combine;
 
 div  u_div (
     .clk                     ( clk                      ),
