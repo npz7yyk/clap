@@ -13,6 +13,7 @@ module register_file(
     input [31:0]write_data_0,
     input [31:0]write_data_1,
     //从issue段后输入
+    input [31:0]counter_id,
     input[63:0]stable_counter,
     input[0:0]eu0_en_in,
     input[`WIDTH_UOP-1:0]eu0_uop_in,
@@ -127,7 +128,7 @@ always @(posedge clk) begin
                     read_data00<=0;
                 end
                 `CTRL_SRC1_CNTID:begin
-                    read_data00<=0;
+                    read_data00<=counter_id;
                 end
             endcase
         end else begin
@@ -204,7 +205,7 @@ always @(posedge clk) begin
                 read_data10<=0;
             end
             `CTRL_SRC1_CNTID:begin
-                read_data10<=0;
+                read_data10<=counter_id;
             end
         endcase
         case (eu1_uop_in[`UOP_SRC2])
