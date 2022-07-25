@@ -1,5 +1,5 @@
 module TLB#(
-    parameter TLBNUM = 8
+    parameter TLBNUM = 16
     )(
     input                       clk,
     input                       rstn,
@@ -15,8 +15,8 @@ module TLB#(
     output     [            6:0] s0_exception,
 
     //search port data
-    input  [              31:0] s1_vaddr,//
-    input  [               9:0] s1_asid,//
+    input  [              31:0] s1_vaddr,
+    input  [               9:0] s1_asid,
     input  [               1:0] s1_plv,
     input  [               1:0] s1_mem_type,
     input                       s1_en,
@@ -26,47 +26,47 @@ module TLB#(
     //write & refill port
     input                       we,
     input                       fill_mode,
-    input  [$clog2(TLBNUM)-1:0] w_index,//
-    input  [              18:0] w_vpn2,//
-    input  [               9:0] w_asid,//
-    input  [               5:0] w_ps,//
-    input                       w_e,//
-    input                       w_g,//
-    input  [              19:0] w_pfn0,//
-    input  [               1:0] w_mat0,//
-    input  [               1:0] w_plv0,//
-    input                       w_d0,//
-    input                       w_v0,//
-    input  [              19:0] w_pfn1,//
-    input  [               1:0] w_mat1,//
-    input  [               1:0] w_plv1,//
-    input                       w_d1,//
-    input                       w_v1,//
+    input  [$clog2(TLBNUM)-1:0] w_index,
+    input  [              18:0] w_vpn2,
+    input  [               9:0] w_asid,
+    input  [               5:0] w_ps,
+    input                       w_e,
+    input                       w_g,
+    input  [              19:0] w_pfn0,
+    input  [               1:0] w_mat0,
+    input  [               1:0] w_plv0,
+    input                       w_d0,
+    input                       w_v0,
+    input  [              19:0] w_pfn1,
+    input  [               1:0] w_mat1,
+    input  [               1:0] w_plv1,
+    input                       w_d1,
+    input                       w_v1,
 
     input  [$clog2(TLBNUM)-1:0] f_index,
 
     //read  & search port
-    input  [$clog2(TLBNUM)-1:0] r_index,//
+    input  [$clog2(TLBNUM)-1:0] r_index,
     input                       check_mode,
 
-    output [              18:0] r_vpn2,//
-    output [               9:0] r_asid,//
-    output [               5:0] r_ps,//
-    output                      r_g,//
-    output [              19:0] r_pfn0,//
-    output [               1:0] r_mat0,//
-    output [               1:0] r_plv0,//
-    output                      r_d0,//
-    output                      r_v0,//
-    output [              19:0] r_pfn1,//
-    output [               1:0] r_mat1,//
-    output [               1:0] r_plv1,//
-    output                      r_d1,//
-    output                      r_v1,//
+    output [              18:0] r_vpn2,
+    output [               9:0] r_asid,
+    output [               5:0] r_ps,
+    output                      r_g,
+    output [              19:0] r_pfn0,
+    output [               1:0] r_mat0,
+    output [               1:0] r_plv0,
+    output                      r_d0,
+    output                      r_v0,
+    output [              19:0] r_pfn1,
+    output [               1:0] r_mat1,
+    output [               1:0] r_plv1,
+    output                      r_d1,
+    output                      r_v1,
 
-    input  [              18:0] s_vpn2,//
-    output [$clog2(TLBNUM)-1:0] s_index,//
-    output                      rs_e,//
+    input  [              18:0] s_vpn2,
+    output [$clog2(TLBNUM)-1:0] s_index,
+    output                      rs_e,
 
     input  [               2:0] clear_mem,
     input  [              31:0] clear_vaddr,

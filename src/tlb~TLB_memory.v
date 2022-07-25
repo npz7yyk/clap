@@ -1,5 +1,5 @@
 module TLB_memory#(
-    parameter TLBNUM = 8
+    parameter TLBNUM = 16
     )(
     input                       clk,
     input [               2:0]  clear_mem,
