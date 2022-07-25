@@ -26,7 +26,10 @@ module icache
     input ret_last,             // the last returned data
     input [31:0] r_data_AXI,     // read data from AXI
     output [31:0] badv,
-    output [6:0] exception
+    output [6:0] exception,
+
+    input cacop_en,
+    input [4:0] cacop_code
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;
@@ -34,23 +37,24 @@ module icache
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
     wire[3:0] way_replace, way_replace_mbuf;
+    wire [4:0] cacop_code_rbuf;
     wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;
-    wire way_sel_en;
-    wire uncache_rbuf;
+    wire way_sel_en, cacop_en_rbuf;
+    wire uncache_rbuf, tagv_clear;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
-    assign badv = exception!=0?addr_rbuf[31:0]:0;
+    assign badv = exception != 0 ? addr_rbuf[31:0]:0;
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
     always @(posedge clk)
         if(flush) valid_reg <= 0;
         else if(rbuf_we) valid_reg <= valid;
-    register#(33+COOKIE_WIDHT) req_buf(
+    register#(39+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (rbuf_we),
-        .din    ({cookie_in,pc_in, uncache}),
-        .dout   ({addr_rbuf, uncache_rbuf})
+        .din    ({cookie_in,pc_in, uncache, cacop_en, cacop_code}),
+        .dout   ({addr_rbuf, uncache_rbuf, cacop_en_rbuf, cacop_code_rbuf})
     );
     register#(32) phy_buf(
         .clk        (clk),
@@ -86,6 +90,7 @@ module icache
         .w_addr     (addr_pbuf),
         .tag        (p_addr[31:12]),
         .we         (tagv_we),
+        .tagv_clear (tagv_clear),
         .hit        (hit),
         .cache_hit  (cache_hit)
     );
@@ -136,9 +141,13 @@ module icache
         .r_data_ready   (r_data_ready),
         .data_valid     (data_valid_oIzprAXodb8T),
         .cache_ready    (cache_ready),
+        .addr_rbuf      (addr_rbuf[31:0]),
 
         .uncache        (uncache_rbuf),
-        .r_length       (r_length)
+        .r_length       (r_length),
+        .cacop_en       (cacop_en_rbuf),
+        .cacop_code     (cacop_code_rbuf),
+        .tagv_clear     (tagv_clear)
     );
 
     assign data_valid = data_valid_oIzprAXodb8T&valid_reg;
