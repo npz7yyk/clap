@@ -57,10 +57,10 @@ module decoder
     wire is_alu_imm = inst[30:25]=='b0000001;
     assign type_[`ITYPE_IDX_CACHE] = inst[30:22]=='b000011000;
     //这个invalid的含义是与众不同的，这里的invalid表示指令INVTLB，而其他地方的invalid表示unknown instruction
-    wire tlb_invalid = inst[30:15]=='b0000110010010011;
+    wire is_invalid_tlb = inst[30:15]=='b0000110010010011;
     assign type_[`ITYPE_IDX_IDLE] = inst[30:15]=='b0000110010010001;
     assign type_[`ITYPE_IDX_ERET] = inst[30:10]=='b000011001001000001110;
-    assign type_[`ITYPE_IDX_TLB] = tlb_invalid||
+    assign type_[`ITYPE_IDX_TLB] = is_invalid_tlb||
         inst[30:13]=='b000011001001000001&&inst[12:10]!='b110;
     wire is_ecall = inst[30:17]=='b00000000010101&&inst[15]=='b0;
     assign is_syscall = is_ecall&inst[16];
@@ -183,8 +183,10 @@ module decoder
     ///////////////////////////////////
     //非法指令检查
     wire type_invalid = type_==0&!is_ecall;
+
+    wire invtlb_invalid = is_invalid_tlb && inst[4:0]>5'h6; //INVTLB指令的op无效
     
-    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31];
+    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid;
     //////////////////////////////////////
     
     /////////////////////////////////////

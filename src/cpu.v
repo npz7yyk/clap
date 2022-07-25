@@ -605,6 +605,8 @@ module core_top(
         .flush(set_pc_by_executer||set_pc_by_writeback),
         .read_en(id_read_en),
         .full(if_buf_full),
+        .plv(privilege),
+
         .input_valid(data_valid),
         .inst0(if_inst0),
         .inst1(if_inst1),

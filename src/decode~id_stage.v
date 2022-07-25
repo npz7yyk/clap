@@ -37,6 +37,7 @@ module id_stage
     input flush,
     input [1:0]read_en,         //读取使能，00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
     output full,                //full信号相当于stall
+    input [1:0] plv,            //当前的特权等级
     ////输入信号////
     input [31:0] inst0, inst1,  //两条待解码指令
     input unknown0, unknown1,   //来自预测器，指令未知
@@ -198,7 +199,8 @@ module id_stage
     assign exception0_out = exception0_ICQlsmuv != 0 ? exception0_ICQlsmuv:
         ({7{invalid0}}&`EXP_INE |
          {7{is_syscall0}}&`EXP_SYS |
-         {7{is_break0}}&`EXP_BRK);
+         {7{is_break0}}&`EXP_BRK |
+         {7{plv!=0&&uop0[`UOP_PRIVILEDGED]}}&`EXP_IPE);
     decoder decoder1
     (
         .nempty_badv_exception_pcnext_pc_inst(pop_sel==1?
@@ -215,5 +217,6 @@ module id_stage
     assign exception1_out = exception1_ICQlsmuv != 0 ? exception1_ICQlsmuv:
         ({7{invalid1}}&`EXP_INE |
          {7{is_syscall1}}&`EXP_SYS |
-         {7{is_break1}}&`EXP_BRK);
+         {7{is_break1}}&`EXP_BRK |
+         {7{plv!=0&&uop1[`UOP_PRIVILEDGED]}}&`EXP_IPE);
 endmodule
