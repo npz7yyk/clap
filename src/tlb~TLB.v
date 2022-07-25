@@ -1,5 +1,5 @@
 module TLB#(
-    parameter TLBNUM = 16
+    parameter TLBNUM = 8
     )(
     input                       clk,
     input                       rstn,
