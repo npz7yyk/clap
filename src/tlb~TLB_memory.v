@@ -119,6 +119,7 @@ module TLB_memory#(
     assign r_plv1   =  all_plv1    [r_index];
     assign r_d1     =  all_d1      [r_index];
     assign r_v1     =  all_v1      [r_index];
+
     integer j;
     always @(posedge clk) begin
         if(clear_mem != 0) begin
@@ -140,7 +141,7 @@ module TLB_memory#(
             end
             CLEAR_G0_ASID_VA: begin
                 for(j = 0; j < TLBNUM; j = j + 1) begin
-                    if(tlb_g[j] && clear_asid == tlb_asid[j] && clear_vaddr[31:14] == tlb_vpn2[i]) 
+                    if(tlb_g[j] && clear_asid == tlb_asid[j] && clear_vaddr[31:14] == tlb_vpn2[j]) 
                         tlb_e[j] <= 0;
                 end
             end
@@ -150,8 +151,8 @@ module TLB_memory#(
                 end
             end
             CLEAR_G1ORASID_VA: begin
-                for(j = 0; i < TLBNUM; j = j + 1) begin
-                    if((tlb_g[j] || clear_asid == tlb_asid[j]) && clear_vaddr[31:14] == tlb_vpn2[i])
+                for(j = 0; j < TLBNUM; j = j + 1) begin
+                    if((tlb_g[j] || clear_asid == tlb_asid[j]) && clear_vaddr[31:14] == tlb_vpn2[j])
                         tlb_e[j] <= 0;
                 end
             end

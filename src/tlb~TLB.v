@@ -125,7 +125,7 @@ module TLB#(
         .din            ({s1_vaddr[31:12], s1_asid, s1_plv, s1_mem_type}),
         .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
     );
-    register#(3) mode_buffer(
+    register#(2) mode_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (1'b1),
