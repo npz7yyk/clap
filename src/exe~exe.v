@@ -73,27 +73,27 @@ module exe(
     output restore_state,
 
     //TLB
-    output reg fill_mode,
-    output reg check_mode,
-    output reg tlb_we,
-    output reg tlb_index_we,
-    output reg tlb_e_we,
-    output reg tlb_other_we,
-    output reg [31:0] clear_vaddr,
-    output reg [9:0] clear_asid,
-    output reg [2:0] clear_mem
+    output fill_mode,
+    output check_mode,
+    output tlb_we,
+    output tlb_index_we,
+    output tlb_e_we,
+    output tlb_other_we,
+    output [31:0] clear_vaddr,
+    output [9:0] clear_asid,
+    output [2:0] clear_mem
 );
 
-wire stall2;
+wire stall2,stall4;
 wire[31:0]cache_badv_out;
 
-assign eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
-assign eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
-assign eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
-assign eu0_br_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_BR];
-assign eu0_mem_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MEM];
-assign eu0_priv_en=eu0_en_in&&eu0_uop_in[`UOP_PRIVILEDGED];
-assign eu1_alu_en=eu1_en_in&eu1_uop_in[`ITYPE_IDX_ALU];
+wire eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
+wire eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
+wire eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
+wire eu0_br_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_BR];
+wire eu0_mem_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MEM];
+wire eu0_priv_en=eu0_en_in&&eu0_uop_in[`UOP_PRIVILEDGED];
+wire eu1_alu_en=eu1_en_in&eu1_uop_in[`ITYPE_IDX_ALU];
 
 wire[31:0]eu0_sr0;
 wire[31:0]eu0_sr1;
