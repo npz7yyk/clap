@@ -37,6 +37,7 @@ module writeback
     output [31:0] era,
     output era_wen,
     output store_state,
+    output back_to_direct_translate,
     output [6:0] expcode_out,
     output expcode_wen,
     output [31:0] badv,
@@ -60,7 +61,9 @@ module writeback
     assign store_state = has_exception;
     assign expcode_wen = has_exception;
     assign era_wen     = has_exception;
-    assign pc = eu0_exception==`EXP_TLBR ? tlbrentry:eentry;
+    wire is_tlb_exp = eu0_exception==`EXP_TLBR;
+    assign pc = is_tlb_exp ? tlbrentry:eentry;
+    assign back_to_direct_translate = is_tlb_exp;
     assign era = eu0_pc;
     assign expcode_out = eu0_exception;
     assign badv = eu0_badv;

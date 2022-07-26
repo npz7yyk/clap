@@ -24,6 +24,7 @@ module csr
     //exception
     input store_state,      //pplv <= plv , pie <= ie 
     input restore_state,    //plv  <= pplv, ie  <= pie
+    input back_to_direct_translate,
     input [6:0] expcode_in,
     input expcode_wen,
     output [31:0] era_out,
@@ -263,6 +264,10 @@ module csr
             crmd_plv <= prmd_pplv;
             crmd_ie <= prmd_pie;
         end else if(store_state) begin
+            if(back_to_direct_translate) begin
+                crmd_da <= 1;
+                crmd_pg <= 0;
+            end
             crmd_plv <= 0;
             crmd_ie <= 0;
         end else if(software_query_en&&addr==`CSR_CRMD) begin

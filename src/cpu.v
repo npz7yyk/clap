@@ -214,6 +214,7 @@ module core_top(
     //CSR
     wire  csr_store_state;
     wire  csr_restore_state;
+    wire csr_back_to_direct_translate;
     wire  [6:0]  csr_expcode_in;
     wire  csr_expcode_wen;
     wire  [31:0]  csr_era_in;
@@ -326,6 +327,7 @@ module core_top(
         //exception
         .store_state             ( csr_store_state        ),
         .restore_state           ( csr_restore_state      ),
+        .back_to_direct_translate( csr_back_to_direct_translate ),
         .expcode_in              ( csr_expcode_in         ),
         .expcode_wen             ( csr_expcode_wen        ),
         .era_out                 ( csr_era_out            ),
@@ -1085,6 +1087,7 @@ module core_top(
         .era(csr_era_in),
         .era_wen(csr_era_wen),
         .store_state(csr_store_state),
+        .back_to_direct_translate(csr_back_to_direct_translate),
         .expcode_out(csr_expcode_in),
         .expcode_wen(csr_expcode_wen),
         .badv(csr_badv_in),
