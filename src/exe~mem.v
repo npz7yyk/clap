@@ -16,7 +16,7 @@ module mem0 (
     // output [ 5:0 ] index,               //    virtual addr[ 11:4 ]
     // output [ 19:0 ] tag,                //    physical addr[ 31:12 ]
     // output [ 5:0 ] offset,              //    bank offset:[ 3:2 ], byte offset[ 1:0 ]
-    output [ 3:0 ] write_type,          //    byte write enable
+    output reg [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ] w_data_CPU,         //    write data
     //向exe1段后输出
     output [6:0]mem_exp_out,
@@ -29,9 +29,14 @@ module mem0 (
     assign op=mem_write;
     assign addr=mem_sr+mem_imm;
     //assign {tag,index,offset} = mem_sr+mem_imm;
-    assign write_type = mem_width_in==00?'b0001:
-                        mem_width_in==01?'b0011:
-                        mem_width_in==10?'b1111:'b1111;
+    always @(*) begin
+        case (mem_width_in)
+            0:write_type='b0001;
+            1:write_type='b0011;
+            2: write_type='b1111;
+            default: write_type='b1111;
+        endcase
+    end
     assign w_data_CPU=mem_data_in;
     assign mem_width_out=mem_width_in;
     assign mem_en_out=mem_en_in;
@@ -47,7 +52,7 @@ module mem1 (
     input [0:0]mem_en_in,
     input [1:0]mem_width_in,
     //从cache输入
-    //input addr_valid,                   //    read: addr has been accepted; write: addr and data have been accepted
+    //input addr_valid,                  //    read: addr has been accepted; write: addr and data have been accepted
     input data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
     input [31:0] cache_badv_in,

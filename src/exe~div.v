@@ -102,20 +102,20 @@ always @(posedge clk) begin
                 m<=m_pre;
                 n<=n_pre;
             end else begin
-                div_en_out<=0;
-                stall_because_div<=0;
-                div_result<=0;
-                div_addr_out<=0;
-                i<=0;
-                dividend<=0;
-                divisor<=0;
-                op<=0;
-                dividend_sign<=0;
-                divisor_sign<=0;
-                addr<=0;
-                qoucient<=0;
-                m<=0;
-                n<=0;
+                {div_en_out,
+                stall_because_div,
+                div_result,
+                div_addr_out,
+                i,
+                dividend,
+                divisor,
+                op,
+                dividend_sign,
+                divisor_sign,
+                addr,
+                qoucient,
+                m,
+                n}<=0;
             end
         end
         PREPARE:begin

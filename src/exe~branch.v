@@ -17,7 +17,7 @@ module branch(
     output[31:0]ex_pc_tar,
     output[0:0]branch_valid,
     output[0:0]branch_status,
-    output[1:0]category_out
+    output reg[1:0]category_out
 );
 
 parameter  JIRL = 'b0011;
@@ -50,8 +50,12 @@ assign ex_pc_tar=branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<
 assign flush=br_en_in&&(branch_addr_calculated!=pc_next);
 assign branch_valid=br_en_in;
 
-assign category_out=branch_op==JIRL?11:
-                    branch_op==B?10:
-                    branch_op==BL?10:01;
-
+always @(*) begin
+    case (branch_op)
+        JIRL:category_out=11;
+        B:category_out=10;
+        BL: category_out=10;
+        default: category_out=01;
+    endcase
+end
 endmodule

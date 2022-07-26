@@ -241,10 +241,10 @@ always @(posedge clk) begin
     end
     //eu1
     if(!rstn||flush_by_writeback||stall2||flush)begin
-        eu1_en_0<=0;
-        eu1_rd_0<=0;
-        data_mid10<=0;
-        inst1_mid<=0;
+        {eu1_en_0,
+        eu1_rd_0,
+        data_mid10,
+        inst1_mid}<=0;
     end else if(!flush&&!stall)begin
         eu1_en_0<=eu1_alu_en_mid;
         eu1_rd_0<=eu1_alu_rd_mid;
@@ -257,13 +257,13 @@ end
 always @(posedge clk) begin
     //eu0
     if(!rstn||flush_by_writeback)begin
-        eu0_en_1_internal<=0;
-        en_out0<=0;
-        data_out0<=0;
-        addr_out0<=0;
-        exp_out<=0;
-        eu0_pc_out<=0;
-        eu0_inst<=0;
+        {eu0_en_1_internal,
+        en_out0,
+        data_out0,
+        addr_out0,
+        exp_out,
+        eu0_pc_out,
+        eu0_inst}<=0;
     end else if(!stall_because_cache)begin
         eu0_en_1_internal<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         en_out0<=eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
@@ -279,12 +279,12 @@ always @(posedge clk) begin
     end
     //eu1
     if(!rstn||flush_by_writeback||flush_because_priv)begin
-        eu1_en_1_internal<=0;
-        en_out1<=0;
-        data_out1<=0;
-        addr_out1<=0;
-        eu1_pc_out<=0;
-        eu1_inst<=0;
+        {eu1_en_1_internal,
+        en_out1,
+        data_out1,
+        addr_out1,
+        eu1_pc_out,
+        eu1_inst}<=0;
     end else if(!stall_because_cache&&!flush)begin
         eu1_en_1_internal<=eu1_en_0;
         // en_out1<=eu1_en_0;

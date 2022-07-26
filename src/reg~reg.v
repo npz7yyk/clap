@@ -73,30 +73,30 @@ always @(posedge clk) begin
         register_file[write_addr_1]<=write_addr_1==0?0:write_data_1;
     end
     if(!rstn||flush)begin
-        eu0_en_out<=0;
-        eu0_uop_out<=0;
-        eu0_rd_out<=0;
-        eu0_rj_out<=0;
-        eu0_rk_out<=0;
-        eu0_pc_out<=0;
-        eu0_pc_next_out<=0;
-        eu0_exp_out<=0;
-        eu0_badv_out<=0;
-        read_data00<=0;
-        read_data01<=0;
-        eu0_imm_out<=0;
-        eu1_en_out<=0;
-        eu1_uop_out<=0;
-        eu1_rd_out<=0;
-        eu1_rj_out<=0;
-        eu1_rk_out<=0;
-        eu1_pc_out<=0;
-        eu1_pc_next_out<=0;
-        eu1_exp_out<=0;
-        eu1_badv_out<=0;
-        read_data10<=0;
-        read_data11<=0;
-        eu1_imm_out<=0;
+        {eu0_en_out,
+        eu0_uop_out,
+        eu0_rd_out,
+        eu0_rj_out,
+        eu0_rk_out,
+        eu0_pc_out,
+        eu0_pc_next_out,
+        eu0_exp_out,
+        eu0_badv_out,
+        read_data00,
+        read_data01,
+        eu0_imm_out,
+        eu1_en_out,
+        eu1_uop_out,
+        eu1_rd_out,
+        eu1_rj_out,
+        eu1_rk_out,
+        eu1_pc_out,
+        eu1_pc_next_out,
+        eu1_exp_out,
+        eu1_badv_out,
+        read_data10,
+        read_data11,
+        eu1_imm_out}<=0;
     end else if(!stall)begin
         eu0_en_out<=eu0_en_in;
         eu0_uop_out<=eu0_uop_in;
