@@ -946,6 +946,7 @@ module core_top(
     assign tlb_ne_in = ~tlb_e_in;
     assign tlb_ppn_0_in[23:20] = 0;
     assign tlb_ppn_1_in[23:20] = 0;
+    //TODO: TLB exception
     TLB the_tlb(
         .clk            (aclk),
         .rstn           (aresetn),
@@ -955,14 +956,14 @@ module core_top(
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
-        .s0_mem_type    (translate_mode),
+        .s0_mem_type    (2),
         .s0_en          (~if_buf_full),
         .s0_exception   (),
 
         .s1_vaddr       (ex_mem_addr),
         .s1_paddr       (ex_mem_paddr),
-        .s1_asid        (),
-        .s1_plv         (),
+        .s1_asid        (asid_out),
+        .s1_plv         (privilege),
         .s1_mem_type    ({0, ex_mem_op}),
         .s1_en          (ex_mem_valid),
         .s1_exception   (),
