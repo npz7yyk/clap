@@ -894,6 +894,7 @@ module core_top(
     assign tlb_global_1_wen = tlb_other_we;
     assign tlb_ppn_0_wen = tlb_other_we;
     assign tlb_ppn_1_wen = tlb_other_we;
+    assign asid_wen = tlb_other_we;
     dcache the_dcache
     (
         .clk            (aclk),
