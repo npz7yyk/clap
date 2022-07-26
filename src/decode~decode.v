@@ -205,7 +205,7 @@ module decoder
     
     //源地址1
     assign rj =
-        (type_[`ITYPE_IDX_TLB]||
+        (type_[`ITYPE_IDX_TLB]&~is_invalid_tlb||
         type_[`ITYPE_IDX_IDLE]||
         is_pcadd||is_lui||is_b_or_bl||is_time)?0:
         inst[9:5];
@@ -214,7 +214,7 @@ module decoder
     assign rk = 
         (is_alu || is_sra ||
         type_[`ITYPE_IDX_MUL] ||
-        type_[`ITYPE_IDX_DIV])? inst[14:10]: 
+        type_[`ITYPE_IDX_DIV] || is_invalid_tlb)? inst[14:10]: 
             (type_[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE] || type_[`ITYPE_IDX_BR]&&!(is_b_or_bl||is_jilr) || type_[`ITYPE_IDX_CSR])? inst[4:0]:0;
     /////////////////////////////////////
     
