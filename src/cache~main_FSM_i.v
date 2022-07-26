@@ -25,7 +25,8 @@ module main_FSM_i(
 
     input [4:0] cacop_code,
     input cacop_en,
-    output reg tagv_clear
+    output reg tagv_clear,
+    input [6:0] tlb_exception
     );
     parameter IDLE = 2'd0;
     parameter LOOKUP = 2'd1;
@@ -63,7 +64,8 @@ module main_FSM_i(
             else nxt = IDLE;
         end
         LOOKUP: begin
-            if(cacop_en && cacop_code[2:0] == ICACHE_OP) begin
+            if(tlb_exception != 0) nxt = IDLE;
+            else if(cacop_en && cacop_code[2:0] == ICACHE_OP) begin
                 if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
             end
@@ -109,28 +111,30 @@ module main_FSM_i(
             cache_ready = 1;
         end
         LOOKUP: begin
-            rdata_sel = 1;
-            pbuf_we = 1;
-            if(cacop_en && (cacop_code == {STORE_TAG, ICACHE_OP} || cacop_code == {INDEX_INVALIDATE, ICACHE_OP})) begin
-                tagv_clear          = 1;
-                tagv_we             = tagv_we_inst;
-                data_valid          = 1;
-            end
-            else if(cacop_en && cacop_code == {HIT_INVALIDATE, ICACHE_OP}) begin
-                tagv_clear          = 1;
-                tagv_we             = hit;
-                data_valid          = 1;
-            end
-            else if(!cache_hit || uncache) begin
-                mbuf_we = 1;
-            end
-            else begin
-                if(!uncache) begin
-                    data_valid = 1;
-                    rbuf_we = 1;
-                    way_visit = hit;
-                    way_sel_en = 1;
-                    cache_ready = 1;
+            if(tlb_exception == 0) begin
+                rdata_sel = 1;
+                pbuf_we = 1;
+                if(cacop_en && (cacop_code == {STORE_TAG, ICACHE_OP} || cacop_code == {INDEX_INVALIDATE, ICACHE_OP})) begin
+                    tagv_clear          = 1;
+                    tagv_we             = tagv_we_inst;
+                    data_valid          = 1;
+                end
+                else if(cacop_en && cacop_code == {HIT_INVALIDATE, ICACHE_OP}) begin
+                    tagv_clear          = 1;
+                    tagv_we             = hit;
+                    data_valid          = 1;
+                end
+                else if(!cache_hit || uncache) begin
+                    mbuf_we = 1;
+                end
+                else begin
+                    if(!uncache) begin
+                        data_valid = 1;
+                        rbuf_we = 1;
+                        way_visit = hit;
+                        way_sel_en = 1;
+                        cache_ready = 1;
+                    end
                 end
             end
         end

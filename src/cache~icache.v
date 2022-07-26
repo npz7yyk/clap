@@ -29,7 +29,8 @@ module icache
     output [6:0] exception,
 
     input cacop_en,
-    input [4:0] cacop_code
+    input [4:0] cacop_code,
+    input [6:0] tlb_exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;
@@ -147,7 +148,8 @@ module icache
         .r_length       (r_length),
         .cacop_en       (cacop_en_rbuf),
         .cacop_code     (cacop_code_rbuf),
-        .tagv_clear     (tagv_clear)
+        .tagv_clear     (tagv_clear),
+        .tlb_exception  (tlb_exception)
     );
 
     assign data_valid = data_valid_oIzprAXodb8T&valid_reg;

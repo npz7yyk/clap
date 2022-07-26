@@ -273,6 +273,7 @@ module TLB#(
     wire found_d0_obuf, found_d1_obuf;
     wire [1:0] s0_plv_obuf, s1_plv_obuf;
     wire [1:0] found_plv0_obuf, found_plv1_obuf;
+    wire s0_en_obuf, s1_en_obuf;
     register#(2) output_ad_buffer(
         .clk            (clk),
         .rstn           (rstn),
@@ -280,27 +281,27 @@ module TLB#(
         .din            (ad_mode),
         .dout           (ad_mode_buf)
     );
-    register#(32+20+6+1+2+1+1+2+2+2+2+32+1) output_s0_buffer(
+    register#(32+20+6+1+2+1+1+2+2+2+2+32+1+1) output_s0_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s0_en),
         .din            ({s0_vaddr,        found_pfn0,        found_ps0,      s0_found,        s0_mem_type,      
                           found_v0,        found_d0,          s0_plv,         found_plv0,      found_mat0,
-                          s0_dmw_mat,      s0_dmw_paddr,      s0_dmw_hit}),
+                          s0_dmw_mat,      s0_dmw_paddr,      s0_dmw_hit,     s0_en}),
         .dout           ({s0_vaddr_obuf,   found_pfn0_obuf,   found_ps0_obuf, s0_found_obuf,   s0_mem_type_obuf, 
                           found_v0_obuf,   found_d0_obuf,     s0_plv_obuf,    found_plv0_obuf, s0_mat, 
-                          s0_dmw_mat_obuf, s0_dmw_paddr_obuf, s0_dmw_hit_obuf})
+                          s0_dmw_mat_obuf, s0_dmw_paddr_obuf, s0_dmw_hit_obuf, s0_en_obuf})
     );
-    register#(32+20+6+1+2+1+1+2+2+2+2+32+1) output_s1_buffer(
+    register#(32+20+6+1+2+1+1+2+2+2+2+32+1+1) output_s1_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s1_en),
         .din            ({s1_vaddr ,       found_pfn1,        found_ps1,      s1_found,        s1_mem_type,      
                           found_v1,        found_d1,          s1_plv,         found_plv1,      found_mat1,
-                          s1_dmw_mat,      s1_dmw_paddr,      s1_dmw_hit}),
+                          s1_dmw_mat,      s1_dmw_paddr,      s1_dmw_hit,     s1_en}),
         .dout           ({s1_vaddr_obuf,   found_pfn1_obuf,   found_ps1_obuf, s1_found_obuf,   s1_mem_type_obuf, 
                           found_v1_obuf,   found_d1_obuf,     s1_plv_obuf,    found_plv1_obuf, s1_mat,
-                          s1_dmw_mat_obuf, s1_dmw_paddr_obuf, s1_dmw_hit_obuf})
+                          s1_dmw_mat_obuf, s1_dmw_paddr_obuf, s1_dmw_hit_obuf, s1_en_obuf})
     );
 
     TLB_out addr_output(
@@ -322,6 +323,7 @@ module TLB#(
     /* exeption coping */
     TLB_exp_handler exp_handler(
         .s0_found       (s0_found_obuf),
+        .s0_en          (s0_en_obuf),
         .s0_dmw_hit     (s0_dmw_hit_obuf),
         .s0_mem_type    (s0_mem_type_obuf),
         .found_v0       (found_v0_obuf),
@@ -331,6 +333,7 @@ module TLB#(
         .s0_exception   (s0_exception),
 
         .s1_found       (s1_found_obuf),
+        .s1_en          (s1_en_obuf),
         .s1_dmw_hit     (s1_dmw_hit_obuf),
         .s1_mem_type    (s1_mem_type_obuf),
         .found_v1       (found_v1_obuf),

@@ -1,6 +1,7 @@
 `include "exception.vh"
 module TLB_exp_handler(
     input s0_found,
+    input s0_en,
     input [1:0] s0_mem_type,
     input s0_dmw_hit,
     input found_v0,
@@ -10,6 +11,7 @@ module TLB_exp_handler(
     output [6:0] s0_exception,
 
     input s1_found,
+    input s1_en,
     input [1:0] s1_mem_type,
     input s1_dmw_hit,
     input found_v1,
@@ -59,7 +61,7 @@ module TLB_exp_handler(
         else if(s1_mem_type == STORE && !found_d1) s1_exception_temp = `EXP_PME;
     end
 
-    assign s0_exception = s0_exception_temp & {7{~s0_dmw_hit}};
-    assign s1_exception = s1_exception_temp & {7{~s1_dmw_hit}};
+    assign s0_exception = s0_exception_temp & {7{~s0_dmw_hit}} & {7{s0_en}};
+    assign s1_exception = s1_exception_temp & {7{~s1_dmw_hit}} & {7{s1_en}};
 
 endmodule

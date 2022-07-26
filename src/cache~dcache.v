@@ -257,6 +257,8 @@ module dcache(
 
         .cacop_code         (cacop_code_rbuf),
         .cacop_en           (cacop_en_rbuf),
-        .tagv_clear         (tagv_clear)
+        .tagv_clear         (tagv_clear),
+
+        .tlb_exception      (tlb_exception)
     );
 endmodule

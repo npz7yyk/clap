@@ -48,7 +48,9 @@ module main_FSM_d(
 
     input [4:0] cacop_code,
     input cacop_en,
-    output reg tagv_clear
+    output reg tagv_clear,
+
+    input [6:0] tlb_exception
     );
     parameter IDLE          = 6'b000001;
     parameter LOOKUP        = 6'b000010;
@@ -106,7 +108,8 @@ module main_FSM_d(
         end
         LOOKUP: begin
             // check instruction
-            if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
+            if(exception != 0 || tlb_exception != 0) nxt = IDLE;
+            else if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
                 if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
             end 
@@ -125,9 +128,6 @@ module main_FSM_d(
                     if(valid) nxt = LOOKUP;
                     else nxt = IDLE;
                 end
-            end
-            else if(exception != 0) begin
-                nxt = IDLE;
             end
 
             // check uncache
@@ -200,58 +200,60 @@ module main_FSM_d(
             cache_ready = 1;
         end
         LOOKUP: begin
-            rdata_sel       = 1;
-            wrt_data_sel    = 1;
-            pbuf_we         = 1;
-            if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin
-                tagv_clear          = 1;
-                tagv_we             = tagv_we_inst;
-                dirty_we            = tagv_we_inst;
-                w_dirty_data        = 1'b0;
-                data_valid          = 1;
-            end 
-            else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin
-                tagv_clear          = 1;
-                tagv_we             = tagv_we_inst;
-                dirty_we            = tagv_we_inst;
-                w_dirty_data        = 1'b0;
-                if(!dirty_data) begin
-                    data_valid      = 1;
-                    rbuf_we         = 1;
-                    wbuf_AXI_reset  = 1;
-                    cache_ready     = 1;
-                end
+            if(exception == 0 && tlb_exception == 0) begin
+                rdata_sel       = 1;
+                wrt_data_sel    = 1;
+                pbuf_we         = 1;
+                if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin
+                    tagv_clear          = 1;
+                    tagv_we             = tagv_we_inst;
+                    dirty_we            = tagv_we_inst;
+                    w_dirty_data        = 1'b0;
+                    data_valid          = 1;
+                end 
+                else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin
+                    tagv_clear          = 1;
+                    tagv_we             = tagv_we_inst;
+                    dirty_we            = tagv_we_inst;
+                    w_dirty_data        = 1'b0;
+                    if(!dirty_data) begin
+                        data_valid      = 1;
+                        rbuf_we         = 1;
+                        wbuf_AXI_reset  = 1;
+                        cache_ready     = 1;
+                    end
 
-            end
-            else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
-                tagv_clear          = 1;
-                tagv_we             = hit;
-                dirty_we            = hit;
-                w_dirty_data        = 1'b0;
-                if(!(cache_hit && dirty_data)) begin
-                    data_valid      = 1;
-                    rbuf_we         = 1;
-                    wbuf_AXI_reset  = 1;
-                    cache_ready     = 1;
                 end
-            end
-            else if(exception != 0) data_valid = 1;
-            else if(!cache_hit || uncache) begin
-                mbuf_we     = 1;
-                wbuf_AXI_we = 1;
-            end
-            else begin
-                if(!uncache) begin
-                    data_valid  = 1;
-                    rbuf_we     = 1;
-                    way_visit   = hit;
-                    way_sel_en  = 1;
-                    cache_ready = 1;
-                    if(op == WRITE)begin
-                        mem_en          = hit;
-                        mem_we          = mem_we_normal;
-                        dirty_we        = hit;
-                        w_dirty_data    = 1;
+                else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
+                    tagv_clear          = 1;
+                    tagv_we             = hit;
+                    dirty_we            = hit;
+                    w_dirty_data        = 1'b0;
+                    if(!(cache_hit && dirty_data)) begin
+                        data_valid      = 1;
+                        rbuf_we         = 1;
+                        wbuf_AXI_reset  = 1;
+                        cache_ready     = 1;
+                    end
+                end
+                else if(exception != 0) data_valid = 1;
+                else if(!cache_hit || uncache) begin
+                    mbuf_we     = 1;
+                    wbuf_AXI_we = 1;
+                end
+                else begin
+                    if(!uncache) begin
+                        data_valid  = 1;
+                        rbuf_we     = 1;
+                        way_visit   = hit;
+                        way_sel_en  = 1;
+                        cache_ready = 1;
+                        if(op == WRITE)begin
+                            mem_en          = hit;
+                            mem_we          = mem_we_normal;
+                            dirty_we        = hit;
+                            w_dirty_data    = 1;
+                        end
                     end
                 end
             end
