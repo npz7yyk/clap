@@ -320,8 +320,8 @@ module TLB#(
 
     TLB_out addr_output(
         .ad_mode        (ad_mode_buf),
-        .s0_dmw_hit     (s0_dmw_hit),
-        .s1_dmw_hit     (s1_dmw_hit),
+        .s0_dmw_hit     (s0_dmw_hit_obuf),
+        .s1_dmw_hit     (s1_dmw_hit_obuf),
         .s0_addr        (s0_vaddr_obuf),
         .s1_addr        (s1_vaddr_obuf),
         .s0_dmw_paddr   (s0_dmw_paddr_obuf),

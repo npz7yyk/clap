@@ -1037,7 +1037,18 @@ module core_top(
 
         .clear_mem      (clear_mem),
         .clear_vaddr    (clear_vaddr),
-        .clear_asid     (clear_asid)
+        .clear_asid     (clear_asid),
+
+        .dmw0_plv0      (dmw0_plv0),
+        .dmw0_plv3      (dmw0_plv3),
+        .dmw0_mat       (dmw0_mat ),
+        .dmw0_vseg      (dmw0_vseg),
+        .dmw0_pseg      (dmw0_pseg),
+        .dmw1_plv0      (dmw1_plv0),
+        .dmw1_plv3      (dmw1_plv3),
+        .dmw1_mat       (dmw1_mat ),
+        .dmw1_vseg      (dmw1_vseg),
+        .dmw1_pseg      (dmw1_pseg)
     );
 
     assign d_axi_awid = 1;
