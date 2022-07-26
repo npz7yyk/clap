@@ -63,6 +63,7 @@ module core_top(
     assign wid = awid;
     assign arlock[1] = 0;
     assign awlock[1] = 0;
+    wire [6:0] itlb_exp,dtlb_exp;
     wire [3:0]  i_axi_awid;         wire [3:0]  d_axi_awid;
     wire [31:0] i_axi_awaddr;       wire [31:0] d_axi_awaddr;
     wire [7:0]  i_axi_awlen;        wire [7:0]  d_axi_awlen;
@@ -587,7 +588,7 @@ module core_top(
         .inst1_in(r_data_CPU[63:32]),
         .known_in(if_known_qt4WxiD7aL7),
         .first_inst_jmp_in(first_inst_jmp_qt4WxiD7aL7),
-        .exception_in(if_exception_qt4WxiD7aL7),
+        .exception_in(if_exception_qt4WxiD7aL7==0?itlb_exp:if_exception_qt4WxiD7aL7),
         .badv_in(if_badv_qt4WxiD7aL7),
         .pc_in(if_pc_qt4WxiD7aL7),
         .pc_next_in(if_pc_next_qt4WxiD7aL7),
@@ -863,7 +864,7 @@ module core_top(
         .data_valid             ( ex_mem_data_valid),
         .r_data_CPU             ( ex_mem_r_data_CPU),
         .cache_badv             ( ex_mem_badv),
-        .cache_exception        ( ex_mem_exception),
+        .cache_exception        ( ex_mem_exception==0?dtlb_exp:ex_mem_exception),
 
         .csr_software_query_en(csr_software_query_en),
         .csr_addr   (csr_addr),
@@ -949,7 +950,7 @@ module core_top(
     assign tlb_ne_in = ~tlb_e_in;
     assign tlb_ppn_0_in[23:20] = 0;
     assign tlb_ppn_1_in[23:20] = 0;
-    //TODO: TLB exception
+
     TLB the_tlb(
         .clk            (aclk),
         .rstn           (aresetn),
@@ -961,7 +962,7 @@ module core_top(
         .s0_plv         (privilege),
         .s0_mem_type    (2),
         .s0_en          (~if_buf_full),
-        .s0_exception   (),
+        .s0_exception   (itlb_exp),
 
         .s1_vaddr       (ex_mem_addr),
         .s1_paddr       (ex_mem_paddr),
@@ -969,7 +970,7 @@ module core_top(
         .s1_plv         (privilege),
         .s1_mem_type    ({0, ex_mem_op}),
         .s1_en          (ex_mem_valid),
-        .s1_exception   (),
+        .s1_exception   (dtlb_exp),
 
 
         //CSR.TLBINDEX
