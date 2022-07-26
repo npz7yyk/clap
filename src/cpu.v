@@ -209,7 +209,7 @@ module core_top(
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
 
-    localparam TLBIDX_WIDTH = 4;
+    localparam TLBIDX_WIDTH = 5;
     //CSR
     wire  csr_store_state;
     wire  csr_restore_state;
