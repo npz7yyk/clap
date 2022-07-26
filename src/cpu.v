@@ -309,6 +309,7 @@ module core_top(
     wire [31:0] csr_rdata;
     wire [31:0] csr_wen;
     wire [31:0] csr_wdata;
+    wire [5:0] csr_ecode;
 
     csr  #(
         .TLBIDX_WIDTH(TLBIDX_WIDTH)
@@ -318,6 +319,7 @@ module core_top(
         .rstn                    ( aresetn                ),
 
         .privilege               ( privilege              ),
+        .ecode                   ( csr_ecode              ),
 
         //software query port (exe stage)
         .software_query_en       ( csr_software_query_en  ),
@@ -987,7 +989,7 @@ module core_top(
         .r_ps           (tlb_ps_in),
         .w_ps           (tlb_ps_out),
         .rs_e           (tlb_e_in),
-        .w_e            (~tlb_ne_out),
+        .w_e            (csr_ecode==6'h3F ? 1'b1:~tlb_ne_out),
 
         //CSR.TLBEHI
         .r_vpn2         (tlb_vppn_in),

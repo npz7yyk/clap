@@ -20,6 +20,7 @@ module csr
     
     //current machine state
     output [1:0] privilege,
+    output [5:0] ecode,
 
     //exception
     input store_state,      //pplv <= plv , pie <= ie 
@@ -265,6 +266,10 @@ module csr
         end else if(restore_state) begin
             crmd_plv <= prmd_pplv;
             crmd_ie <= prmd_pie;
+            if(estat_ecode==6'h3F) begin
+                crmd_da <= 0;
+                crmd_pg <= 1;
+            end
         end else if(store_state) begin
             if(back_to_direct_translate) begin
                 crmd_da <= 1;
@@ -1136,6 +1141,7 @@ module csr
     assign llbit = llbctl_rollb;
     assign tid = csr_tid;
     assign cache_tag = csr_ctag;
+    assign ecode = estat_ecode;
     //end CSR read
     ///////////////////////////////////////
 endmodule
