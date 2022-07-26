@@ -217,6 +217,8 @@ module core_top(
     wire csr_back_to_direct_translate;
     wire  [6:0]  csr_expcode_in;
     wire  csr_expcode_wen;
+    wire [18:0] csr_exp_vppn_in;
+    wire csr_exp_vppn_we;
     wire  [31:0]  csr_era_in;
     wire  csr_era_wen;
     wire  [31:0]  csr_badv_in;
@@ -330,6 +332,8 @@ module core_top(
         .back_to_direct_translate( csr_back_to_direct_translate ),
         .expcode_in              ( csr_expcode_in         ),
         .expcode_wen             ( csr_expcode_wen        ),
+        .exp_vppn_in             ( csr_exp_vppn_in        ),
+        .exp_vppn_we             ( csr_exp_vppn_we        ),
         .era_out                 ( csr_era_out            ),
         .era_in                  ( csr_era_in             ),
         .era_wen                 ( csr_era_wen            ),
@@ -1088,6 +1092,8 @@ module core_top(
         .era_wen(csr_era_wen),
         .store_state(csr_store_state),
         .back_to_direct_translate(csr_back_to_direct_translate),
+        .vppn(csr_exp_vppn_in),
+        .vppn_we(csr_exp_vppn_we),
         .expcode_out(csr_expcode_in),
         .expcode_wen(csr_expcode_wen),
         .badv(csr_badv_in),

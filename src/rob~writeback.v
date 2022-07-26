@@ -38,6 +38,8 @@ module writeback
     output era_wen,
     output store_state,
     output back_to_direct_translate,
+    output [18:0] vppn,
+    output vppn_we,
     output [6:0] expcode_out,
     output expcode_wen,
     output [31:0] badv,
@@ -48,6 +50,7 @@ module writeback
 );
     wire has_exception = eu0_valid && eu0_exception!=0;
     reg set_badv;
+    reg set_vppn;
     always @* begin
         set_badv = 0;
         if(eu0_valid)
@@ -55,6 +58,14 @@ module writeback
             `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PIS,
             `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_badv = 1;
+            endcase
+    end
+    always @* begin
+        set_vppn = 0;
+        if(eu0_valid)
+            case(eu0_exception)
+            `EXP_TLBR, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PME, `EXP_PPI:
+                set_vppn = 1;
             endcase
     end
     assign set_pc = has_exception;
@@ -70,6 +81,8 @@ module writeback
     assign pgd = eu0_badv[31]?pgdh:pgdl;
     assign badv_wen = set_badv;
     assign pgd_wen = set_badv;
+    assign vppn = eu0_badv[31:13];
+    assign vppn_we = set_vppn;
 
     assign wen0 = eu0_valid && eu0_exception==0;
     //第一条指令出现异常时，第二条指令不能被写回

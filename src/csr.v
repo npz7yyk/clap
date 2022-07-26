@@ -25,6 +25,8 @@ module csr
     input store_state,      //pplv <= plv , pie <= ie 
     input restore_state,    //plv  <= pplv, ie  <= pie
     input back_to_direct_translate,
+    input [18:0] exp_vppn_in,
+    input exp_vppn_we,
     input [6:0] expcode_in,
     input expcode_wen,
     output [31:0] era_out,
@@ -688,7 +690,11 @@ module csr
 
     //TLBEHI
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TLBEHI) begin
+        if(~rstn)
+            tlbehi_vppn<=0;
+        else if(exp_vppn_we) begin
+            tlbehi_vppn <= exp_vppn_in;
+        end else if(software_query_en&&addr==`CSR_TLBEHI) begin
             if(wen[13]) tlbehi_vppn[13] <= wdata[13];
             if(wen[14]) tlbehi_vppn[14] <= wdata[14];
             if(wen[15]) tlbehi_vppn[15] <= wdata[15];
