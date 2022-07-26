@@ -236,24 +236,22 @@ module main_FSM_d(
                         cache_ready     = 1;
                     end
                 end
-                else if(exception != 0) data_valid = 1;
+                //else if(exception != 0) data_valid = 1;
                 else if(!cache_hit || uncache) begin
                     mbuf_we     = 1;
                     wbuf_AXI_we = 1;
                 end
                 else begin
-                    if(!uncache) begin
-                        data_valid  = 1;
-                        rbuf_we     = 1;
-                        way_visit   = hit;
-                        way_sel_en  = 1;
-                        cache_ready = 1;
-                        if(op == WRITE)begin
-                            mem_en          = hit;
-                            mem_we          = mem_we_normal;
-                            dirty_we        = hit;
-                            w_dirty_data    = 1;
-                        end
+                    data_valid  = 1;
+                    rbuf_we     = 1;
+                    way_visit   = hit;
+                    way_sel_en  = 1;
+                    cache_ready = 1;
+                    if(op == WRITE)begin
+                        mem_en          = hit;
+                        mem_we          = mem_we_normal;
+                        dirty_we        = hit;
+                        w_dirty_data    = 1;
                     end
                 end
             end
