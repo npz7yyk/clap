@@ -534,7 +534,8 @@ module core_top(
         .ret_valid      (i_axi_rvalid),
         .ret_last       (i_axi_rlast),
         .r_data_ready   (i_axi_rready),
-        .r_data_AXI     (i_axi_rdata)
+        .r_data_AXI     (i_axi_rdata),
+        .tlb_exception  (itlb_exp)
     );
     
     assign i_axi_awid = 0;
@@ -940,7 +941,8 @@ module core_top(
         .b_valid        (d_axi_bvalid),
 
         .cacop_code     (5'b0),
-        .cacop_en       (1'b0)
+        .cacop_en       (1'b0),
+        .tlb_exception  (dtlb_exp)
     );
     wire tlb_e_in;
     wire tlb_g_in;
