@@ -306,7 +306,10 @@ module core_top(
     wire [31:0] csr_wen;
     wire [31:0] csr_wdata;
 
-    csr  the_csr (
+    csr  #(
+        .TLBIDX_WIDTH(TLBIDX_WIDTH)
+    )
+    the_csr (
         .clk                     ( aclk                   ),
         .rstn                    ( aresetn                ),
 
