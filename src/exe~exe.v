@@ -186,7 +186,7 @@ assign flush = flush_because_br||flush_because_priv;
 //中段寄存器更新
 always @(posedge clk) begin
     //eu0
-    if(!rstn||flush_by_writeback||stall2||flush)begin
+    if(!rstn||flush_by_writeback||stall2||flush||stall_because_div)begin
         {eu0_en_0,
         eu0_mul_en_0,
         eu0_rd_0,
@@ -240,19 +240,21 @@ always @(posedge clk) begin
         mul_ajustice_exe1<=mul_ad_mid;
     end
     //eu1
-    if(!rstn||flush_by_writeback||stall2||flush)begin
+    if(!rstn||flush_by_writeback||stall2||flush||stall_because_div)begin
         {eu1_en_0,
         eu1_rd_0,
         data_mid10,
         inst1_mid}<=0;
     end else if(!flush&&!stall)begin
-        eu1_en_0<=eu1_alu_en_mid;
+        eu1_en_0<=eu1_alu_en_mid&&!stall_because_div;
         eu1_rd_0<=eu1_alu_rd_mid;
         data_mid10<=eu1_alu_result_mid;
         eu1_pc_exe1<=eu1_pc_in;
         inst1_mid<=eu1_uop_in[`UOP_ORIGINAL_INST];
     end
 end
+wire[31:0]div_pc_out;
+wire[31:0]div_inst_out;
 //末段寄存器更新
 always @(posedge clk) begin
     //eu0
@@ -271,8 +273,8 @@ always @(posedge clk) begin
         addr_out0<=eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out<=exp_exe1|mem_exp_out;
         badv_out<=badv_exe1|cache_badv_out;
-        eu0_pc_out<=eu0_pc_exe1;
-        eu0_inst<=inst0_mid;
+        eu0_pc_out<=eu0_pc_exe1|div_pc_out;
+        eu0_inst<=inst0_mid|div_inst_out;
     end 
     else begin
         en_out0<=0;
@@ -288,7 +290,7 @@ always @(posedge clk) begin
     end else if(!stall_because_cache&&!flush)begin
         eu1_en_1_internal<=eu1_en_0;
         // en_out1<=eu1_en_0;
-        en_out1<=eu1_en_0&&!stall_because_div&&!stall_because_priv;
+        en_out1<=eu1_en_0&&!stall_because_priv;
         data_out1<=data_mid10;
         addr_out1<=eu1_rd_0;
         eu1_pc_out<=eu1_pc_exe1;
@@ -474,17 +476,21 @@ mem1  u_mem1 (
 div  u_div (
     .clk                     ( clk                      ),
     .rstn                    ( rstn&&!flush_by_writeback ),
-    .div_en_in               ( eu0_div_en&&!stall&&!flush        ),
+    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_mem&&!stall_because_priv&&!stall_because_mul&&!flush&&!div_en_out),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                   ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                 ),
     .div_sr0                 ( eu0_sr0                  ),
     .div_sr1                 ( eu0_sr1                  ),
     .div_addr_in             ( eu0_rd_in              ),
+    .div_pc_in               ( eu0_pc_in),
+    .div_inst_in                ( eu0_uop_in ),
 
     .div_en_out              ( div_en_out               ),
     .stall_because_div       ( stall_because_div        ),
     .div_result              ( div_result               ),
-    .div_addr_out            ( div_addr_out   )
+    .div_addr_out            ( div_addr_out   ),
+    .div_pc_out              ( div_pc_out),
+    .div_inst_out            (div_inst_out)
 );
 
 //特权指令

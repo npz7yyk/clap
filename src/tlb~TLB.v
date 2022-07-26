@@ -1,5 +1,5 @@
 module TLB#(
-    parameter TLBNUM = 16
+    parameter TLBNUM = 32
     )(
     input                       clk,
     input                       rstn,
@@ -50,7 +50,7 @@ module TLB#(
 
     input  [$clog2(TLBNUM)-1:0] f_index,
 
-    //read  & search port
+    //read port
     input  [$clog2(TLBNUM)-1:0] r_index,
     input                       check_mode,
 
@@ -68,18 +68,28 @@ module TLB#(
     output [               1:0] r_plv1,
     output                      r_d1,
     output                      r_v1,
-
+    // tlbsearch
     input  [              18:0] s_vpn2,
     input  [               9:0] s_asid,
     output [$clog2(TLBNUM)-1:0] s_index,
     output                      rs_e,
-
+    // invtlb
     input  [               2:0] clear_mem,
     input  [              31:0] clear_vaddr,
-    input  [               9:0] clear_asid
+    input  [               9:0] clear_asid,
+    //dmw
+    input                       dmw0_plv0,
+    input                       dmw0_plv3,
+    input  [               1:0] dmw0_mat,
+    input  [               2:0] dmw0_vseg,
+    input  [               2:0] dmw0_pseg,
+    input                       dmw1_plv0,
+    input                       dmw1_plv3,
+    input  [               1:0] dmw1_mat,
+    input  [               2:0] dmw1_vseg,
+    input  [               2:0] dmw1_pseg
+
     );
-    //wire [1:0] mode_mbuf;
-    //wire [31:0] s0_addr_buf, s1_addr_buf;
     wire s0_found, s1_found;
 
     wire [TLBNUM-1:0] found0, found1;
@@ -90,13 +100,12 @@ module TLB#(
     wire [1:0] found_mat0, found_mat1;
     wire [1:0] found_plv0, found_plv1;
     wire [19:0] found_pfn0, found_pfn1;
-    // wire [6:0] s0_exception_obuf, s1_exception_obuf;
-    // wire [31:0] s0_paddr_obuf, s1_paddr_obuf;
-    //wire [19:0] s0_pfn, s1_pfn;
-    //wire [19:0] s0_vpn_obuf, s1_vpn_obuf;
-    // wire [9:0] s0_asid_obuf, s1_asid_obuf;
-    // wire [1:0] s0_plv_obuf, s1_plv_obuf;
-    // wire [1:0] s0_mem_type_obuf, s1_mem_type_obuf; 
+    wire [1:0] s0_dmw_mat, s1_dmw_mat;
+    wire [1:0] s0_dmw_mat_obuf, s1_dmw_mat_obuf;
+    wire [31:0] s0_dmw_paddr, s1_dmw_paddr;
+    wire [31:0] s0_dmw_paddr_obuf, s1_dmw_paddr_obuf;
+    wire s0_dmw_hit, s1_dmw_hit;
+    wire s0_dmw_hit_obuf, s1_dmw_hit_obuf;
 
     wire r_e, s_e;
     assign rs_e = check_mode ? s_e : r_e;
@@ -117,42 +126,31 @@ module TLB#(
     wire [       TLBNUM-1:0]  all_d1;
     wire [       TLBNUM-1:0]  all_v1;
 
-    // register#(34) req0_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (s0_en),
-    //     .din            ({s0_vaddr[31:12], s0_asid, s0_plv, s0_mem_type}),
-    //     .dout           ({s0_vpn_rbuf, s0_asid_rbuf, s0_plv_rbuf, s0_mem_type_rbuf})
-    // );
-    // register#(34) req1_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (s1_en),
-    //     .din            ({s1_vaddr[31:12], s1_asid, s1_plv, s1_mem_type}),
-    //     .dout           ({s1_vpn_rbuf, s1_asid_rbuf, s1_plv_rbuf, s1_mem_type_rbuf})
-    //);
-    // register#(2) mode_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (1'b1),
-    //     .din            (ad_mode),
-    //     .dout           (mode_mbuf)
-    // );
-    // register#(32) vad0_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (1'b1),
-    //     .din            (s0_vaddr),
-    //     .dout           (s0_addr_buf)
-    // );
-    // register#(32) vad1_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (1'b1),
-    //     .din            (s1_vaddr),
-    //     .dout           (s1_addr_buf)
-    //);
     
+    TLB_dmw dmw_cope(
+        .dmw0_plv0          (dmw0_plv0),
+        .dmw0_plv3          (dmw0_plv3),
+        .dmw0_mat           (dmw0_mat ),
+        .dmw0_vseg          (dmw0_vseg),
+        .dmw0_pseg          (dmw0_pseg),
+        .dmw1_plv0          (dmw1_plv0),
+        .dmw1_plv3          (dmw1_plv3),
+        .dmw1_mat           (dmw1_mat ),
+        .dmw1_vseg          (dmw1_vseg),
+        .dmw1_pseg          (dmw1_pseg),
+
+        .s0_vaddr           (s0_vaddr    ),
+        .s0_plv             (s0_plv      ),
+        .s0_dmw_mat         (s0_dmw_mat  ),
+        .s0_dmw_paddr       (s0_dmw_paddr),
+        .s0_dmw_hit         (s0_dmw_hit  ),
+        
+        .s1_vaddr           (s1_vaddr    ),
+        .s1_plv             (s1_plv      ),
+        .s1_dmw_mat         (s1_dmw_mat  ),
+        .s1_dmw_paddr       (s1_dmw_paddr),
+        .s1_dmw_hit         (s1_dmw_hit  )
+    );
     /* memory */
     TLB_memory memory(
         .clk            (clk),
@@ -282,40 +280,49 @@ module TLB#(
         .din            (ad_mode),
         .dout           (ad_mode_buf)
     );
-    register#(32+20+6+1+2+1+1+2+2+2) output_s0_buffer(
+    register#(32+20+6+1+2+1+1+2+2+2+2+32+1) output_s0_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s0_en),
-        .din            ({s0_vaddr     , found_pfn0,      found_ps0,      s0_found,        s0_mem_type,      
-                          found_v0,      found_d0,        s0_plv,         found_plv0,      found_mat0}),
-        .dout           ({s0_vaddr_obuf, found_pfn0_obuf, found_ps0_obuf, s0_found_obuf,   s0_mem_type_obuf, 
-                          found_v0_obuf, found_d0_obuf,   s0_plv_obuf,    found_plv0_obuf, s0_mat})
+        .din            ({s0_vaddr,        found_pfn0,        found_ps0,      s0_found,        s0_mem_type,      
+                          found_v0,        found_d0,          s0_plv,         found_plv0,      found_mat0,
+                          s0_dmw_mat,      s0_dmw_paddr,      s0_dmw_hit}),
+        .dout           ({s0_vaddr_obuf,   found_pfn0_obuf,   found_ps0_obuf, s0_found_obuf,   s0_mem_type_obuf, 
+                          found_v0_obuf,   found_d0_obuf,     s0_plv_obuf,    found_plv0_obuf, s0_mat, 
+                          s0_dmw_mat_obuf, s0_dmw_paddr_obuf, s0_dmw_hit_obuf})
     );
-    register#(32+20+6+1+2+1+1+2+2+2) output_s1_buffer(
+    register#(32+20+6+1+2+1+1+2+2+2+2+32+1) output_s1_buffer(
         .clk            (clk),
         .rstn           (rstn),
         .we             (s1_en),
-        .din            ({s1_vaddr     , found_pfn1,      found_ps1,      s1_found,        s1_mem_type,      
-                          found_v1,      found_d1,        s1_plv,         found_plv1,      found_mat1}),
-        .dout           ({s1_vaddr_obuf, found_pfn1_obuf, found_ps1_obuf, s1_found_obuf,   s1_mem_type_obuf, 
-                          found_v1_obuf, found_d1_obuf,   s1_plv_obuf,    found_plv1_obuf, s1_mat})
+        .din            ({s1_vaddr ,       found_pfn1,        found_ps1,      s1_found,        s1_mem_type,      
+                          found_v1,        found_d1,          s1_plv,         found_plv1,      found_mat1,
+                          s1_dmw_mat,      s1_dmw_paddr,      s1_dmw_hit}),
+        .dout           ({s1_vaddr_obuf,   found_pfn1_obuf,   found_ps1_obuf, s1_found_obuf,   s1_mem_type_obuf, 
+                          found_v1_obuf,   found_d1_obuf,     s1_plv_obuf,    found_plv1_obuf, s1_mat,
+                          s1_dmw_mat_obuf, s1_dmw_paddr_obuf, s1_dmw_hit_obuf})
     );
 
     TLB_out addr_output(
-        .ad_mode    (ad_mode_buf),
-        .s0_addr    (s0_vaddr_obuf),
-        .s1_addr    (s1_vaddr_obuf),
-        .s0_pfn     (found_pfn0_obuf),
-        .s1_pfn     (found_pfn1_obuf),
-        .found_ps0  (found_ps0_obuf),
-        .found_ps1  (found_ps1_obuf),
-        .s0_paddr   (s0_paddr),
-        .s1_paddr   (s1_paddr)
+        .ad_mode        (ad_mode_buf),
+        .s0_dmw_hit     (s0_dmw_hit),
+        .s1_dmw_hit     (s1_dmw_hit),
+        .s0_addr        (s0_vaddr_obuf),
+        .s1_addr        (s1_vaddr_obuf),
+        .s0_dmw_paddr   (s0_dmw_paddr_obuf),
+        .s1_dmw_paddr   (s1_dmw_paddr_obuf),
+        .s0_pfn         (found_pfn0_obuf),
+        .s1_pfn         (found_pfn1_obuf),
+        .found_ps0      (found_ps0_obuf),
+        .found_ps1      (found_ps1_obuf),
+        .s0_paddr       (s0_paddr),
+        .s1_paddr       (s1_paddr)
     );
 
     /* exeption coping */
     TLB_exp_handler exp_handler(
         .s0_found       (s0_found_obuf),
+        .s0_dmw_hit     (s0_dmw_hit_obuf),
         .s0_mem_type    (s0_mem_type_obuf),
         .found_v0       (found_v0_obuf),
         .found_d0       (found_d0_obuf),
@@ -324,6 +331,7 @@ module TLB#(
         .s0_exception   (s0_exception),
 
         .s1_found       (s1_found_obuf),
+        .s1_dmw_hit     (s1_dmw_hit_obuf),
         .s1_mem_type    (s1_mem_type_obuf),
         .found_v1       (found_v1_obuf),
         .found_d1       (found_d1_obuf),
@@ -331,21 +339,6 @@ module TLB#(
         .found_plv1     (found_plv1_obuf),
         .s1_exception   (s1_exception)
     );
-
-    // register#(32+2+7) s0_output_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (s0_en),
-    //     .din            ({s0_paddr_obuf, found_mat0, s0_exception_obuf}),
-    //     .dout           ({s0_paddr, s0_mat, s0_exception})
-    // );
-    // register#(32+2+7) s1_output_buffer(
-    //     .clk            (clk),
-    //     .rstn           (rstn),
-    //     .we             (s1_en),
-    //     .din            ({s1_paddr_obuf, found_mat1, s1_exception_obuf}),
-    //     .dout           ({s1_paddr, s1_mat, s1_exception})
-    // );
     
 
 endmodule 
