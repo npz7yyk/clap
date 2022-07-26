@@ -136,12 +136,12 @@ module TLB_memory#(
             end
             CLEAR_G0_ASID_ALL: begin
                 for(j = 0; j < TLBNUM; j = j + 1) begin
-                    if(tlb_g[j] && clear_asid == tlb_asid[j]) tlb_e[j] <= 0;
+                    if(!tlb_g[j] && clear_asid == tlb_asid[j]) tlb_e[j] <= 0;
                 end
             end
             CLEAR_G0_ASID_VA: begin
                 for(j = 0; j < TLBNUM; j = j + 1) begin
-                    if(tlb_g[j] && clear_asid == tlb_asid[j] && clear_vaddr[31:13] == tlb_vpn2[j]) 
+                    if(!tlb_g[j] && clear_asid == tlb_asid[j] && clear_vaddr[31:13] == tlb_vpn2[j]) 
                         tlb_e[j] <= 0;
                 end
             end
