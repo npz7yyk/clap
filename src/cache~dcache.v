@@ -39,6 +39,7 @@ module dcache(
     input                   b_valid,
     //exception 
     output            [6:0] exception,
+    input             [6:0] tlb_exception,
     output           [31:0] badv,
     //cacop
     input [4:0] cacop_code,

@@ -965,7 +965,7 @@ module core_top(
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
         .s0_mem_type    (2),
-        .s0_en          (~if_buf_full),
+        .s0_en          (~if_buf_full&translate_mode[1]),
         .s0_exception   (itlb_exp),
 
         .s1_vaddr       (ex_mem_addr),
@@ -973,7 +973,7 @@ module core_top(
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
         .s1_mem_type    ({0, ex_mem_op}),
-        .s1_en          (ex_mem_valid),
+        .s1_en          (ex_mem_valid&&translate_mode[1]),
         .s1_exception   (dtlb_exp),
 
 
