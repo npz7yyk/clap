@@ -48,7 +48,10 @@ module branch_unit #(
     output wire [ADDR_WIDTH - 1:0] pdPC,            // pc predicted
     output wire                    pdBranch,        // whether a branch is predicted
     output wire                    pdReason,        // if branch, which inst causes this
-    output wire                    pdKnown
+    output wire                    pdKnown1,
+    output wire                    pdKnown2,
+    output wire [ADDR_WIDTH - 1:0] pdAddrType1,
+    output wire [ADDR_WIDTH - 1:0] pdAddrType2
 );
     // start of instruction fact part
     wire [3:0] erFactSel, exFactSel;
@@ -164,9 +167,13 @@ module branch_unit #(
 
         .pc_new     (pdPC),
         .branch     (pdBranch),
-        .reason     (pdReason),
-        .known      (pdKnown)
+        .reason     (pdReason)
     );
     // end of prediction part
+
+    assign pdKnown1 = ifPastVld1;
+    assign pdKnown2 = ifPastVld2;
+    assign pdAddrType1 = ifPastPara1;
+    assign pdAddrType2 = ifPastPara2;
 
 endmodule
