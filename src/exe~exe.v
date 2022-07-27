@@ -71,6 +71,14 @@ module exe(
     input [31:0]            era,
     output [0:0]            restore_state,
 
+    //cache
+    output [1:0] cacop_code,// code[4:3]
+    output l1i_en,l1d_en,l2_en,
+    input l1i_ready,l1d_ready,l2_ready,
+    input l1i_complete,l1d_complete,l2_complete,
+    output [31:0] cacop_rj_plus_imm,
+    output use_tlb_s0,use_tlb_s1,
+
     //TLB
     output [0:0]            fill_mode,
     output [0:0]            check_mode,
@@ -521,6 +529,14 @@ exe_privliedged exe_privliedged
     .csr_rdata(csr_rdata),
     .csr_wen(csr_wen),
     .csr_wdata(csr_wdata),
+
+    .cacop_code(cacop_code),
+    .l1i_en(l1i_en),.l1d_en(l1d_en),.l2_en(l2_en),
+    .l1i_ready(l1i_ready),.l1d_ready(l1d_ready),.l2_ready(l2_ready),
+    .l1i_complete(l1i_complete),.l1d_complete(l1d_complete),.l2_complete(l2_complete),
+    .cacop_rj_plus_imm(cacop_rj_plus_imm),
+    .use_tlb_s0(use_tlb_s0),
+    .use_tlb_s1(use_tlb_s1),
 
     .era(era),
     .restore_state(restore_state),

@@ -6,7 +6,7 @@ module core_top(
     input           aresetn,
     input    [ 7:0] intrpt,
     //AXI interface
-    //read reqest
+    //read request
     output   [ 3:0] arid,
     output   [31:0] araddr,
     output   [ 7:0] arlen,
@@ -510,6 +510,13 @@ module core_top(
         .pdReason(pd_reason)
     );
 
+    wire [1:0] ex_mem_cacop_code;
+    wire ex_mem_l1i_en,ex_mem_l1d_en,ex_mem_l2_en;
+    wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
+    wire ex_mem_l1i_complete,ex_mem_l1d_complete,ex_mem_l2_complete;
+    wire [31:0] ex_mem_cacop_rj_plus_imm;
+    wire use_tlb_s0_by_exe,use_tlb_s1_by_exe;
+
     wire data_valid_qt4WxiD7aL7;
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7;
@@ -597,7 +604,7 @@ module core_top(
         .inst1_in(r_data_CPU[63:32]),
         .known_in(if_known_qt4WxiD7aL7),
         .first_inst_jmp_in(first_inst_jmp_qt4WxiD7aL7),
-        .exception_in(if_exception_qt4WxiD7aL7==0?itlb_exp:if_exception_qt4WxiD7aL7),
+        .exception_in(if_exception_qt4WxiD7aL7),
         .badv_in(if_badv_qt4WxiD7aL7),
         .pc_in(if_pc_qt4WxiD7aL7),
         .pc_next_in(if_pc_next_qt4WxiD7aL7),
@@ -873,7 +880,7 @@ module core_top(
         .data_valid             ( ex_mem_data_valid),
         .r_data_CPU             ( ex_mem_r_data_CPU),
         .cache_badv             ( ex_mem_badv),
-        .cache_exception        ( ex_mem_exception==0?dtlb_exp:ex_mem_exception),
+        .cache_exception        ( ex_mem_exception),
 
         .csr_software_query_en(csr_software_query_en),
         .csr_addr   (csr_addr),
@@ -882,6 +889,18 @@ module core_top(
         .csr_wdata  (csr_wdata),
         .era(csr_era_out),
         .restore_state(csr_restore_state),
+
+        .cacop_code(ex_mem_cacop_code),
+        .l1i_en(ex_mem_l1i_en),
+        .l1i_ready(ex_mem_l1i_ready),
+        .l1i_complete(ex_mem_l1i_complete),
+        .l1d_en(ex_mem_l1d_en),
+        .l1d_ready(ex_mem_l1d_ready),
+        .l1d_complete(ex_mem_l1d_complete),
+        .l2_en(ex_mem_l2_en),
+        .l2_ready(ex_mem_l2_ready),
+        .l2_complete(ex_mem_l2_complete),
+
 
         .fill_mode              (fill_mode),
         .check_mode             (check_mode),
@@ -967,7 +986,7 @@ module core_top(
         .ad_mode        (translate_mode),
 
         .s0_vaddr       (pc),
-        .s0_paddr       (p_pc),
+        .s0_paddr       (use_tlb_s0_by_exe?ex_mem_cacop_rj_plus_imm:p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
         .s0_mem_type    (2),
@@ -975,7 +994,7 @@ module core_top(
         .s0_exception   (itlb_exp),
 
         .s1_vaddr       (ex_mem_addr),
-        .s1_paddr       (ex_mem_paddr),
+        .s1_paddr       (use_tlb_s0_by_exe?ex_mem_cacop_rj_plus_imm:ex_mem_paddr),
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
         .s1_mem_type    ({0, ex_mem_op}),

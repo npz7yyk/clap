@@ -32,8 +32,14 @@ module exe_privliedged(
     output reg restore_state,
 
     //cache
+    output reg [1:0] cacop_code,// code[4:3]
+    output reg l1i_en,l1d_en,l2_en,
+    input l1i_ready,l1d_ready,l2_ready,
+    input l1i_complete,l1d_complete,l2_complete,
+    output reg [31:0] cacop_rj_plus_imm,
+    output reg use_tlb_s0,use_tlb_s1,
 
-    //tlb
+    //TLB
     output reg fill_mode,
     output reg check_mode,
     output reg tlb_we,
@@ -45,23 +51,42 @@ module exe_privliedged(
     output reg [2:0] clear_mem
 ); 
     localparam
-        S_INIT      = 9'b000000001,
-        S_CSR       = 9'b000000010,
-        S_CACOP     = 9'b000000100,
-        S_TLB       = 9'b000001000,
-        S_IDLE      = 9'b000010000,
-        S_ERTN      = 9'b000100000,
-        S_DONE_CSR  = 9'b001000000,
-        S_DONE_ERTN = 9'b010000000,
-        S_DONE_TLB  = 9'b100000000;
-    reg [8:0] state,next_state;
+        S_INIT      = 23'b00000000000000000000001,
+        S_CSR       = 23'b00000000000000000000010,
+        S_CACOP     = 23'b00000000000000000000100,
+        S_TLB       = 23'b00000000000000000001000,
+        S_IDLE      = 23'b00000000000000000010000,
+        S_ERTN      = 23'b00000000000000000100000,
+        S_DONE_CSR  = 23'b00000000000000001000000,
+        S_DONE_ERTN = 23'b00000000000000010000000,
+        S_DONE_TLB  = 23'b00000000000000100000000,
+        S_L1I_REQ   = 23'b00000000000001000000000,
+        S_L1D_REQ   = 23'b00000000000010000000000,
+        S_L2_REQ    = 23'b00000000000100000000000,
+        S_L1I_WAIT  = 23'b00000000001000000000000,
+        S_L1D_WAIT  = 23'b00000000010000000000000,
+        S_L2_WAIT   = 23'b00000000100000000000000,
+        S_DONE_L1I  = 23'b00000001000000000000000,
+        S_DONE_L1D  = 23'b00000010000000000000000,
+        S_DONE_L2   = 23'b00000100000000000000000,
+        S_TLB_SRCH  = 23'b00001000000000000000000,
+        S_TLB_RD    = 23'b00010000000000000000000,
+        S_TLB_WR    = 23'b00100000000000000000000,
+        S_TLB_FILL  = 23'b01000000000000000000000,
+        S_INVTLB    = 23'b10000000000000000000000;
+    reg [22:0] state,next_state;
+
+    reg [1:0] which_cache;
+    reg [0:0] inst_16;
+    reg [1:0] inst_11_10;
+    reg [4:0] inst_4_0;
 
     always @(posedge clk)
         if(~rstn) state <= S_INIT;
         else state <= next_state;
     
     always @ * begin
-        next_state = state;
+        next_state = S_INIT;
         case(state)
         S_INIT: begin
             next_state = 0;
@@ -74,8 +99,33 @@ module exe_privliedged(
         end
         S_CSR: next_state = S_DONE_CSR;
         S_ERTN: next_state = S_DONE_ERTN;
-        S_TLB: next_state = S_DONE_TLB;
-        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB:
+        S_TLB:
+            if(inst_16) begin
+                next_state = S_INVTLB;
+            end else begin
+                case(inst_11_10)
+                2'b10: next_state = S_TLB_SRCH;
+                2'b11: next_state = S_TLB_RD;
+                2'b00: next_state = S_TLB_WR;
+                2'b01: next_state = S_TLB_FILL;
+                endcase
+            end
+        S_INVTLB, S_TLB_SRCH, S_TLB_RD, S_TLB_WR, S_TLB_FILL:
+            next_state = S_DONE_TLB;
+        S_CACOP: begin 
+            case(which_cache)
+            0: next_state = S_L1I_REQ;
+            1: next_state = S_L1D_REQ;
+            default: next_state = S_L2_REQ;
+            endcase
+        end
+        S_L1I_REQ :next_state = l1i_ready   ? S_L1I_WAIT:S_L1I_REQ ;
+        S_L1D_REQ :next_state = l1i_ready   ? S_L1D_WAIT:S_L1D_REQ ;
+        S_L2_REQ  :next_state = l2_ready    ? S_L2_WAIT :S_L2_REQ  ;
+        S_L1I_WAIT:next_state = l1i_complete? S_DONE_L1I:S_L1I_WAIT;
+        S_L1D_WAIT:next_state = l1d_complete? S_DONE_L1D:S_L1D_WAIT;
+        S_L2_WAIT :next_state = l2_complete ? S_DONE_L2 :S_L2_WAIT ;
+        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB,S_DONE_L1I,S_DONE_L1D,S_DONE_L2:
             next_state = S_INIT;
         endcase
     end
@@ -100,6 +150,10 @@ module exe_privliedged(
             tlb_index_we <= 0;
             tlb_e_we <= 0;
             tlb_other_we <= 0;
+            cacop_code <= 0;
+            {l1i_en,l1d_en,l2_en} <= 0;
+            cacop_rj_plus_imm <= 0;
+            {use_tlb_s0,use_tlb_s1}<= 0;
         end else case(next_state)
             S_INIT: begin
                 en_out<=0;
@@ -126,35 +180,32 @@ module exe_privliedged(
             S_TLB: begin
                 stall_because_priv<=1;
                 pc_target<=pc_next;
-                if(inst[16:15] == 2'b00) begin
-                    case(inst[12:10])
-                    3'b010: begin
-                        check_mode <= 1;
-                        tlb_index_we <= 1;
-                        tlb_e_we <= 1;
-                    end
-                    3'b011: begin
-                        check_mode <= 0;
-                        tlb_e_we <= 1;
-                        tlb_other_we <= 1;
-                    end
-                    3'b100: begin
-                        fill_mode <= 0;
-                        tlb_we <= 1;
-                    end
-                    3'b101: begin 
-                        fill_mode <= 1;
-                        tlb_we <= 1;
-                    end
-                    endcase
-                end
-                else if(inst[16:15] == 2'b11) begin
-                    clear_asid <= sr0;
-                    clear_vaddr <= sr1;
-                    if(inst[4:0] == 5'd0) clear_mem <= 3'd1;
-                    else if(inst[4:0] >= 5'd7) clear_mem <= 3'd7;
-                    else clear_mem <= inst[2:0];
-                end
+                inst_16 <= inst[16];
+                inst_11_10 <= inst[11:10];
+                inst_4_0 <= inst[4:0];
+                clear_asid <= sr0;
+                clear_vaddr <= sr1;
+            end
+            S_TLB_SRCH: begin
+                check_mode <= 1;
+                tlb_index_we <= 1;
+                tlb_e_we <= 1;
+            end
+            S_TLB_RD: begin
+                check_mode <= 0;
+                tlb_e_we <= 1;
+                tlb_other_we <= 1;
+            end
+            S_TLB_WR: begin
+                fill_mode <= 0;
+                tlb_we <= 1;
+            end
+            S_TLB_FILL: begin
+                fill_mode <= 1;
+                tlb_we <= 1;
+            end
+            S_INVTLB: begin
+                clear_mem <= inst[4:0]==5'd0 ? 3'd1:inst[2:0];
             end
             S_ERTN: begin
                 pc_target <= era;
@@ -175,6 +226,47 @@ module exe_privliedged(
                 stall_because_priv<=0;
                 flush <= 1;
                 clear_mem <= 0;
+            end
+            S_CACOP: begin
+                which_cache <= inst[1:0];
+                stall_because_priv<=1;
+                pc_target<=pc_next;
+                cacop_code <= inst[4:3];
+                cacop_rj_plus_imm <= sr0+imm;
+            end
+            S_L1I_REQ: begin
+                l1i_en <= 1;
+                use_tlb_s0 <= 1;
+            end
+            S_L1I_WAIT: begin
+                l1i_en <= 0;
+            end
+            S_DONE_L1I: begin
+                stall_because_priv<=0;
+                flush <= 1;
+                use_tlb_s0 <= 0;
+            end
+            S_L1D_REQ: begin
+                l1d_en <= 1;
+                use_tlb_s1 <= 1;
+            end
+            S_L1D_WAIT: begin
+                l1d_en <= 0;
+            end
+            S_DONE_L1D: begin
+                stall_because_priv<=0;
+                flush <= 1;
+                use_tlb_s1 <= 0;
+            end
+            S_L2_REQ: begin
+                l2_en <= 1;
+            end
+            S_L2_WAIT: begin
+                l2_en <= 0;
+            end
+            S_DONE_L2: begin
+                stall_because_priv<=0;
+                flush <= 1;
             end
         endcase
 endmodule
