@@ -1,4 +1,5 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module cache_excption_i(
     input [31:0] addr_rbuf,
     input cacop_en_rbuf,

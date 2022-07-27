@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module ret_buf_i(
     input clk,
     input[31:0] r_data_AXI,

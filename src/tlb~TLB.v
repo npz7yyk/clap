@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TLB#(
     parameter TLBNUM = 32
     )(

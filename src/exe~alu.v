@@ -1,4 +1,5 @@
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module alu (
     input  [0:0]  alu_en_in,
     input  [3:0]  alu_control,

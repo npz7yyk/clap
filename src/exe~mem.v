@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module mem0 (
     //从exe1段输入
     input  [4:0]       mem_rd_in,

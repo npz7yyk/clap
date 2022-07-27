@@ -30,6 +30,7 @@ THE SOFTWARE.
 /*
  * Priority encoder module
  */
+ /* verilator lint_off DECLFILENAME */
 module priority_encoder #
 (
     parameter WIDTH = 4,

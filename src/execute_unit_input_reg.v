@@ -1,5 +1,5 @@
 `include "uop.vh"
-
+/* verilator lint_off DECLFILENAME */
 module execute_unit_input_reg
 (
     input clk,rstn,flush,stall,

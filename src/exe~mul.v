@@ -27,6 +27,7 @@ About mul.w and mulh.w:
     lower 32 bits --- same
     higher 32 bits --- same
 */
+/* verilator lint_off DECLFILENAME */
 module mul_0(
 
     input  [0:0]  mul_en_in,

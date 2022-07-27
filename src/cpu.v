@@ -1,6 +1,6 @@
 `include "uop.vh"
 `include "exception.vh"
-
+/* verilator lint_off DECLFILENAME */
 module core_top(
     input           aclk,
     input           aresetn,
@@ -486,6 +486,7 @@ module core_top(
     //         id_category0_reg <= id_category0;
     //         id_category1_reg <= id_category1;
     //     end
+    wire [0:0] ex_branch_unknown;
     branch_unit the_branch_predict
     (
         .clk(aclk),.rstn(aresetn),
@@ -503,7 +504,7 @@ module core_top(
         .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
-        .exKnown(~branch_unknown),
+        .exKnown(~ex_branch_unknown),
 
         .pdPC(pc_next),
         .pdKnown(pred_known),
@@ -1011,7 +1012,7 @@ module core_top(
         .rstn           (aresetn),
         .ad_mode        (translate_mode),
 
-        .s0_vaddr       (use_tlb_s0_by_exe?exe_mem_cacop_rj_plus_imm:pc),
+        .s0_vaddr       (use_tlb_s0_by_exe?ex_mem_cacop_rj_plus_imm:pc),
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),

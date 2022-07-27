@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TLB_found_compare#(
     parameter TLBNUM = 32
     )(

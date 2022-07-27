@@ -17,6 +17,7 @@
 //combine logic
 //pre-decoder the instruction before pushing it to the FIFO, 
 //to get feedback signals
+/* verilator lint_off DECLFILENAME */
 module pre_decoder
 (
     input [31:0] inst,

@@ -1,5 +1,6 @@
 //FIXME: handle stall signal
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module register_file(
     input [0:0]clk,
     input [0:0]rstn,

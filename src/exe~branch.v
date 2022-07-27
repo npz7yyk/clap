@@ -1,4 +1,4 @@
-
+/* verilator lint_off DECLFILENAME */
 module branch(
     input  [0:0]     br_en_in,
     input  [ 31:0]   pc,

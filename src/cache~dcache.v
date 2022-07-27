@@ -1,4 +1,5 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module dcache(
     input clk, rstn,
     /* for CPU */
@@ -175,7 +176,7 @@ module dcache(
     );
 
     /* miss way sel */
-    miss_way_sel_lru way_sel(
+    miss_way_sel_lru u_way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf),
         .visit          (way_visit),

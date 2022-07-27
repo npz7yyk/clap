@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TLB_out(
     input [1:0] ad_mode,
     input s0_dmw_hit,

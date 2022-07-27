@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module ret_buf_d(
     input clk,
     input [31:0] addr_rbuf,

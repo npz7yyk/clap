@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module mem_rd_ctrl_i(
     input [31:0] addr_rbuf,
     input [3:0] r_way_sel,

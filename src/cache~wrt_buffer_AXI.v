@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module wrt_buffer_AXI(
     input clk,
     input rstn,

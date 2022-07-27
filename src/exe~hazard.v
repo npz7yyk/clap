@@ -1,4 +1,5 @@
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module hazard (
     //从rf段后输入
     input  [0:0] eu0_en_in,
@@ -21,7 +22,8 @@ module hazard (
     output [0:0] stall2,
     output [0:0] stall4
 );
-
+wire [0:0] stall_because_mul;
+wire [0:0] stall_because_mem;
 assign stall_because_mul  = eu0_rd!=0
                             &&eu0_mul_en_0
                             &&((eu0_rd==eu0_rj||eu0_rd==eu0_rk)&&eu0_en_in

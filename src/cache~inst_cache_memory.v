@@ -4,7 +4,7 @@
 //  the output port.  If the output data is not needed during writes or the last read value is
 //  desired to be retained, it is suggested to use no change as it is more power efficient.
 //  If a reset or enable is not necessary, it may be tied off or removed from the code.
-
+/* verilator lint_off DECLFILENAME */
 module inst_cache_memory #(
   parameter RAM_WIDTH = 512,                       // Specify RAM data width
   parameter RAM_DEPTH = 64,                      // Specify RAM depth (number of entries)

@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module exe_log2_plus_one
 (
     input [31:0] in,

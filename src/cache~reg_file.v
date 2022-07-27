@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module reg_file(
     input clk, 
     input [3:0] we,

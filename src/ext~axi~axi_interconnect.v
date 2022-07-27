@@ -30,6 +30,7 @@ THE SOFTWARE.
 /*
  * AXI4 interconnect
  */
+ /* verilator lint_off DECLFILENAME */
 module axi_interconnect #
 (
     // Number of AXI inputs (slave interfaces)

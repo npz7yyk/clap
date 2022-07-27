@@ -1,4 +1,5 @@
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module exe(
     input [0:0]             clk,   
     input [0:0]             rstn,
@@ -489,7 +490,7 @@ mem1  u_mem1 (
 div  u_div (
     .clk                     ( clk                                                                                                               ),
     .rstn                    ( rstn&&!flush_by_writeback                                                                                         ),
-    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_mem&&!stall_because_priv&&!stall_because_mul&&!flush&&!div_en_out),
+    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_priv&&!stall2&&!flush&&!div_en_out),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                                                                                           ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]                                                                                             ),
     .div_sr0                 ( eu0_sr0                                                                                                           ),

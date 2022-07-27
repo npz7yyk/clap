@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TagV_memory_d(
     input clk,
     input tagv_clear,

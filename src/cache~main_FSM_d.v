@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module main_FSM_d(
     input clk, 
     input rstn,

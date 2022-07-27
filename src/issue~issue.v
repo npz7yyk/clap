@@ -17,7 +17,7 @@
 
 `include "uop.vh"
 `include "exception.vh"
-
+/* verilator lint_off DECLFILENAME */
 module is_stage
 (
     input clk,rstn, //时钟, 复位

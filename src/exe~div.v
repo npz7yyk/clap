@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module div(
     input [0:0]         clk,
     input [0:0]         rstn,

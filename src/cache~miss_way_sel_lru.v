@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module miss_way_sel_lru(
     input clk,
     input [31:0] addr_rbuf,

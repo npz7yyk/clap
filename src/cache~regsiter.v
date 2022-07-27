@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module register#(
     parameter WIDTH = 32
     )(

@@ -1,6 +1,7 @@
 `include "uop.vh"
 
 //执行特权指令
+/* verilator lint_off DECLFILENAME */
 module exe_privliedged(
     input clk,
     input rstn,

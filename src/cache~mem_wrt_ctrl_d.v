@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module mem_wrt_ctrl_d(
     input [31:0] w_data_CPU,
     input [511:0] w_data_AXI,

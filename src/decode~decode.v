@@ -20,6 +20,7 @@
 
 //纯组合逻辑，译码器
 //【注意】load、br指令的原本位于rd段的源数据被放到了rk，而rd=0，这样可以保证读取寄存器堆时只需要读rk和rj
+/* verilator lint_off DECLFILENAME */
 module decoder
 (
     input [135:0] nempty_unknown_badv_exception_pcnext_pc_inst,

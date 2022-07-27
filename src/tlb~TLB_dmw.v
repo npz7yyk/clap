@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TLB_dmw(
     input                       dmw0_plv0,
     input                       dmw0_plv3,

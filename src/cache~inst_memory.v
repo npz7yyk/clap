@@ -1,4 +1,5 @@
 /* for each way, there are 16 banks, whose width is 4bytes */
+/* verilator lint_off DECLFILENAME */
 module inst_memory(
     input clk,
     input [31:0] r_addr,

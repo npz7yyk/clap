@@ -1,4 +1,5 @@
 // -*- Verilog -*-
+/* verilator lint_off DECLFILENAME */
 `include "csr.vh"
 
 module csr

@@ -1,4 +1,5 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module TLB_exp_handler(
     input s0_found,
     input s0_en,

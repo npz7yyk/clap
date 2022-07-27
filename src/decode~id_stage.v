@@ -29,6 +29,7 @@
 // 输出: uop x2
 // 传递: PC, PC-next
 // 异常: 非法指令, 指令特权等级错误, 系统调用, 断点, FIFO满
+/* verilator lint_off DECLFILENAME */
 module id_stage
 (
     input clk,rstn, //时钟, 复位
@@ -128,6 +129,7 @@ module id_stage
     wire full0 = tail0_plus_1==head0;
     wire full1 = tail1_plus_1==head1;
     assign empty = empty0&&empty1;
+    wire [0:0] really_full;
     assign really_full = full0||full1;
     //在还剩2 words容量时发出full，因为i-cache不支持stall
     assign full  = really_full || tail0_plus_2==head0 || tail1_plus_2==head1 || tail0_plus_3==head0 || tail1_plus_3==head1;

@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module predict_unit #(
     parameter ADDR_WIDTH = 32,
               HASH_DEPTH = 5,

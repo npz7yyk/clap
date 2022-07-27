@@ -30,6 +30,7 @@ THE SOFTWARE.
 /*
  * Arbiter module
  */
+ /* verilator lint_off DECLFILENAME */
 module arbiter #
 (
     parameter PORTS = 4,

@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module branch_unit #(
     parameter ADDR_WIDTH = 32,
               HASH_DEPTH = 5,
@@ -54,6 +54,11 @@ module branch_unit #(
     wire [3:0] erFactSel, exFactSel;
     wire [1:0] ifFactSel;
     wire [ADDR_WIDTH - 1:0] ifFactData1, ifFactData2;
+    wire [0:0] erFactLower;
+    wire [0:0] erFactUpper;
+    wire [0:0] exFactExist;
+    wire [0:0] ifFactExist1;
+    wire [0:0] ifFactExist2;
     fact #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -101,6 +106,8 @@ module branch_unit #(
      *                  each case has 2 bits
      */
     wire [PAST_WIDTH - 1:0] ifPastPara1, ifPastPara2;
+    wire [0:0] ifPastVld1;
+    wire [0:0] ifPastVld2;
     past #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (PAST_DEPTH),

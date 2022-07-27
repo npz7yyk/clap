@@ -1,4 +1,5 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module icache
 #(COOKIE_WIDHT = 32)(
     input clk, rstn,
@@ -111,7 +112,7 @@ module icache
         .mem_we     (mem_we),
         .mem_dout   (mem_dout)
     );
-    miss_way_sel_lru way_sel(
+    miss_way_sel_lru u_way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf[31:0]),
         .visit          (way_visit),
