@@ -30,7 +30,11 @@ module icache
     output [6:0] exception,
 
     input cacop_en,
-    input [4:0] cacop_code,
+    input [1:0] cacop_code,
+    //input [31:0] cacop_addr,
+    output cacop_ready,
+    output cacop_complete,
+
     input [6:0] tlb_exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
@@ -39,10 +43,10 @@ module icache
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
     wire[3:0] way_replace, way_replace_mbuf;
-    wire [4:0] cacop_code_rbuf;
+    wire [1:0] cacop_code_rbuf;
     wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;
-    wire way_sel_en, cacop_en_rbuf;
+    wire way_sel_en;
     wire uncache_rbuf, tagv_clear;
 
     wire [6:0] exception_temp;
@@ -54,12 +58,12 @@ module icache
     always @(posedge clk)
         if(flush) valid_reg <= 0;
         else if(rbuf_we) valid_reg <= valid;
-    register#(39+COOKIE_WIDHT) req_buf(
+    register#(35+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (rbuf_we),
-        .din    ({cookie_in,pc_in, uncache, cacop_en, cacop_code}),
-        .dout   ({addr_rbuf, uncache_rbuf, cacop_en_rbuf, cacop_code_rbuf})
+        .din    ({cookie_in,pc_in, uncache, cacop_code}),
+        .dout   ({addr_rbuf, uncache_rbuf, cacop_code_rbuf})
     );
     register#(32) phy_buf(
         .clk        (clk),
@@ -146,14 +150,16 @@ module icache
         .r_data_ready   (r_data_ready),
         .data_valid     (data_valid_oIzprAXodb8T),
         .cache_ready    (cache_ready),
+        .cacop_ready    (cacop_ready),
+        .cacop_complete (cacop_complete),
         .addr_rbuf      (addr_rbuf[31:0]),
 
         .uncache        (uncache_rbuf),
         .r_length       (r_length),
-        .cacop_en       (cacop_en_rbuf),
+        .cacop_en       (cacop_en),
         .cacop_code     (cacop_code_rbuf),
         .tagv_clear     (tagv_clear),
-        .tlb_exception  (tlb_exception)
+        .exception      (exception)
     );
 
     assign data_valid = data_valid_oIzprAXodb8T&valid_reg;

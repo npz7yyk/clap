@@ -23,22 +23,25 @@ module main_FSM_i(
     output reg data_valid,
     output reg cache_ready,
 
-    input [4:0] cacop_code,
+    output reg cacop_ready,
+    output reg cacop_complete,
+
+    input [1:0] cacop_code,
     input cacop_en,
+
     output reg tagv_clear,
-    input [6:0] tlb_exception
+    input [6:0] exception
     );
-    parameter IDLE = 2'd0;
-    parameter LOOKUP = 2'd1;
-    parameter REPLACE = 2'd2;
-    parameter REFILL = 2'd3;
+    parameter IDLE          = 3'd0;
+    parameter LOOKUP        = 3'd1;
+    parameter REPLACE       = 3'd2;
+    parameter REFILL        = 3'd3;
+    parameter CACOP_COPE    = 3'd4;
+    parameter EXTRA_READY   = 3'd5;
 
     parameter STORE_TAG         = 2'b00;
     parameter INDEX_INVALIDATE  = 2'b01;
     parameter HIT_INVALIDATE    = 2'b10;
-
-    parameter DCACHE_OP = 3'b001;
-    parameter ICACHE_OP = 3'b000;
 
     reg [3:0] tagv_we_inst;
     always @(*) begin
@@ -50,7 +53,7 @@ module main_FSM_i(
         endcase
     end
 
-    reg[1:0] crt, nxt;
+    reg[2:0] crt, nxt;
     
     always @(posedge clk) begin
         if(!rstn) crt <= IDLE;
@@ -60,18 +63,16 @@ module main_FSM_i(
     always @(*) begin
         case(crt)
         IDLE: begin
-            if(valid) nxt = LOOKUP;
+            if(cacop_en) nxt = CACOP_COPE;
+            else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
         end
         LOOKUP: begin
-            if(tlb_exception != 0) nxt = IDLE;
-            else if(cacop_en && cacop_code[2:0] == ICACHE_OP) begin
-                if(valid) nxt = LOOKUP;
-                else nxt = IDLE;
-            end
+            if(exception != 0) nxt = IDLE;
             else if(uncache) nxt = REPLACE;
             else if(cache_hit) begin
-                if(valid) nxt = LOOKUP;
+                if(cacop_en) nxt = CACOP_COPE;
+                else if(valid) nxt = LOOKUP;
                 else nxt = IDLE;
             end
             else nxt = REPLACE;
@@ -81,12 +82,20 @@ module main_FSM_i(
             else nxt = REPLACE;
         end
         REFILL: begin
-            if(fill_finish) begin
-                if(valid) nxt = LOOKUP;
-                else nxt = IDLE;
-            end
+            if(fill_finish) nxt = EXTRA_READY;
             else nxt = REFILL;
         end
+        CACOP_COPE: begin
+            if(exception != 0) nxt = IDLE;
+            nxt = EXTRA_READY;
+        end
+
+        EXTRA_READY: begin
+            if(cacop_en) nxt = CACOP_COPE;
+            else if(valid) nxt = LOOKUP;
+            else nxt = IDLE;
+        end
+        
         default: nxt = IDLE;
         endcase
     end
@@ -109,32 +118,20 @@ module main_FSM_i(
         IDLE: begin
             rbuf_we = 1;
             cache_ready = 1;
+            cacop_ready = 1;
         end
         LOOKUP: begin
-            if(tlb_exception == 0) begin
+            if(exception == 0) begin
                 rdata_sel = 1;
                 pbuf_we = 1;
-                if(cacop_en && (cacop_code == {STORE_TAG, ICACHE_OP} || cacop_code == {INDEX_INVALIDATE, ICACHE_OP})) begin
-                    tagv_clear          = 1;
-                    tagv_we             = tagv_we_inst;
-                    data_valid          = 1;
-                end
-                else if(cacop_en && cacop_code == {HIT_INVALIDATE, ICACHE_OP}) begin
-                    tagv_clear          = 1;
-                    tagv_we             = hit;
-                    data_valid          = 1;
-                end
-                else if(!cache_hit || uncache) begin
-                    mbuf_we = 1;
-                end
+                if(!cache_hit || uncache) mbuf_we = 1;
                 else begin
-                    if(!uncache) begin
-                        data_valid = 1;
-                        rbuf_we = 1;
-                        way_visit = hit;
-                        way_sel_en = 1;
-                        cache_ready = 1;
-                    end
+                    data_valid = 1;
+                    rbuf_we = 1;
+                    way_visit = hit;
+                    way_sel_en = 1;
+                    cache_ready = 1;
+                    cacop_ready = 1;
                 end
             end
             else data_valid = 1;
@@ -154,10 +151,26 @@ module main_FSM_i(
                     way_visit = lru_way_sel;
                     way_sel_en = 1;
                 end
-                data_valid = 1;
-                rbuf_we = 1;
-                cache_ready = 1;
             end
+        end
+        CACOP_COPE: begin
+            if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
+                tagv_clear          = 1;
+                tagv_we             = tagv_we_inst;
+                data_valid          = 1;
+            end
+            else if(cacop_code == HIT_INVALIDATE) begin
+                tagv_clear          = 1;
+                tagv_we             = hit;
+                data_valid          = 1;
+            end
+        end
+        EXTRA_READY: begin
+            data_valid = 1;
+            rbuf_we = 1;
+            cache_ready = 1;
+            cacop_ready = 1;
+            cacop_complete = 1;
         end
         endcase
     end
