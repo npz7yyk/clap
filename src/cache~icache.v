@@ -98,6 +98,7 @@ module icache
         .clk        (clk),
         .r_addr     (pc_in),
         .w_addr     (addr_pbuf),
+        .addr_rbuf  (addr_rbuf),
         .tag        (p_addr[31:12]),
         .we         (tagv_we),
         .tagv_clear (tagv_clear),

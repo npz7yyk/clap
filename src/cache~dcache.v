@@ -155,6 +155,7 @@ module dcache(
         .tagv_clear     (tagv_clear),
         .r_addr         (addr),
         .w_addr         (addr_pbuf),
+        .addr_rbuf      (addr_rbuf),
         .tag            (p_addr[31:12]),
         .we             (tagv_we),
         .way_sel        (way_replace),

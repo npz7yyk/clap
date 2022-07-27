@@ -3,6 +3,7 @@ module TagV_memory(
     input clk,
     input [31:0] r_addr,
     input [31:0] w_addr,
+    input [31:0] addr_rbuf,
     input [19:0] tag,
     input [3:0] we,
     input tagv_clear,
@@ -16,7 +17,7 @@ module TagV_memory(
     wire [20:0] tagv_din;
 
     assign index = r_addr[11:6];
-    assign index_w = w_addr[11:6];
+    assign index_w = tagv_clear ? addr_rbuf[11:6] : w_addr[11:6];
     //assign tag = w_addr[31:12];
     assign tagv_din = tagv_clear ? 0 : {1'b1, w_addr[31:12]};
     

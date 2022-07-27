@@ -23,7 +23,7 @@
 /* verilator lint_off DECLFILENAME */
 module decoder
 (
-    input [135:0] nempty_unknown_badv_exception_pcnext_pc_inst,
+    input [136:0] nempty_unknown_badv_exception_pcnext_pc_inst,
     output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
     output [6:0] exception,
     output [31:0] badv,
@@ -37,7 +37,7 @@ module decoder
     output [4:0] rj,
     output [4:0] rk
 );
-    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[135];
+    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[136];
     wire [31:0] inst = nempty_unknown_badv_exception_pcnext_pc_inst[31:0];
     assign pc=nempty_unknown_badv_exception_pcnext_pc_inst[63:32];
     assign pc_next=nempty_unknown_badv_exception_pcnext_pc_inst[95:64];
