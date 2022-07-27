@@ -137,6 +137,7 @@ module main_FSM_i(
                     end
                 end
             end
+            else data_valid = 1;
         end
         REPLACE: begin
             r_req = 1;

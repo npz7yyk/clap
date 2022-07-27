@@ -24,7 +24,7 @@ module TLB#(
     input  [               1:0] s1_plv,
     input  [               1:0] s1_mem_type,
     input                       s1_en,
-    output     [          31:0] s1_paddr,
+    output [              31:0] s1_paddr,
     output [               6:0] s1_exception,
     output [               1:0] s1_mat,
 
@@ -88,6 +88,10 @@ module TLB#(
     input  [               1:0] dmw1_mat,
     input  [               2:0] dmw1_vseg,
     input  [               2:0] dmw1_pseg
+    //excp
+    // input                       cacop_en,
+    // input  [               4:0] cacop_code,
+    // output [               6:0] asmd_excp
 
     );
     wire s0_found, s1_found;
@@ -345,6 +349,7 @@ module TLB#(
         .s0_plv         (s0_plv_obuf),
         .found_plv0     (found_plv0_obuf),
         .s0_exception   (s0_exception),
+        .s0_vaddr       (s0_vaddr_obuf),
 
         .s1_found       (s1_found_obuf),
         .s1_en          (s1_en_obuf),
@@ -354,7 +359,9 @@ module TLB#(
         .found_d1       (found_d1_obuf),
         .s1_plv         (s1_plv_obuf),
         .found_plv1     (found_plv1_obuf),
-        .s1_exception   (s1_exception)
+        .s1_exception   (s1_exception),
+
+        .s1_vaddr       (s1_vaddr_obuf)
     );
     
 

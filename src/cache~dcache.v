@@ -1,3 +1,4 @@
+`include "exception.vh"
 module dcache(
     input clk, rstn,
     /* for CPU */
@@ -51,6 +52,7 @@ module dcache(
     wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit, hit_mbuf;
     wire [4:0] cacop_code_rbuf;
+    wire [6:0] exception_temp;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
@@ -61,12 +63,13 @@ module dcache(
     assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
+    assign exception = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_temp == 0 ? tlb_exception : exception_temp);
     
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
         .type_          (write_type_rbuf),
-        .exception      (exception)
+        .exception      (exception_temp)
     );
 
     /* request buffer*/

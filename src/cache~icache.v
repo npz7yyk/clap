@@ -1,3 +1,4 @@
+`include "exception.vh"
 module icache
 #(COOKIE_WIDHT = 32)(
     input clk, rstn,
@@ -43,8 +44,11 @@ module icache
     wire cache_hit, rbuf_we;
     wire way_sel_en, cacop_en_rbuf;
     wire uncache_rbuf, tagv_clear;
+
+    wire [6:0] exception_temp;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
-    assign badv = exception != 0 ? addr_rbuf[31:0]:0;
+    assign exception = (exception_temp == 0 || tlb_exception == `EXP_ADEF)? tlb_exception : exception_temp;
+    assign badv = exception != 0 ? addr_rbuf[31:0] : 0;
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
     always @(posedge clk)
@@ -67,7 +71,7 @@ module icache
 
     cache_excption_i exp_cope(
         .addr_rbuf      (addr_rbuf[31:0]),
-        .exception      (exception)
+        .exception      (exception_temp)
     );
     
     ret_buf_i ret_buf(    

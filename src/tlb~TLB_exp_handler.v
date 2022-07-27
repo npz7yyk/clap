@@ -10,6 +10,8 @@ module TLB_exp_handler(
     input [1:0] found_plv0,
     output [6:0] s0_exception,
 
+    input [31:0] s0_vaddr,
+
     input s1_found,
     input s1_en,
     input [1:0] s1_mem_type,
@@ -18,7 +20,9 @@ module TLB_exp_handler(
     input found_d1,
     input [1:0] s1_plv,
     input [1:0] found_plv1,
-    output [6:0] s1_exception
+    output [6:0] s1_exception,
+
+    input [31:0] s1_vaddr
     );
 
     parameter FETCH = 2'd2;
@@ -28,8 +32,9 @@ module TLB_exp_handler(
     /* exeption coping */
     always @(*) begin
         s0_exception_temp = 0;
+        if(s0_plv == 2'd3 && s0_vaddr[31]) s0_exception_temp = `EXP_ADEF;
         // TLBR
-        if(!s0_found)  s0_exception_temp = `EXP_TLBR;
+        else if(!s0_found)  s0_exception_temp = `EXP_TLBR;
         // PIF, PIL, PIS
         else if(!found_v0) begin
             case (s0_mem_type)
@@ -46,7 +51,8 @@ module TLB_exp_handler(
     always @(*) begin
         s1_exception_temp = 0;
         // TLBR
-        if(!s1_found)  s1_exception_temp = `EXP_TLBR;
+        if(s1_plv == 2'd3 && s1_vaddr[31]) s1_exception_temp = `EXP_ADEM;
+        else if(!s1_found)  s1_exception_temp = `EXP_TLBR;
         // PIF, PIL, PIS
         else if(!found_v1) begin
             case (s1_mem_type)
