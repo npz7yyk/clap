@@ -1,13 +1,13 @@
 `include "uop.vh"
 module alu (
-    input[0:0]alu_en_in,
-    input[3:0]alu_control,
-    input [4:0]alu_rd_in,
-    input [31:0]alu_sr0,
-    input[31:0]alu_sr1,
-    output[0:0]alu_en_out,
-    output[4:0]alu_rd_out,
-    output[31:0]alu_result
+    input  [0:0]  alu_en_in,
+    input  [3:0]  alu_control,
+    input  [4:0]  alu_rd_in,
+    input  [31:0] alu_sr0,
+    input  [31:0] alu_sr1,
+    output [0:0]  alu_en_out,
+    output [4:0]  alu_rd_out,
+    output [31:0] alu_result
 );
     wire op_add;
     wire op_sub;

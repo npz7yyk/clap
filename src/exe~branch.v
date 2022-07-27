@@ -1,23 +1,23 @@
 
 module branch(
-    input [0:0]br_en_in,
-    input [ 31:0]pc,
-    input [ 31:0]pc_next,
-    input [ 3:0 ]branch_op,
-    input [4:0]br_rd_addr_in,
-    input [ 31:0 ]branch_sr0,
-    input [ 31:0 ]branch_sr1,
-    input [ 31:0 ]branch_imm,
-    
-    output[31:0]br_rd_data,
-    output[4:0]br_rd_addr_out,
-    output[0:0]br_en_out,
-    output[0:0]flush,
-    output[31:0]branch_addr_calculated,
-    output[31:0]ex_pc_tar,
-    output[0:0]branch_valid,
-    output[0:0]branch_status,
-    output reg[1:0]category_out
+    input  [0:0]     br_en_in,
+    input  [ 31:0]   pc,
+    input  [ 31:0]   pc_next,
+    input  [ 3:0 ]   branch_op,
+    input  [4:0]     br_rd_addr_in,
+    input  [ 31:0 ]  branch_sr0,
+    input  [ 31:0 ]  branch_sr1,
+    input  [ 31:0 ]  branch_imm,
+       
+    output [31:0]    br_rd_data,
+    output [4:0]     br_rd_addr_out,
+    output [0:0]     br_en_out,
+    output [0:0]     flush,
+    output [31:0]    branch_addr_calculated,
+    output [31:0]    ex_pc_tar,
+    output [0:0]     branch_valid,
+    output [0:0]     branch_status,
+    output reg [1:0] category_out
 );
 
 parameter  JIRL = 'b0011;
@@ -40,22 +40,21 @@ assign branch_status = branch_op == JIRL
                      ||branch_op == BLTU&&branch_sr0<branch_sr1
                      ||branch_op == BGEU&&branch_sr0>= branch_sr1;
 
-//assign br_en_out=br_en_in&&(branch_op == JIRL||branch_op == BL);
-assign br_en_out=br_en_in;
-assign br_rd_addr_out={5{br_en_in}}&(branch_op==JIRL?br_rd_addr_in:(branch_op==BL?1:0));
-assign br_rd_data={32{br_en_out}}&(pc+4);
+assign br_en_out      = br_en_in;
+assign br_rd_addr_out = {5{br_en_in}}&(branch_op==JIRL?br_rd_addr_in:(branch_op==BL?1:0));
+assign br_rd_data     = {32{br_en_out}}&(pc+4);
 
-assign branch_addr_calculated =branch_status? branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
-assign ex_pc_tar=branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2));
-assign flush=br_en_in&&(branch_addr_calculated!=pc_next);
-assign branch_valid=br_en_in;
+assign branch_addr_calculated = branch_status? branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2)):pc+4;
+assign ex_pc_tar              = branch_op==JIRL?(branch_sr0+ (branch_imm<<2)):(pc+(branch_imm<<2));
+assign flush                  = br_en_in&&(branch_addr_calculated!=pc_next);
+assign branch_valid           = br_en_in;
 
 always @(*) begin
     case (branch_op)
-        JIRL:category_out=11;
-        B:category_out=10;
-        BL: category_out=10;
-        default: category_out=01;
+        JIRL:    category_out = 11;
+        B:       category_out = 10;
+        BL:      category_out = 10;
+        default: category_out = 01;
     endcase
 end
 endmodule
