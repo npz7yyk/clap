@@ -87,7 +87,7 @@ module main_FSM_i(
         end
         CACOP_COPE: begin
             if(exception != 0) nxt = IDLE;
-            nxt = EXTRA_READY;
+            else nxt = EXTRA_READY;
         end
 
         EXTRA_READY: begin

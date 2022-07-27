@@ -46,18 +46,19 @@ module main_FSM_d(
     output reg data_valid,
     output reg cache_ready,
 
-    input [4:0] cacop_code,
+    input [1:0] cacop_code,
     input cacop_en,
-    output reg tagv_clear,
-
-    input [6:0] tlb_exception
+    input cacop_en_rbuf,
+    output reg tagv_clear
     );
-    parameter IDLE          = 6'b000001;
-    parameter LOOKUP        = 6'b000010;
-    parameter MISS          = 6'b000100;
-    parameter REPLACE       = 6'b001000;
-    parameter REFILL        = 6'b010000;
-    parameter WAIT_WRITE    = 6'b100000;
+    parameter IDLE          = 8'b00000001;
+    parameter LOOKUP        = 8'b00000010;
+    parameter MISS          = 8'b00000100;
+    parameter REPLACE       = 8'b00001000;
+    parameter REFILL        = 8'b00010000;
+    parameter WAIT_WRITE    = 8'b00100000;
+    parameter CACOP_COPE    = 8'b01000000;
+    parameter EXTRA_READY   = 8'b10000000;
 
     parameter READ          = 1'd0;
     parameter WRITE         = 1'd1;
@@ -70,8 +71,8 @@ module main_FSM_d(
     parameter INDEX_INVALIDATE  = 2'b01;
     parameter HIT_INVALIDATE    = 2'b10;
 
-    parameter DCACHE_OP = 3'b001;
-    parameter ICACHE_OP = 3'b000;
+    // parameter DCACHE_OP = 3'b001;
+    // parameter ICACHE_OP = 3'b000;
 
 
     reg [2:0] un_visit_type;
@@ -93,7 +94,7 @@ module main_FSM_d(
         endcase
     end
 
-    reg[5:0] crt, nxt;
+    reg[7:0] crt, nxt;
 
     always @(posedge clk) begin
         if(!rstn) crt <= IDLE;
@@ -103,32 +104,50 @@ module main_FSM_d(
     always @(*) begin
         case(crt)
         IDLE: begin
-            if(valid) nxt = LOOKUP;
+            if(cacop_en) nxt = CACOP_COPE;
+            else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
+        end
+        CACOP_COPE: begin
+            if(exception != 0) nxt = IDLE;
+            else begin
+                case(cacop_code)
+                STORE_TAG: nxt = EXTRA_READY;
+                INDEX_INVALIDATE: begin
+                    if(dirty_data) nxt = MISS;
+                    else nxt = EXTRA_READY;
+                end
+                HIT_INVALIDATE: begin
+                    if(cache_hit && dirty_data) nxt = MISS;
+                    else nxt = EXTRA_READY;
+                end
+                default: nxt = EXTRA_READY;
+                endcase
+            end
         end
         LOOKUP: begin
             // check instruction
-            if(exception != 0 || tlb_exception != 0) nxt = IDLE;
-            else if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
-                if(valid) nxt = LOOKUP;
-                else nxt = IDLE;
-            end 
+            if(exception != 0) nxt = IDLE;
+            // else if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
+            //     if(valid) nxt = LOOKUP;
+            //     else nxt = IDLE;
+            // end 
 
-            else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin 
-                if(dirty_data) nxt = MISS;
-                else begin
-                    if(valid) nxt = LOOKUP;
-                    else nxt = IDLE;
-                end
-            end
+            // else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin 
+            //     if(dirty_data) nxt = MISS;
+            //     else begin
+            //         if(valid) nxt = LOOKUP;
+            //         else nxt = IDLE;
+            //     end
+            // end
 
-            else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
-                if(cache_hit && dirty_data) nxt = MISS;
-                else begin
-                    if(valid) nxt = LOOKUP;
-                    else nxt = IDLE;
-                end
-            end
+            // else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
+            //     if(cache_hit && dirty_data) nxt = MISS;
+            //     else begin
+            //         if(valid) nxt = LOOKUP;
+            //         else nxt = IDLE;
+            //     end
+            // end
 
             // check uncache
             else if(uncache) begin
@@ -150,7 +169,8 @@ module main_FSM_d(
         end
         MISS: begin
             if(w_rdy_AXI) begin
-                if(uncache || (cacop_en && (cacop_code == 5'b01001 || cacop_code == 5'b10001))) nxt = WAIT_WRITE;
+                if(uncache || 
+                  (cacop_en_rbuf && (cacop_code == INDEX_INVALIDATE || cacop_code == HIT_INVALIDATE))) nxt = WAIT_WRITE;
                 else nxt = REPLACE;
             end
             else nxt = MISS;
@@ -166,19 +186,22 @@ module main_FSM_d(
             else nxt = REFILL;
         end
         WAIT_WRITE: begin
-            if(cacop_en) begin
+            if(cacop_en_rbuf) begin
                 if(wrt_AXI_finish) begin
-                    if(valid) nxt = LOOKUP;
-                    else nxt = IDLE;
+                    nxt = EXTRA_READY;
                 end
                 else nxt = WAIT_WRITE;
             end
             else if(uncache && (wrt_AXI_finish || op == READ) || 
               !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf)) begin
-                if(valid) nxt = LOOKUP;
-                else nxt = IDLE;
+                nxt = EXTRA_READY;
             end
             else nxt = WAIT_WRITE;
+        end
+        EXTRA_READY: begin
+            if(cacop_en) nxt = CACOP_COPE;
+            else if(valid) nxt = LOOKUP;
+            else nxt = IDLE;
         end
         default: nxt = IDLE;
         endcase
@@ -200,44 +223,11 @@ module main_FSM_d(
             cache_ready = 1;
         end
         LOOKUP: begin
-            if(exception == 0 && tlb_exception == 0) begin
+            if(exception == 0) begin
                 rdata_sel       = 1;
                 wrt_data_sel    = 1;
                 pbuf_we         = 1;
-                if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin
-                    tagv_clear          = 1;
-                    tagv_we             = tagv_we_inst;
-                    dirty_we            = tagv_we_inst;
-                    w_dirty_data        = 1'b0;
-                    data_valid          = 1;
-                end 
-                else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin
-                    tagv_clear          = 1;
-                    tagv_we             = tagv_we_inst;
-                    dirty_we            = tagv_we_inst;
-                    w_dirty_data        = 1'b0;
-                    if(!dirty_data) begin
-                        data_valid      = 1;
-                        rbuf_we         = 1;
-                        wbuf_AXI_reset  = 1;
-                        cache_ready     = 1;
-                    end
-
-                end
-                else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
-                    tagv_clear          = 1;
-                    tagv_we             = hit;
-                    dirty_we            = hit;
-                    w_dirty_data        = 1'b0;
-                    if(!(cache_hit && dirty_data)) begin
-                        data_valid      = 1;
-                        rbuf_we         = 1;
-                        wbuf_AXI_reset  = 1;
-                        cache_ready     = 1;
-                    end
-                end
-                //else if(exception != 0) data_valid = 1;
-                else if(!cache_hit || uncache) begin
+                if(!cache_hit || uncache) begin
                     mbuf_we     = 1;
                     wbuf_AXI_we = 1;
                 end
@@ -255,6 +245,7 @@ module main_FSM_d(
                     end
                 end
             end
+            else data_valid = 1;
         end
         MISS: begin
             w_req   = 1;
@@ -272,34 +263,35 @@ module main_FSM_d(
         end
         REFILL: begin
             r_data_ready = 1;
-            if(fill_finish) begin
-                if(!uncache) begin
-                    mem_we          = {64{1'b1}};
-                    mem_en          = lru_way_sel;
-                    tagv_we         = lru_way_sel;
-                    dirty_we        = lru_way_sel;
-                    w_dirty_data    = (op == READ ? 1'b0 : 1'b1);
-                    way_sel_en      = 1;
-                    way_visit       = lru_way_sel;
-                end
+            if(fill_finish && !uncache) begin
+                mem_we          = {64{1'b1}};
+                mem_en          = lru_way_sel;
+                tagv_we         = lru_way_sel;
+                dirty_we        = lru_way_sel;
+                w_dirty_data    = (op == READ ? 1'b0 : 1'b1);
+                way_sel_en      = 1;
+                way_visit       = lru_way_sel;
             end
         end
-        WAIT_WRITE: begin
-            if(cacop_en) begin
-                if(wrt_AXI_finish) begin
-                    data_valid      = 1;
-                    rbuf_we         = 1;
-                    wbuf_AXI_reset  = 1;
-                    cache_ready     = 1;
-                end
+        CACOP_COPE: begin
+            if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
+                tagv_clear          = 1;
+                tagv_we             = tagv_we_inst;
+                dirty_we            = tagv_we_inst;
+                w_dirty_data        = 1'b0;
             end
-            else if(uncache && (wrt_AXI_finish || op == READ) || 
-              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf) )begin
-                data_valid      = 1;
-                rbuf_we         = 1;
-                wbuf_AXI_reset  = 1;
-                cache_ready     = 1;
+            else if(cacop_code == HIT_INVALIDATE) begin
+                tagv_clear          = 1;
+                tagv_we             = hit;
+                dirty_we            = hit;
+                w_dirty_data        = 1'b0;
             end
+        end
+        EXTRA_READY: begin
+            data_valid      = 1;
+            rbuf_we         = 1;
+            wbuf_AXI_reset  = 1;
+            cache_ready     = 1;
         end
         endcase
     end

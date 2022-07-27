@@ -43,7 +43,7 @@ module dcache(
     input             [6:0] tlb_exception,
     output           [31:0] badv,
     //cacop
-    input [4:0] cacop_code,
+    input [1:0] cacop_code,
     input cacop_en
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
@@ -51,7 +51,7 @@ module dcache(
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
     wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit, hit_mbuf;
-    wire [4:0] cacop_code_rbuf;
+    wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_temp;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
@@ -74,7 +74,7 @@ module dcache(
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type
-    register#(77) req_buf(
+    register#(74) req_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
@@ -260,9 +260,10 @@ module dcache(
         .cache_ready        (cache_ready),
 
         .cacop_code         (cacop_code_rbuf),
-        .cacop_en           (cacop_en_rbuf),
-        .tagv_clear         (tagv_clear),
+        .cacop_en_rbuf      (cacop_en_rbuf),
+        .cacop_en           (cacop_en),
+        .tagv_clear         (tagv_clear)
 
-        .tlb_exception      (tlb_exception)
+        //.tlb_exception      (tlb_exception)
     );
 endmodule
