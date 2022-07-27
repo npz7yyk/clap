@@ -40,7 +40,6 @@ module id_stage
     input [1:0] plv,            //当前的特权等级
     ////输入信号////
     input [31:0] inst0, inst1,  //两条待解码指令
-    input unknown0, unknown1,   //来自预测器，指令未知
     input first_inst_jmp,       //第一条指令发生了跳转（即inst1无效）
     ////输出信号////
     output [`WIDTH_UOP-1:0] uop0, uop1, //微操作
@@ -57,6 +56,8 @@ module id_stage
     input [31:0] pc_next_in,    //下一条指令的PC
     output [31:0] pc0_out,pc1_out,
     output [31:0] pc_next0_out,pc_next1_out,
+    input unknown0_in, unknown1_in,   //来自预测器，指令未知
+    output unknown0_out,unknown1_out,
     ////反馈信号////
     //给预测器
     output feedback_valid,
@@ -87,16 +88,16 @@ module id_stage
         set_pc_due_to_inst1 = 0;
         probably_right_destination = jmpdist0;
         if(valid0_before_predecode) begin
-            if(unknown0&&should_jmp0) begin
+            if(unknown0_in&&should_jmp0) begin
                 probably_right_destination = jmpdist0;
                 set_pc_due_to_inst0 = 1;
             end
-            else if(valid1_before_predecode&&unknown1&&should_jmp1) begin
+            else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
                 probably_right_destination = jmpdist1;
                 set_pc_due_to_inst1 = 1;
             end
         end
-        else if(valid1_before_predecode&&unknown1&&should_jmp1) begin
+        else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
             probably_right_destination = jmpdist1;
             set_pc_due_to_inst1 = 1;
         end
@@ -109,8 +110,8 @@ module id_stage
     wire empty;            //FIFO空
     
     //用交叠法实现伪双端口循环队列，浪费12.5%的空间，以简化push/pop逻辑
-    //[31:0] 指令; [63:32] pc；[95:64] pc_next; [102:96] exception; [134:103] badv
-    reg [134:0] fetch_buffer0[0:7],fetch_buffer1[0:7];
+    //[31:0] 指令; [63:32] pc；[95:64] pc_next; [102:96] exception; [134:103] badv; [135] unknown
+    reg [135:0] fetch_buffer0[0:7],fetch_buffer1[0:7];
     reg [2:0] head0,head1;      //队头指针
     reg [2:0] tail0,tail1;      //队尾指针
     reg push_sel;   //进行push操作时，inst0被push到fetch_buffer0还是fetch_buffer1
@@ -146,8 +147,8 @@ module id_stage
     wire [31:0] real_pc_next0 = first_inst_jmp||set_pc_due_to_inst0||pc_in[2]?pc_next_after_predecode:pc_in+4;
     wire [31:0] real_pc_next1 = pc_next_after_predecode;
     
-    wire [134:0] real_0_concat = {badv_in,exception_in,real_pc_next0,real_pc0,real_inst0};
-    wire [134:0] real_1_concat = {badv_in,exception_in,real_pc_next1,real_pc1,real_inst1};
+    wire [135:0] real_0_concat = {unknown0_in, badv_in,exception_in,real_pc_next0,real_pc0,real_inst0};
+    wire [135:0] real_1_concat = {unknown1_in, badv_in,exception_in,real_pc_next1,real_pc1,real_inst1};
     
     //fetch_buffer0需要进行push操作
     wire push0 = valid_both || push_sel==0&&valid_either;
@@ -185,13 +186,14 @@ module id_stage
     wire is_break0,is_break1;
     decoder decoder0
     (
-        .nempty_badv_exception_pcnext_pc_inst(pop_sel==0?
-            empty0?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
-            empty1?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
+        .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==0?
+            empty0?{1'b0,1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop0),.imm(imm0),.rd(rd0),.rj(rj0),.rk(rk0),
         .pc(pc0_out),.pc_next(pc_next0_out),
         .exception(exception0_ICQlsmuv),
         .badv(badv0_out),
+        .unknown(unknown0_out),
         .invalid_instruction(invalid0),
         .is_syscall(is_syscall0),
         .is_break(is_break0)
@@ -203,13 +205,14 @@ module id_stage
          {7{plv!=0&&uop0[`UOP_PRIVILEDGED]}}&`EXP_IPE);
     decoder decoder1
     (
-        .nempty_badv_exception_pcnext_pc_inst(pop_sel==1?
-            empty0?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
-            empty1?{1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
+        .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==1?
+            empty0?{1'b0,1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer0[head0]}:
+            empty1?{1'b0,1'b0,32'd0,7'd0,32'd4,32'd0,`INST_NOP}:{1'b1,fetch_buffer1[head1]}),
         .uop(uop1),.imm(imm1),.rd(rd1),.rj(rj1),.rk(rk1),
         .pc(pc1_out),.pc_next(pc_next1_out),
         .exception(exception1_ICQlsmuv),
         .badv(badv1_out),
+        .unknown(unknown1_out),
         .invalid_instruction(invalid1),
         .is_syscall(is_syscall1),
         .is_break(is_break1)

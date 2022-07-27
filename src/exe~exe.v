@@ -14,6 +14,7 @@ module exe(
     input [31:0]            eu0_pc_next_in,
     input [6:0]             eu0_exp_in,
     input [31:0]            eu0_badv_in,
+    input                   eu0_unknown_in,
     input [31:0]            data00,
     input [31:0]            data01,
     input [0:0]             eu1_en_in,
@@ -47,6 +48,7 @@ module exe(
     output [31:0]           correct_pc_next,
     output reg [0:0]        branch_status,
     output reg [0:0]        branch_valid,
+    output                  branch_unknown,
     output reg [1:0]        category_out,
     output reg [31:0]       ex_pc_tar,
     //向cache输出
@@ -159,7 +161,9 @@ reg  [31:0]  mul_ajustice_exe1;
 reg  [4:0]   mul_rd_exe1;
 reg  [6:0]   exp_exe1;
 reg  [31:0]  badv_exe1;
+reg          unknown_exe1;
 reg  [31:0]  eu0_pc_exe1;
+assign branch_unknown = unknown_exe1;
 //exe1组合输出
 wire [4:0]  mul_rd_out;
 wire [0:0]  mul_en_out;
@@ -217,6 +221,7 @@ always @(posedge clk) begin
         category_out,
         ex_pc_tar,
         flush_because_br,
+        unknown_exe1,
         mul_ajustice_exe1}     <= 0;
     end else if(!stall)begin
         //在存在异常时，将eu0_en_0置位，否则异常会被丢弃
@@ -236,6 +241,7 @@ always @(posedge clk) begin
         mul_rd_exe1            <= mul_rd_mid;
         exp_exe1               <= eu0_exp_in;
         badv_exe1              <= eu0_badv_in;
+        unknown_exe1           <= eu0_unknown_in;
         eu0_pc_exe1            <= eu0_pc_in;
         inst0_mid              <= eu0_uop_in[`UOP_ORIGINAL_INST];
         branch_addr_calculated <= branch_addr_calculated_mid;

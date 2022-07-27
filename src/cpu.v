@@ -503,6 +503,7 @@ module core_top(
         .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
+        .exKnown(~branch_unknown),
 
         .pdPC(pc_next),
         .pdKnown(pred_known),
@@ -598,6 +599,7 @@ module core_top(
     wire [6:0] id_exception0,id_exception1;
     wire [31:0] id_badv0,id_badv1;
     wire [31:0] id_pc0,id_pc1,id_pc_next0,id_pc_next1;
+    wire id_unknown0,id_unknown1;
 
     decode_unit_input_reg duir
     (
@@ -636,7 +638,6 @@ module core_top(
         .input_valid(data_valid),
         .inst0(if_inst0),
         .inst1(if_inst1),
-        .unknown0(~if_known),.unknown1(~if_known),
         .first_inst_jmp(first_inst_jmp),
         
         .uop0(id_uop0),.uop1(id_uop1),
@@ -652,6 +653,8 @@ module core_top(
         .badv_in(if_badv),
         .exception0_out(id_exception0),.exception1_out(id_exception1),
         .badv0_out(id_badv0),.badv1_out(id_badv1),
+        .unknown0_in(~if_known),.unknown1_in(~if_known),
+        .unknown0_out(id_unknown0),.unknown1_out(id_unknown1),
        
         .feedback_valid(id_feedback_valid),
         .pc_for_predict(id_pc_for_predict),
@@ -660,7 +663,6 @@ module core_top(
 
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)
-
     );
     wire  ex_stall;
     wire is_eu0_en_3qW1U3J0hMn,is_eu1_en_3qW1U3J0hMn;
@@ -672,6 +674,7 @@ module core_top(
     wire [31:0] is_eu1_pc_3qW1U3J0hMn,is_eu1_pc_next_3qW1U3J0hMn;
     wire [6:0] is_eu0_exception_3qW1U3J0hMn,is_eu1_exception_3qW1U3J0hMn;
     wire [31:0] is_eu0_badv_3qW1U3J0hMn,is_eu1_badv_3qW1U3J0hMn;
+    wire is_eu0_unknown_3qW1U3J0hMn,is_eu1_unknown_3qW1U3J0hMn;
     is_stage the_issue (
         .clk(aclk),.rstn(aresetn),
         .num_read(id_read_en),
@@ -682,6 +685,7 @@ module core_top(
         .imm0(id_imm0),.imm1(id_imm1),
         .exception0(id_exception0),.exception1(id_exception1),
         .badv0(id_badv0),.badv1(id_badv1),
+        .unknown0(id_unknown0),.unknown1(id_unknown1),
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
         .has_interrupt(has_interrupt),
@@ -698,6 +702,7 @@ module core_top(
         .eu0_pc_next(is_eu0_pc_next_3qW1U3J0hMn),
         .eu0_exception(is_eu0_exception_3qW1U3J0hMn),
         .eu0_badv(is_eu0_badv_3qW1U3J0hMn),
+        .eu0_unknown(is_eu0_unknown_3qW1U3J0hMn),
         
         .eu1_en(is_eu1_en_3qW1U3J0hMn),
         .eu1_ready(~ex_stall),
@@ -710,7 +715,8 @@ module core_top(
         .eu1_pc(is_eu1_pc_3qW1U3J0hMn),
         .eu1_pc_next(is_eu1_pc_next_3qW1U3J0hMn),
         .eu1_exception(is_eu1_exception_3qW1U3J0hMn),
-        .eu1_badv(is_eu1_badv_3qW1U3J0hMn)
+        .eu1_badv(is_eu1_badv_3qW1U3J0hMn),
+        .eu1_unknown(is_eu1_unknown_3qW1U3J0hMn)
     );
 
     wire is_eu0_en,is_eu1_en;
@@ -722,6 +728,7 @@ module core_top(
     wire [31:0] is_eu1_pc,is_eu1_pc_next;
     wire [6:0] is_eu0_exception,is_eu1_exception;
     wire [31:0] is_eu0_badv,is_eu1_badv;
+    wire is_eu0_unknown,is_eu1_unknown;
 
     execute_unit_input_reg euir0
     (
@@ -736,7 +743,8 @@ module core_top(
         .pc_in(is_eu0_pc_3qW1U3J0hMn),.pc_out(is_eu0_pc),
         .pc_next_in(is_eu0_pc_next_3qW1U3J0hMn),.pc_next_out(is_eu0_pc_next),
         .exception_in(is_eu0_exception_3qW1U3J0hMn),.exception_out(is_eu0_exception),
-        .badv_in(is_eu0_badv_3qW1U3J0hMn),.badv_out(is_eu0_badv)
+        .badv_in(is_eu0_badv_3qW1U3J0hMn),.badv_out(is_eu0_badv),
+        .unknown_in(is_eu0_unknown_3qW1U3J0hMn),.unknown_out(is_eu0_unknown)
     );
 
     execute_unit_input_reg euir1
@@ -752,7 +760,8 @@ module core_top(
         .pc_in(is_eu1_pc_3qW1U3J0hMn),.pc_out(is_eu1_pc),
         .pc_next_in(is_eu1_pc_next_3qW1U3J0hMn),.pc_next_out(is_eu1_pc_next),
         .exception_in(is_eu1_exception_3qW1U3J0hMn),.exception_out(is_eu1_exception),
-        .badv_in(is_eu1_badv_3qW1U3J0hMn),.badv_out(is_eu1_badv)
+        .badv_in(is_eu1_badv_3qW1U3J0hMn),.badv_out(is_eu1_badv),
+        .unknown_in(is_eu1_unknown_3qW1U3J0hMn),.unknown_out(is_eu1_unknown)
     );
 
     reg [63:0] stable_counter;
@@ -772,6 +781,7 @@ module core_top(
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm, rf_eu1_imm;
     wire  [31:0]  rf_eu0_badv,rf_eu1_badv;
+    wire rf_eu0_unknown,rf_eu1_unknown;
 
     wire rf_wen0;
     wire rf_wen1;
@@ -797,7 +807,8 @@ module core_top(
         .eu0_pc_next_in(is_eu0_pc_next), .eu1_pc_next_in(is_eu1_pc_next),
         .eu0_exp_in    (is_eu0_exception),.eu1_exp_in   (is_eu1_exception),
         .eu0_imm_in    (is_eu0_imm    ), .eu1_imm_in    (is_eu1_imm    ),
-        .eu0_badv_in    (is_eu0_badv),   .eu1_badv_in   (is_eu1_badv),
+        .eu0_badv_in   (is_eu0_badv),    .eu1_badv_in   (is_eu1_badv),
+        .eu0_unknown_in(is_eu0_unknown), .eu1_unknown_in(is_eu0_unknown),
 
         .eu0_en_out     (rf_eu0_en        ), .eu1_en_out     (rf_eu1_en        ),
         .eu0_uop_out    (rf_eu0_uop       ), .eu1_uop_out    (rf_eu1_uop       ),
@@ -811,6 +822,7 @@ module core_top(
         .read_data01    (rf_eu0_read_datak), .read_data11    (rf_eu1_read_datak),
         .eu0_imm_out    (rf_eu0_imm       ), .eu1_imm_out    (rf_eu1_imm),
         .eu0_badv_out   (rf_eu0_badv),       .eu1_badv_out   (rf_eu1_badv),
+        .eu0_unknown_out(rf_eu0_unknown),    .eu1_unknown_out(rf_eu1_unknown),
 
         .write_en_0   (rf_wen0  ),
         .write_en_1   (rf_wen1  ),
@@ -827,6 +839,7 @@ module core_top(
     wire  [31:0] ex_eu0_badv;
     wire  [31:0] ex_eu0_pc,ex_eu1_pc;
     wire  [31:0] ex_eu0_inst,ex_eu1_inst;
+    wire ex_eu0_unknown;
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
@@ -856,6 +869,7 @@ module core_top(
         .eu0_pc_next_in(rf_eu0_pc_next),
         .eu0_exp_in    (rf_eu0_exp    ), //.eu1_exp_in    ( rf_eu1_exp    ),
         .eu0_badv_in   (rf_eu0_badv   ), //.eu1_badv_in   ( rf_eu1_badv   ),
+        .eu0_unknown_in(rf_eu0_unknown), //.eu1_unknown_in( rf_eu1_unknown),
         .data00        (rf_eu0_read_dataj), .data10(rf_eu1_read_dataj),
         .data01        (rf_eu0_read_datak), .data11(rf_eu1_read_datak),
         
@@ -873,6 +887,7 @@ module core_top(
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),
         .branch_pc               ( ex_branch_pc ),
+        .branch_unknown          ( ex_branch_unknown),
         .category_out            ( ex_br_category ),
         .correct_pc_next         ( pc_executer   ),
         .ex_pc_tar               ( ex_pc_tar),

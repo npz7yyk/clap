@@ -43,6 +43,7 @@ module branch_unit #(
     input wire              [1:0] exType,           // instruction type
     input wire                    exBranch,         // whether this instruction branches
     input wire                    exWrong,          // ex pc wrongly predicted
+    input wire                    exKnown,
 
     output wire [ADDR_WIDTH - 1:0] pdPC,            // pc predicted
     output wire                    pdBranch,        // whether a branch is predicted
