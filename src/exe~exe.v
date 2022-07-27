@@ -489,7 +489,7 @@ div  u_div (
     .div_sr1                 ( eu0_sr1                                                                                                           ),
     .div_addr_in             ( eu0_rd_in                                                                                                         ),
     .div_pc_in               ( eu0_pc_in                                                                                                         ),
-    .div_inst_in             ( eu0_uop_in                                                                                                        ),
+    .div_inst_in             ( eu0_uop_in[`UOP_ORIGINAL_INST]                                                                                    ),
 
     .div_en_out              ( div_en_out                                                                                                        ),
     .stall_because_div       ( stall_because_div                                                                                                 ),

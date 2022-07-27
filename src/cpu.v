@@ -997,7 +997,7 @@ module core_top(
         .s1_paddr       (use_tlb_s0_by_exe?ex_mem_cacop_rj_plus_imm:ex_mem_paddr),
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
-        .s1_mem_type    ({0, ex_mem_op}),
+        .s1_mem_type    ({1'b0, ex_mem_op}),
         .s1_en          (ex_mem_valid&&translate_mode[1]),
         .s1_exception   (dtlb_exp),
 
@@ -1022,7 +1022,7 @@ module core_top(
         .r_plv0         (tlb_priviledge_0_in),
         .w_plv0         (tlb_priviledge_0_out),
         .r_mat0         (tlb_mat_0_in),
-        .w_mat0         (tlb_mat_0_out),
+        .w_mat0         ({1'b0,tlb_mat_0_out}),
         .r_g            (tlb_g_in),
         .w_g            (tlb_global_0_out & tlb_global_1_out),
         .r_pfn0         (tlb_ppn_0_in[19:0]),

@@ -114,6 +114,8 @@ module main_FSM_i(
         pbuf_we = 0;
         r_length = 8'd15;
         tagv_clear = 0;
+        cacop_ready = 0;
+        cacop_complete = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;

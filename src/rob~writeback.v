@@ -55,7 +55,7 @@ module writeback
         set_badv = 0;
         if(eu0_valid)
             case(eu0_exception)
-            `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PIS,
+            `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS,
             `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_badv = 1;
             endcase
