@@ -550,7 +550,13 @@ module core_top(
         .ret_last       (i_axi_rlast),
         .r_data_ready   (i_axi_rready),
         .r_data_AXI     (i_axi_rdata),
-        .tlb_exception  (itlb_exp)
+
+        .cacop_en       (ex_mem_l1i_en),
+        .cacop_code     (ex_mem_cacop_code),
+        .cacop_ready    (ex_mem_l1i_ready),
+        .cacop_complete (ex_mem_l1i_complete),
+
+        .tlb_exception  (itlb_exp)    
     );
     
     assign i_axi_awid = 0;
@@ -901,7 +907,6 @@ module core_top(
         .l2_ready(ex_mem_l2_ready),
         .l2_complete(ex_mem_l2_complete),
 
-
         .fill_mode              (fill_mode),
         .check_mode             (check_mode),
         .tlb_we                 (tlb_we),
@@ -967,8 +972,11 @@ module core_top(
         .w_rdy          (d_axi_awready),
         .b_valid        (d_axi_bvalid),
 
-        .cacop_code     (5'b0),
-        .cacop_en       (1'b0),
+        .cacop_code     (ex_mem_cacop_code),
+        .cacop_en       (ex_mem_l1d_en),
+        .cacop_ready    (ex_mem_l1d_ready),
+        .cacop_complete (ex_mem_l1d_complete),
+
         .tlb_exception  (dtlb_exp)
     );
     wire tlb_e_in;
@@ -1133,6 +1141,10 @@ module core_top(
         .pgd(csr_pgd_in),
         .pgd_wen(csr_pgd_wen)
     );
+
+    //L2 cache is not implemented
+    assign ex_mem_l2_ready = 1;
+    assign ex_mem_l2_complete = 1;
 
 `ifdef VERILATOR
     DifftestInstrCommit DifftestInstrCommit0
