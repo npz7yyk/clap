@@ -71,6 +71,6 @@ module mem1 (
     assign mem_data_out={32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
     assign mem_rd_out={5{mem_en_out}}&mem_rd_in;
     assign mem_en_out=mem_en_in;
-    assign cache_badv_out=cache_badv_in;
+    assign cache_badv_out={32{mem_en_in}}&cache_badv_in;
 
 endmodule
