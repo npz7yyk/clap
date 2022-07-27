@@ -463,7 +463,8 @@ module core_top(
     wire [31:0] id_jmpdist0,id_jmpdist1;
     wire [1:0] id_category0,id_category1,ex_br_category;
     wire ex_feedback_valid,ex_did_jump;
-    wire pred_known;
+    wire pred_known0,pred_known1;
+    wire [31:0] pred_record0,pred_record1;
     wire pd_branch,pd_reason;
     // reg id_feedback_valid_reg;
     // reg [31:0] id_pc_for_predict_reg;
@@ -507,7 +508,8 @@ module core_top(
         .exKnown(~ex_branch_unknown),
 
         .pdPC(pc_next),
-        .pdKnown(pred_known),
+        .pdKnown1(pred_known0),.pdKnown2(pred_known1),
+        .pdAddrType1(pred_record0),.pdAddrType2(pred_record1),
         .pdBranch(pd_branch),
         .pdReason(pd_reason)
     );
@@ -523,11 +525,12 @@ module core_top(
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7;
     wire [31:0] p_pc;
-    wire if_known_qt4WxiD7aL7;
+    wire if_known0_qt4WxiD7aL7,if_known1_qt4WxiD7aL7;
+    wire [31:0] if_pred_record0_qt4WxiD7aL7,if_pred_record1_qt4WxiD7aL7;
     wire first_inst_jmp_qt4WxiD7aL7;
     wire [6:0] if_exception_qt4WxiD7aL7;
     wire [31:0] if_badv_qt4WxiD7aL7;
-    icache #(34) the_icache (
+    icache #(99) the_icache (
         .clk            (aclk),
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
@@ -535,8 +538,8 @@ module core_top(
         .uncache        (~direct_i_mat),
         .pc_in          (ex_mem_l1i_en?ex_mem_cacop_rj_plus_imm:pc),
         .p_addr         (p_pc),
-        .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
-        .cookie_out     ({first_inst_jmp_qt4WxiD7aL7,if_known_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7}),
+        .cookie_in      ({pred_record0,pred_record1,pd_branch&~pd_reason,pred_known0,pred_known1,pc_next}),
+        .cookie_out     ({if_pred_record0_qt4WxiD7aL7,if_pred_record1_qt4WxiD7aL7,first_inst_jmp_qt4WxiD7aL7,if_known0_qt4WxiD7aL7,if_known1_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7}),
         .data_valid     (data_valid_qt4WxiD7aL7),
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc_qt4WxiD7aL7),
@@ -588,7 +591,8 @@ module core_top(
     wire [31:0] if_inst0,if_inst1;
     wire data_valid;
     wire [31:0] if_pc,if_pc_next;
-    wire if_known;
+    wire if_known0,if_known1;
+    wire [31:0] if_pred_record0,if_pred_record1;
     wire first_inst_jmp;
     wire [6:0] if_exception;
     wire [31:0] if_badv;
@@ -611,7 +615,10 @@ module core_top(
         .input_valid_in(data_valid_qt4WxiD7aL7),
         .inst0_in(r_data_CPU[31:0]),
         .inst1_in(r_data_CPU[63:32]),
-        .known_in(if_known_qt4WxiD7aL7),
+        .known0_in(if_known0_qt4WxiD7aL7),
+        .known1_in(if_known1_qt4WxiD7aL7),
+        .pred_record0_in(if_pred_record0_qt4WxiD7aL7),
+        .pred_record1_in(if_pred_record1_qt4WxiD7aL7),
         .first_inst_jmp_in(first_inst_jmp_qt4WxiD7aL7),
         .exception_in(if_exception_qt4WxiD7aL7),
         .badv_in(if_badv_qt4WxiD7aL7),
@@ -621,7 +628,10 @@ module core_top(
         .input_valid_out(data_valid),
         .inst0_out(if_inst0),
         .inst1_out(if_inst1),
-        .known_out(if_known),
+        .known0_out(if_known0),
+        .known1_out(if_known1),
+        .pred_record0_out(if_pred_record0),
+        .pred_record1_out(if_pred_record1),
         .first_inst_jmp_out(first_inst_jmp),
         .exception_out(if_exception),
         .badv_out(if_badv),
@@ -654,7 +664,8 @@ module core_top(
         .badv_in(if_badv),
         .exception0_out(id_exception0),.exception1_out(id_exception1),
         .badv0_out(id_badv0),.badv1_out(id_badv1),
-        .unknown0_in(~if_known),.unknown1_in(~if_known),
+        .pred_record0(if_pred_record0),.pred_record1(if_pred_record1),
+        .unknown0_in(~if_known0),.unknown1_in(~if_known0),
         .unknown0_out(id_unknown0),.unknown1_out(id_unknown1),
        
         .feedback_valid(id_feedback_valid),

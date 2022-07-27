@@ -57,6 +57,9 @@ module id_stage
     input [31:0] pc_next_in,    //下一条指令的PC
     output [31:0] pc0_out,pc1_out,
     output [31:0] pc_next0_out,pc_next1_out,
+    //预测器对指令的记录信息
+    //[31:2] pc的高30位，[1:0] 指令类型
+    input [31:0] pred_record0,pred_record1,
     input unknown0_in, unknown1_in,   //来自预测器，指令未知
     output unknown0_out,unknown1_out,
     ////反馈信号////
@@ -77,29 +80,43 @@ module id_stage
     pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0));
     pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
     assign pc_for_predict = pc_in;
-    assign jmpdist0 = pc_in + pc_offset0;
-    assign jmpdist1 = (pc_in[2]?pc_in:pc_in+4) + pc_offset1;
+    wire [31:0] pc_inst0_sGec6sQ = pc_in;
+    wire [31:0] pc_inst1_sGec6sQ = pc_in[2]?pc_in:pc_in+4;
+    assign jmpdist0 = pc_inst0_sGec6sQ + pc_offset0;
+    assign jmpdist1 = pc_inst1_sGec6sQ + pc_offset1;
+    //正确的记录信息
+    wire [31:0] correct_record0 = {jmpdist0[31:2],category0};
+    wire [31:0] correct_record1 = {jmpdist1[31:2],category1};
     assign feedback_valid = input_valid;
     wire should_jmp0 = category0=='b10 || category0=='b01&&pc_offset0[31];
     wire should_jmp1 = category1=='b10 || category1=='b01&&pc_offset1[31];
+    wire actually_unknown0 = unknown0_in || correct_record0!=pred_record0;
+    wire actually_unknown1 = unknown1_in || correct_record1!=pred_record1;
+    //下一条指令的PC的静态预测结果
+    wire [31:0] inst0_probably_right_pc_next = should_jmp0? jmpdist0:pc_inst0_sGec6sQ+4;
+    wire [31:0] inst1_probably_right_pc_next = should_jmp1? jmpdist1:pc_inst1_sGec6sQ+4;
+    //分支预测器给出的下一条PC的预测结果
+    wire [31:0] inst0_predicted_pc_next = first_inst_jmp? pc_next_in:pc_in+4;
+    wire [31:0] inst1_predicted_pc_next = pc_next_in;
     reg set_pc_due_to_inst0,set_pc_due_to_inst1;
-    assign set_pc = set_pc_due_to_inst0|set_pc_due_to_inst1;
+    assign set_pc = set_pc_due_to_inst0||set_pc_due_to_inst1;
     always @* begin
         set_pc_due_to_inst0 = 0;
         set_pc_due_to_inst1 = 0;
         probably_right_destination = jmpdist0;
         if(valid0_before_predecode) begin
-            if(unknown0_in&&should_jmp0) begin
-                probably_right_destination = jmpdist0;
+            //在分支预测器不知道一条指令且分支预测器的预测与静态预测不符时，更新PC
+            if(actually_unknown0&&inst0_predicted_pc_next!=inst0_probably_right_pc_next) begin
+                probably_right_destination = inst0_probably_right_pc_next;
                 set_pc_due_to_inst0 = 1;
             end
-            else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
-                probably_right_destination = jmpdist1;
+            else if(valid1_before_predecode&&actually_unknown1&&inst1_predicted_pc_next!=inst1_probably_right_pc_next) begin
+                probably_right_destination = inst1_probably_right_pc_next;
                 set_pc_due_to_inst1 = 1;
             end
         end
-        else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
-            probably_right_destination = jmpdist1;
+        else if(valid1_before_predecode&&actually_unknown1&&inst1_predicted_pc_next!=inst1_probably_right_pc_next) begin
+            probably_right_destination = inst1_probably_right_pc_next;
             set_pc_due_to_inst1 = 1;
         end
     end
