@@ -14,7 +14,7 @@ module cache_exception_d(
         exception_temp = 0;
         case(type_)
         WORD: begin
-            if(addr_rbuf[1:0]) exception_temp = `EXP_ALE;
+            if(addr_rbuf[1:0]!=0) exception_temp = `EXP_ALE;
         end
         HALF: begin
             if(addr_rbuf[0]) exception_temp = `EXP_ALE;

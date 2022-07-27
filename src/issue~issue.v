@@ -60,7 +60,7 @@ module is_stage
 );
     localparam RST_VAL = {32'd4,32'd0,32'd0,7'd0,32'd0,15'd0,{`WIDTH_UOP{1'b0}}};
     //pc_next,pc,badv,exception,imm,rd,rk,rj,uop
-    reg [32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
+    reg [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
     
     //FIXME: 无效的指令也可能带上中断
@@ -76,7 +76,7 @@ module is_stage
     wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
     wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
     
-    reg [4:0] size_after_out;
+    reg [1:0] size_after_out;
     reg eu1_en_0Ucym1r,eu0_en_0Ucym1r;
     always @ *
         case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})

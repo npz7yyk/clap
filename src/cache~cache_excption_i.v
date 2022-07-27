@@ -7,7 +7,7 @@ module cache_excption_i(
     );
     reg [6:0] exception_temp;
     always @(*) begin
-        if(addr_rbuf[1:0]) exception_temp = `EXP_ADEF;
+        if(addr_rbuf[1:0]!=0) exception_temp = `EXP_ADEF;
         else exception_temp = 0;
     end
     assign exception = {7{~cacop_en_rbuf}} & exception_temp;

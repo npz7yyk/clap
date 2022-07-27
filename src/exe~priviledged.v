@@ -190,7 +190,7 @@ module exe_privliedged(
                 inst_16 <= inst[16];
                 inst_11_10 <= inst[11:10];
                 inst_4_0 <= inst[4:0];
-                clear_asid <= sr0;
+                clear_asid <= sr0[9:0];
                 clear_vaddr <= sr1;
             end
             S_TLB_SRCH: begin

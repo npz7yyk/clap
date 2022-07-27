@@ -235,12 +235,12 @@ module decoder
     wire is_i26 = is_b_or_bl;
     wire is_i20 = is_pcadd|is_lui;
     
-    wire [31:0] i12_result = $signed(inst[21:10]);
-    wire [31:0] u12_result = inst[21:10];
-    wire [31:0] i14_result = $signed(inst[23:10]);
-    wire [31:0] i16_result = $signed(inst[25:10]);
-    wire [31:0] i26_result = $signed({inst[9:0],inst[25:10]});
-    wire [31:0] i20_result = $signed({inst[24:5],12'b0});
+    wire [31:0] i12_result = {{20{inst[21]}},inst[21:10]};
+    wire [31:0] u12_result = {20'b0,inst[21:10]};
+    wire [31:0] i14_result = {{18{inst[23]}},inst[21:10]};
+    wire [31:0] i16_result = {{14{inst[25]}},inst[25:10]};
+    wire [31:0] i26_result = {{6{inst[9]}},{inst[9:0],inst[25:10]}};
+    wire [31:0] i20_result = {{12{inst[24]}},inst[24:5],12'b0};
     
     assign imm = 
         i12_result&{32{is_i12}} |

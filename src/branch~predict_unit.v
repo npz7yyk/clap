@@ -192,6 +192,6 @@ module predict_unit #(
 
     assign pc_new = branch ?
         {pc_choose, 2'b00} :
-        {pc_now[ADDR_WIDTH - 1:3] + 1, 3'b000};
+        pc_now[ADDR_WIDTH - 1:3] + 4;
 
 endmodule

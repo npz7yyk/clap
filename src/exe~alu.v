@@ -54,7 +54,7 @@ module alu (
     assign adder_a                   = alu_sr0;
     assign adder_b                   = ( op_sub|op_slt|op_sltu )?~alu_sr1:alu_sr1;
     assign adder_cin                 = ( op_sub|op_slt|op_sltu )?1'b1:1'b0;
-    assign {adder_cout,adder_result} = adder_a+adder_b+adder_cin;
+    assign {adder_cout,adder_result} = {1'b0,adder_a}+{1'b0,adder_b}+{32'b0,adder_cin};
     assign add_sub_result            = adder_result;
     assign slt_result[ 31:1 ]        = 31'b0;
     assign slt_result[ 0 ]           = ( alu_sr0[ 31 ]&~alu_sr1[ 31 ] )|( ~( alu_sr0[ 31 ]^alu_sr1[ 31 ] )&adder_result[ 31 ] );

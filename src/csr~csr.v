@@ -152,7 +152,7 @@ module csr
     //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
     //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
     //从样例CPU看，TI放在IS[12]
-    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};
+    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIX ME
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -338,7 +338,7 @@ module csr
             estat_is_0 <= 0;
         end else if(expcode_wen) begin
             estat_ecode <= expcode_in[5:0];
-            estat_subecode <= expcode_in[5:0]==0 ? 0:expcode_in[6];
+            estat_subecode <= expcode_in[5:0]==0 ? 0:{8'b0,expcode_in[6]};
         end else if(software_query_en&&addr==`CSR_ESTAT) begin
             if(wen[0]) estat_is_0[0]<=wdata[0];
             if(wen[1]) estat_is_0[1]<=wdata[1];
@@ -1006,7 +1006,7 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL])
+        if(software_query_en&&(addr==`CSR_TCFG&&wen[`TCFG_INITVAL])!=0)
             just_set_timer<=1;
         else just_set_timer<=0;
     
