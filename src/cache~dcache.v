@@ -43,10 +43,10 @@ module dcache(
     input             [6:0] tlb_exception,
     output           [31:0] badv,
     //cacop
-    input [1:0] cacop_code,
-    input cacop_en,
-    output cacop_complete,
-    output cacop_ready
+    input [            1:0] cacop_code,
+    input                   cacop_en,
+    output                  cacop_complete,
+    output                  cacop_ready
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -265,7 +265,9 @@ module dcache(
         .cacop_code         (cacop_code_rbuf),
         .cacop_en_rbuf      (cacop_en_rbuf),
         .cacop_en           (cacop_en),
-        .tagv_clear         (tagv_clear)
+        .tagv_clear         (tagv_clear),
+        .cacop_complete     (cacop_complete),
+        .cacop_ready        (cacop_ready)
 
         //.tlb_exception      (tlb_exception)
     );

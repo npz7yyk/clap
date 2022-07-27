@@ -49,6 +49,8 @@ module main_FSM_d(
     input [1:0] cacop_code,
     input cacop_en,
     input cacop_en_rbuf,
+    output reg cacop_complete,
+    output reg cacop_ready,
     output reg tagv_clear
     );
     parameter IDLE          = 8'b00000001;
@@ -71,8 +73,6 @@ module main_FSM_d(
     parameter INDEX_INVALIDATE  = 2'b01;
     parameter HIT_INVALIDATE    = 2'b10;
 
-    // parameter DCACHE_OP = 3'b001;
-    // parameter ICACHE_OP = 3'b000;
 
 
     reg [2:0] un_visit_type;
@@ -128,26 +128,6 @@ module main_FSM_d(
         LOOKUP: begin
             // check instruction
             if(exception != 0) nxt = IDLE;
-            // else if(cacop_en && cacop_code == {STORE_TAG, DCACHE_OP}) begin 
-            //     if(valid) nxt = LOOKUP;
-            //     else nxt = IDLE;
-            // end 
-
-            // else if(cacop_en && cacop_code == {INDEX_INVALIDATE, DCACHE_OP}) begin 
-            //     if(dirty_data) nxt = MISS;
-            //     else begin
-            //         if(valid) nxt = LOOKUP;
-            //         else nxt = IDLE;
-            //     end
-            // end
-
-            // else if(cacop_en && cacop_code == {HIT_INVALIDATE, DCACHE_OP}) begin
-            //     if(cache_hit && dirty_data) nxt = MISS;
-            //     else begin
-            //         if(valid) nxt = LOOKUP;
-            //         else nxt = IDLE;
-            //     end
-            // end
 
             // check uncache
             else if(uncache) begin
@@ -216,11 +196,13 @@ module main_FSM_d(
         way_visit = 0;  cache_ready = 0;    pbuf_we = 0;
         r_size = 3'b010;                    w_size = 3'b010;
         r_length = 8'd15;                   w_length = 8'd15;
-        tagv_clear = 0;
+        tagv_clear = 0;                     cacop_complete = 0;
+        cacop_ready = 0;
         case(crt)
         IDLE: begin
             rbuf_we     = 1;
             cache_ready = 1;
+            cacop_ready = 1;
         end
         LOOKUP: begin
             if(exception == 0) begin
@@ -237,6 +219,7 @@ module main_FSM_d(
                     way_visit   = hit;
                     way_sel_en  = 1;
                     cache_ready = 1;
+                    cacop_ready = 1;
                     if(op == WRITE)begin
                         mem_en          = hit;
                         mem_we          = mem_we_normal;
@@ -289,6 +272,8 @@ module main_FSM_d(
         end
         EXTRA_READY: begin
             data_valid      = 1;
+            cacop_complete  = 1;
+            cacop_ready     = 1;
             rbuf_we         = 1;
             wbuf_AXI_reset  = 1;
             cache_ready     = 1;

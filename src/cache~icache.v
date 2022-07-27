@@ -31,7 +31,6 @@ module icache
 
     input cacop_en,
     input [1:0] cacop_code,
-    //input [31:0] cacop_addr,
     output cacop_ready,
     output cacop_complete,
 
