@@ -186,6 +186,7 @@ wire [0:0]  flush_because_priv;
 wire [31:0] priv_data_out;
 wire [4:0]  priv_addr_out;
 reg  [31:0] branch_addr_calculated;
+wire [6:0] priv_exp_out;
 //末段寄存器
 reg  [0:0]  eu0_en_1_internal;
 reg  [0:0]  eu1_en_1_internal;
@@ -284,7 +285,7 @@ always @(posedge clk) begin
         en_out0           <= eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         data_out0         <= data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0         <= eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
-        exp_out           <= exp_exe1|mem_exp_out;
+        exp_out           <= exp_exe1|mem_exp_out|priv_exp_out;
         badv_out          <= badv_exe1|cache_badv_out;
         eu0_pc_out        <= eu0_pc_exe1|div_pc_out;
         eu0_inst          <= inst0_mid|div_inst_out;
@@ -522,6 +523,7 @@ exe_privliedged exe_privliedged
     .inst(eu0_uop_in[`UOP_ORIGINAL_INST]),
     .sr0(eu0_sr0),
     .sr1(eu0_sr1),
+    .exp_out(priv_exp_out),
 
     .en_out (priv_en_out),
     .pc_target(priv_pc),
@@ -543,6 +545,7 @@ exe_privliedged exe_privliedged
     .cacop_rj_plus_imm(cacop_rj_plus_imm),
     .use_tlb_s0(use_tlb_s0),
     .use_tlb_s1(use_tlb_s1),
+    .cacop_exp_in(cache_exception),
 
     .era(era),
     .restore_state(restore_state),
