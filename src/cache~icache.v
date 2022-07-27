@@ -46,7 +46,7 @@ module icache
     wire [1:0] cacop_code_rbuf;
     wire mbuf_we, rdata_sel, fill_finish, pbuf_we;
     wire cache_hit, rbuf_we;
-    wire way_sel_en;
+    wire way_sel_en, cacop_en_rbuf;
     wire uncache_rbuf, tagv_clear;
 
     wire [6:0] exception_temp;
@@ -58,12 +58,12 @@ module icache
     always @(posedge clk)
         if(flush) valid_reg <= 0;
         else if(rbuf_we) valid_reg <= valid;
-    register#(35+COOKIE_WIDHT) req_buf(
+    register#(36+COOKIE_WIDHT) req_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (rbuf_we),
-        .din    ({cookie_in,pc_in, uncache, cacop_code}),
-        .dout   ({addr_rbuf, uncache_rbuf, cacop_code_rbuf})
+        .din    ({cookie_in,pc_in, uncache, cacop_code, cacop_en}),
+        .dout   ({addr_rbuf, uncache_rbuf, cacop_code_rbuf, cacop_en_rbuf})
     );
     register#(32) phy_buf(
         .clk        (clk),
@@ -75,6 +75,7 @@ module icache
 
     cache_excption_i exp_cope(
         .addr_rbuf      (addr_rbuf[31:0]),
+        .cacop_en_rbuf  (cacop_en_rbuf),
         .exception      (exception_temp)
     );
     

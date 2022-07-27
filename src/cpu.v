@@ -906,6 +906,9 @@ module core_top(
         .l2_en(ex_mem_l2_en),
         .l2_ready(ex_mem_l2_ready),
         .l2_complete(ex_mem_l2_complete),
+        .cacop_rj_plus_imm(ex_mem_cacop_rj_plus_imm),
+        .use_tlb_s0(use_tlb_s0_by_exe),
+        .use_tlb_s1(use_tlb_s1_by_exe),
 
         .fill_mode              (fill_mode),
         .check_mode             (check_mode),
@@ -939,7 +942,7 @@ module core_top(
         .valid          (ex_mem_valid),
         .op             (ex_mem_op),
         .uncache        (~direct_d_mat),
-        .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:pcex_mem_addr),
+        .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .p_addr         (ex_mem_paddr),
         .signed_ext     (ex_signed_ext),
         .write_type     (ex_mem_write_type),

@@ -205,7 +205,7 @@ module exe_privliedged(
                 tlb_we <= 1;
             end
             S_INVTLB: begin
-                clear_mem <= inst[4:0]==5'd0 ? 3'd1:inst[2:0];
+                clear_mem <= inst_4_0==5'd0 ? 3'd1:inst_4_0[2:0];
             end
             S_ERTN: begin
                 pc_target <= era;

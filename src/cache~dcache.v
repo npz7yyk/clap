@@ -44,7 +44,9 @@ module dcache(
     output           [31:0] badv,
     //cacop
     input [1:0] cacop_code,
-    input cacop_en
+    input cacop_en,
+    output cacop_complete,
+    output cacop_ready
     );
     wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -69,6 +71,7 @@ module dcache(
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
         .type_          (write_type_rbuf),
+        .cacop_en_rbuf  (cacop_en_rbuf),
         .exception      (exception_temp)
     );
 
