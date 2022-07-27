@@ -1,13 +1,13 @@
 `include "uop.vh"
 module alu (
-    input[0:0]alu_en_in,
-    input[3:0]alu_control,
-    input [4:0]alu_rd_in,
-    input [31:0]alu_sr0,
-    input[31:0]alu_sr1,
-    output[0:0]alu_en_out,
-    output[4:0]alu_rd_out,
-    output[31:0]alu_result
+    input  [0:0]  alu_en_in,
+    input  [3:0]  alu_control,
+    input  [4:0]  alu_rd_in,
+    input  [31:0] alu_sr0,
+    input  [31:0] alu_sr1,
+    output [0:0]  alu_en_out,
+    output [4:0]  alu_rd_out,
+    output [31:0] alu_result
 );
     wire op_add;
     wire op_sub;
@@ -62,7 +62,7 @@ module alu (
     assign sll_result                = alu_sr0<<alu_sr1[ 4:0 ];
     assign srl_result                = alu_sr0>>alu_sr1[ 4:0 ];
     assign sra_result                = ( $signed ( alu_sr0 ) )>>>alu_sr1[ 4:0 ];
-    assign alu_result                = alu_en_out?(( {32{op_add|op_sub}}&add_sub_result )
+    assign alu_result                = {32{alu_en_out}}&((( {32{op_add|op_sub}}&add_sub_result )
                                         |( {32{op_slt}}&slt_result )
                                         |( {32{op_sltu}}&sltu_result )
                                         |( {32{op_and}}&and_result )
@@ -71,7 +71,7 @@ module alu (
                                         |( {32{op_xor}}&xor_result )
                                         |( {32{op_sll}}&sll_result )
                                         |( {32{op_srl}}&srl_result )
-                                        |( {32{op_sra}}&sra_result )):0;
-    assign alu_rd_out=alu_en_out?alu_rd_in:0;
+                                        |( {32{op_sra}}&sra_result )));
+    assign alu_rd_out={5{alu_en_out}}&alu_rd_in;
     assign alu_en_out=alu_en_in;
 endmodule

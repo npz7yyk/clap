@@ -1,5 +1,15 @@
 # Timeline
 
+## 2022-07-26
+
+Test func_lab14 passed.
+
+## 2022-07-24
+
+Following the reference manual, set DATF and DATM to 0 after reset. (therefore, func_lab8 fully passed)
+
+Test func_lab9 passed.
+
 ## 2022-07-23
 
 Test func_lab8 passed.

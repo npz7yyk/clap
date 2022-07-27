@@ -22,9 +22,11 @@
 //【注意】load、br指令的原本位于rd段的源数据被放到了rk，而rd=0，这样可以保证读取寄存器堆时只需要读rk和rj
 module decoder
 (
-    input [102:0] pcnext_pc_inst,
+    input [135:0] nempty_unknown_badv_exception_pcnext_pc_inst,
     output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
     output [6:0] exception,
+    output [31:0] badv,
+    output unknown,
     output invalid_instruction,
     output is_syscall,
     output is_break,
@@ -34,10 +36,13 @@ module decoder
     output [4:0] rj,
     output [4:0] rk
 );
-    wire [31:0] inst = pcnext_pc_inst[31:0];
-    assign pc=pcnext_pc_inst[63:32];
-    assign pc_next=pcnext_pc_inst[95:64];
-    assign exception=pcnext_pc_inst[102:96];
+    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[135];
+    wire [31:0] inst = nempty_unknown_badv_exception_pcnext_pc_inst[31:0];
+    assign pc=nempty_unknown_badv_exception_pcnext_pc_inst[63:32];
+    assign pc_next=nempty_unknown_badv_exception_pcnext_pc_inst[95:64];
+    assign exception=nempty_unknown_badv_exception_pcnext_pc_inst[102:96];
+    assign badv=nempty_unknown_badv_exception_pcnext_pc_inst[134:103];
+    assign unknown = nempty_unknown_badv_exception_pcnext_pc_inst[135];
     assign uop[`UOP_ORIGINAL_INST] = inst;
     /////////////////////////////
     //鉴别指令类型
@@ -54,10 +59,10 @@ module decoder
     wire is_alu_imm = inst[30:25]=='b0000001;
     assign type_[`ITYPE_IDX_CACHE] = inst[30:22]=='b000011000;
     //这个invalid的含义是与众不同的，这里的invalid表示指令INVTLB，而其他地方的invalid表示unknown instruction
-    wire tlb_invalid = inst[30:15]=='b0000110010010011;
+    wire is_invalid_tlb = inst[30:15]=='b0000110010010011;
     assign type_[`ITYPE_IDX_IDLE] = inst[30:15]=='b0000110010010001;
     assign type_[`ITYPE_IDX_ERET] = inst[30:10]=='b000011001001000001110;
-    assign type_[`ITYPE_IDX_TLB] = tlb_invalid||
+    assign type_[`ITYPE_IDX_TLB] = is_invalid_tlb||
         inst[30:13]=='b000011001001000001&&inst[12:10]!='b110;
     wire is_ecall = inst[30:17]=='b00000000010101&&inst[15]=='b0;
     assign is_syscall = is_ecall&inst[16];
@@ -180,8 +185,10 @@ module decoder
     ///////////////////////////////////
     //非法指令检查
     wire type_invalid = type_==0&!is_ecall;
+
+    wire invtlb_invalid = is_invalid_tlb && inst[4:0]>5'h6; //INVTLB指令的op无效
     
-    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31];
+    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid;
     //////////////////////////////////////
     
     /////////////////////////////////////
@@ -196,20 +203,20 @@ module decoder
         type_[`ITYPE_IDX_BR]&&!is_jilr&&inst[29:26]!='b0101)?0:
             //bl 向r1写PC+4
             inst[30:26]==('b10101)?1:
-            inst[4:0];
+            (inst[4:0]|{5{is_time}}&inst[9:5]);
     
     //源地址1
     assign rj =
-        (type_[`ITYPE_IDX_TLB]||
+        (type_[`ITYPE_IDX_TLB]&~is_invalid_tlb||
         type_[`ITYPE_IDX_IDLE]||
-        is_pcadd||is_lui||is_b_or_bl)?0:
+        is_pcadd||is_lui||is_b_or_bl||is_time)?0:
         inst[9:5];
     
     //源地址2
     assign rk = 
         (is_alu || is_sra ||
         type_[`ITYPE_IDX_MUL] ||
-        type_[`ITYPE_IDX_DIV])? inst[14:10]: 
+        type_[`ITYPE_IDX_DIV] || is_invalid_tlb)? inst[14:10]: 
             (type_[`ITYPE_IDX_MEM]&&uop[`UOP_MEM_WRITE] || type_[`ITYPE_IDX_BR]&&!(is_b_or_bl||is_jilr) || type_[`ITYPE_IDX_CSR])? inst[4:0]:0;
     /////////////////////////////////////
     

@@ -13,6 +13,7 @@ module register_file(
     input [31:0]write_data_0,
     input [31:0]write_data_1,
     //从issue段后输入
+    input [31:0]counter_id,
     input[63:0]stable_counter,
     input[0:0]eu0_en_in,
     input[`WIDTH_UOP-1:0]eu0_uop_in,
@@ -23,6 +24,8 @@ module register_file(
     input[31:0]eu0_pc_next_in,
     input [6:0]eu0_exp_in,
     input[31:0]eu0_imm_in,
+    input[31:0]eu0_badv_in,
+    input eu0_unknown_in,
     input[0:0]eu1_en_in,
     input[`WIDTH_UOP-1:0]eu1_uop_in,
     input [4:0]eu1_rd_in,
@@ -32,6 +35,8 @@ module register_file(
     input[31:0]eu1_pc_next_in,
     input [6:0]eu1_exp_in,
     input[31:0]eu1_imm_in,
+    input[31:0]eu1_badv_in,
+    input eu1_unknown_in,
     //向rf段后输出
     output reg [0:0]eu0_en_out,
     output reg [`WIDTH_UOP-1:0]eu0_uop_out,
@@ -44,6 +49,8 @@ module register_file(
     output reg [31:0]read_data00,
     output reg [31:0]read_data01,
     output reg [31:0]eu0_imm_out,
+    output reg [31:0]eu0_badv_out,
+    output reg eu0_unknown_out,
 
     output reg [0:0]eu1_en_out,
     output reg [`WIDTH_UOP-1:0]eu1_uop_out,
@@ -55,7 +62,9 @@ module register_file(
     output reg  [6:0]eu1_exp_out,
     output reg [31:0]read_data10,
     output reg [31:0]read_data11,
-    output reg [31:0]eu1_imm_out
+    output reg [31:0]eu1_imm_out,
+    output reg [31:0]eu1_badv_out,
+    output reg eu1_unknown_out
 );
 
 reg[31:0]register_file[31:0];
@@ -68,28 +77,32 @@ always @(posedge clk) begin
         register_file[write_addr_1]<=write_addr_1==0?0:write_data_1;
     end
     if(!rstn||flush)begin
-        eu0_en_out<=0;
-        eu0_uop_out<=0;
-        eu0_rd_out<=0;
-        eu0_rj_out<=0;
-        eu0_rk_out<=0;
-        eu0_pc_out<=0;
-        eu0_pc_next_out<=0;
-        eu0_exp_out<=0;
-        read_data00<=0;
-        read_data01<=0;
-        eu0_imm_out<=0;
-        eu1_en_out<=0;
-        eu1_uop_out<=0;
-        eu1_rd_out<=0;
-        eu1_rj_out<=0;
-        eu1_rk_out<=0;
-        eu1_pc_out<=0;
-        eu1_pc_next_out<=0;
-        eu1_exp_out<=0;
-        read_data10<=0;
-        read_data11<=0;
-        eu1_imm_out<=0;
+        {eu0_en_out,
+        eu0_uop_out,
+        eu0_rd_out,
+        eu0_rj_out,
+        eu0_rk_out,
+        eu0_pc_out,
+        eu0_pc_next_out,
+        eu0_exp_out,
+        eu0_badv_out,
+        eu0_unknown_out,
+        read_data00,
+        read_data01,
+        eu0_imm_out,
+        eu1_en_out,
+        eu1_uop_out,
+        eu1_rd_out,
+        eu1_rj_out,
+        eu1_rk_out,
+        eu1_pc_out,
+        eu1_pc_next_out,
+        eu1_exp_out,
+        eu1_badv_out,
+        eu1_unknown_out,
+        read_data10,
+        read_data11,
+        eu1_imm_out}<=0;
     end else if(!stall)begin
         eu0_en_out<=eu0_en_in;
         eu0_uop_out<=eu0_uop_in;
@@ -99,6 +112,8 @@ always @(posedge clk) begin
         eu0_pc_out<=eu0_pc_in;
         eu0_pc_next_out<=eu0_pc_next_in;
         eu0_exp_out<=eu0_exp_in;
+        eu0_badv_out<=eu0_badv_in;
+        eu0_unknown_out<=eu0_unknown_in;
         eu0_imm_out<=eu0_imm_in;
         if(eu0_uop_in[`ITYPE_IDX_ALU])begin
             case (eu0_uop_in[`UOP_SRC1])
@@ -120,7 +135,7 @@ always @(posedge clk) begin
                     read_data00<=0;
                 end
                 `CTRL_SRC1_CNTID:begin
-                    read_data00<=0;
+                    read_data00<=counter_id;
                 end
             endcase
         end else begin
@@ -176,6 +191,8 @@ always @(posedge clk) begin
         eu1_pc_out<=eu1_pc_in;
         eu1_pc_next_out<=eu1_pc_next_in;
         eu1_exp_out<=eu1_exp_in;
+        eu1_badv_out<=eu1_badv_in;
+        eu1_unknown_out<=eu1_unknown_in;
         eu1_imm_out<=eu1_imm_in;
         case (eu1_uop_in[`UOP_SRC1])
             `CTRL_SRC1_RF:begin
@@ -196,7 +213,7 @@ always @(posedge clk) begin
                 read_data10<=0;
             end
             `CTRL_SRC1_CNTID:begin
-                read_data10<=0;
+                read_data10<=counter_id;
             end
         endcase
         case (eu1_uop_in[`UOP_SRC2])

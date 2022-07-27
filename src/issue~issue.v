@@ -29,9 +29,10 @@ module is_stage
     input [4:0] rd0,rj0,rk0,rd1,rj1,rk1,
     input [31:0] imm0,imm1,
     input [6:0] exception0,exception1,
+    input [31:0] badv0,badv1,
     input [31:0] pc0,pc_next0,
     input [31:0] pc1,pc_next1,
-    output flush_by_issue,
+    input unknown0,unknown1,
     input has_interrupt,
     ////输出信号////
     //execute unit #0
@@ -43,6 +44,8 @@ module is_stage
     output [31:0] eu0_imm,
     output [31:0] eu0_pc,eu0_pc_next,
     output [6:0] eu0_exception,
+    output [31:0] eu0_badv,
+    output eu0_unknown,
     //execute unit #1 //ALU only
     output eu1_en,
     input eu1_ready,
@@ -51,24 +54,27 @@ module is_stage
     output [4:0] eu1_rd,eu1_rj,eu1_rk,
     output [31:0] eu1_imm,
     output [31:0] eu1_pc,eu1_pc_next,
-    output [6:0] eu1_exception
+    output [6:0] eu1_exception,
+    output [31:0] eu1_badv,
+    output eu1_unknown
 );
-    localparam RST_VAL = {32'd4,32'd0,7'd0,32'd0,15'd0,{`WIDTH_UOP{1'b0}}};
-    //pc_next,pc,invalid,imm,rd,rk,rj,uop
-    reg [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
+    localparam RST_VAL = {32'd4,32'd0,32'd0,7'd0,32'd0,15'd0,{`WIDTH_UOP{1'b0}}};
+    //pc_next,pc,badv,exception,imm,rd,rk,rj,uop
+    reg [32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
     
-    wire [6:0] exception0_Ustut79un = has_interrupt?`EXP_INT:exception0;
+    //FIXME: 无效的指令也可能带上中断
+    wire [6:0] exception0_Ustut79un = has_interrupt&&uop0[`UOP_NEMPTY]?`EXP_INT:exception0;
     wire [6:0] exception1_Ustut79un = exception1;
 
     wire first_nop = uop0[`UOP_TYPE] == 0 && exception0_Ustut79un==0;
     wire second_nop = uop1[`UOP_TYPE] == 0 && exception1_Ustut79un==0;
     
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {pc_next0,pc0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0};
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {pc_next1,pc1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1};
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {unknown0,pc_next0,pc0,badv0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0};
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {unknown1,pc_next1,pc1,badv1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1};
 
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
-    wire [32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
     
     reg [4:0] size_after_out;
     reg eu1_en_0Ucym1r,eu0_en_0Ucym1r;
@@ -92,7 +98,7 @@ module is_stage
         else num_read = 2'b11;
 
     always @(posedge clk)
-        if(~rstn || flush || flush_by_issue)
+        if(~rstn || flush)
             fifo0 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: //一输出
@@ -104,7 +110,7 @@ module is_stage
         endcase
     
     always @(posedge clk)
-        if(~rstn || flush || flush_by_issue)
+        if(~rstn || flush)
             fifo1 <= RST_VAL;
         else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
             2'b10,2'b01: begin//一输出
@@ -130,11 +136,10 @@ module is_stage
                 fifo_size <= size_after_out;
        endcase
     
-    assign {eu0_pc_next,eu0_pc,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = fifo0;
-    assign {eu1_pc_next,eu1_pc,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = fifo1;
+    assign {eu0_unknown,eu0_pc_next,eu0_pc,eu0_badv,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = fifo0;
+    assign {eu1_unknown,eu1_pc_next,eu1_pc,eu1_badv,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = fifo1;
     assign eu1_en = eu1_en_0Ucym1r;
     assign eu0_en = eu0_en_0Ucym1r && (eu0_uop[`UOP_TYPE]!=0 || eu0_exception!=0);
-    assign flush_by_issue = eu0_en_0Ucym1r && eu0_exception!=0;
     
     always @* begin
         eu1_en_0Ucym1r = 0;

@@ -9,6 +9,7 @@ module decode_unit_input_reg
     input known_in,
     input first_inst_jmp_in,
     input [6:0] exception_in,
+    input [31:0] badv_in,
     input [31:0] pc_in,
     input [31:0] pc_next_in,
 
@@ -17,6 +18,7 @@ module decode_unit_input_reg
     output reg known_out,
     output reg first_inst_jmp_out,
     output reg [6:0] exception_out,
+    output reg [31:0] badv_out,
     output reg [31:0] pc_out,
     output reg [31:0] pc_next_out
 );
@@ -33,5 +35,6 @@ module decode_unit_input_reg
             pc_out          <= pc_in;
             pc_next_out     <= pc_next_in;
             exception_out   <= exception_in;
+            badv_out        <= badv_in;
         end
 endmodule

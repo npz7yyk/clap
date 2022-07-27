@@ -19,7 +19,6 @@ module TagV #(
 );
 
   reg [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
-  reg [RAM_WIDTH-1:0] ram_data_a = {RAM_WIDTH{1'b0}};
   reg [RAM_WIDTH-1:0] ram_data_b = {RAM_WIDTH{1'b0}};
 
   // The following code either initializes the memory values to a specified file or to all zeros to match hardware
@@ -36,9 +35,6 @@ module TagV #(
   endgenerate
 
     always @(posedge clka)
-      ram_data_a <= dina;
-
-    always @(posedge clka)
         if (wea) begin
             BRAM[addra] <= dina;
         end 
@@ -46,10 +42,7 @@ module TagV #(
     always @(posedge clka)
         ram_data_b <= BRAM[addrb];
 
-    reg last_addr_eq;
-    always @(posedge clka)
-        last_addr_eq <= addra==addrb && wea;
-    assign doutb = last_addr_eq?ram_data_a:ram_data_b;
+    assign doutb = ram_data_b;
 
 
   //  The following function calculates the address width based on specified RAM depth

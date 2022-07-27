@@ -1,7 +1,6 @@
 // -*- Verilog -*-
 `include "csr.vh"
 
-//TODO: reset all CSRs
 module csr
 #(
     COREID = 0,
@@ -21,10 +20,14 @@ module csr
     
     //current machine state
     output [1:0] privilege,
+    output [5:0] ecode,
 
     //exception
     input store_state,      //pplv <= plv , pie <= ie 
     input restore_state,    //plv  <= pplv, ie  <= pie
+    input back_to_direct_translate,
+    input [18:0] exp_vppn_in,
+    input exp_vppn_we,
     input [6:0] expcode_in,
     input expcode_wen,
     output [31:0] era_out,
@@ -145,7 +148,10 @@ module csr
     reg [`ESTAT_ESUBCODE] estat_subecode;
     wire [31:0] csr_estat;
     assign csr_estat[`ESTAT_IS_0] = estat_is_0;
-    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,hardware_int};
+    //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
+    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
+    //从样例CPU看，TI放在IS[12]
+    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -255,9 +261,22 @@ module csr
             crmd_ie <= 0;
             crmd_da <= 1;
             crmd_pg <= 0;
-            // FIXME: 为了加速性能测试，重置后DATF, DATM等于1，但这不符合 龙芯架构32位精简版参考手册 p. 53
-            crmd_datf <= 1;
-            crmd_datm <= 1;
+            crmd_datf <= 0;
+            crmd_datm <= 0;
+        end else if(restore_state) begin
+            crmd_plv <= prmd_pplv;
+            crmd_ie <= prmd_pie;
+            if(estat_ecode==6'h3F) begin
+                crmd_da <= 0;
+                crmd_pg <= 1;
+            end
+        end else if(store_state) begin
+            if(back_to_direct_translate) begin
+                crmd_da <= 1;
+                crmd_pg <= 0;
+            end
+            crmd_plv <= 0;
+            crmd_ie <= 0;
         end else if(software_query_en&&addr==`CSR_CRMD) begin
             if(wen[0]) crmd_plv[0]  <= wdata[0];
             if(wen[1]) crmd_plv[1]  <= wdata[1];
@@ -268,23 +287,20 @@ module csr
             if(wen[6]) crmd_datf[6] <= wdata[6];
             if(wen[7]) crmd_datm[7] <= wdata[7];
             if(wen[8]) crmd_datm[8] <= wdata[8];
-        end else if(restore_state) begin
-            crmd_plv <= prmd_pplv;
-            crmd_ie <= prmd_pie;
-        end else if(store_state) begin
-            crmd_plv <= 0;
-            crmd_ie <= 0;
         end
     
     //PRMD
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_PRMD) begin
-            if(wen[0]) prmd_pplv[0]<=wdata[0];
-            if(wen[1]) prmd_pplv[1]<=wdata[1];
-            if(wen[2]) prmd_pie[2] <=wdata[2];
+        if(~rstn) begin
+            prmd_pplv <= 0;
+            prmd_pie <= 0;
         end else if(store_state) begin
             prmd_pplv <= crmd_plv;
             prmd_pie  <= crmd_ie;
+        end else if(software_query_en&&addr==`CSR_PRMD) begin
+            if(wen[0]) prmd_pplv[0]<=wdata[0];
+            if(wen[1]) prmd_pplv[1]<=wdata[1];
+            if(wen[2]) prmd_pie[2] <=wdata[2];
         end
     
     //EUEN
@@ -319,17 +335,21 @@ module csr
     always @(posedge clk)
         if(~rstn) begin
             estat_is_0 <= 0;
+        end else if(expcode_wen) begin
+            estat_ecode <= expcode_in[5:0];
+            estat_subecode <= expcode_in[5:0]==0 ? 0:expcode_in[6];
         end else if(software_query_en&&addr==`CSR_ESTAT) begin
             if(wen[0]) estat_is_0[0]<=wdata[0];
             if(wen[1]) estat_is_0[1]<=wdata[1];
-        end else if(expcode_wen) begin
-            estat_ecode <= expcode_in[5:0];
-            estat_subecode <= expcode_in[6];
         end
     
     //ERA
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_ERA) begin
+        if(~rstn) begin
+            csr_era <= era_in;
+        end else if(era_wen) begin
+            csr_era <= era_in;
+        end else if(software_query_en&&addr==`CSR_ERA) begin
             if(wen[ 0]) csr_era[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_era[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_era[ 2]<=wdata[ 2];
@@ -362,13 +382,15 @@ module csr
             if(wen[29]) csr_era[29]<=wdata[29];
             if(wen[30]) csr_era[30]<=wdata[30];
             if(wen[31]) csr_era[31]<=wdata[31];
-        end else if(era_wen) begin
-            csr_era <= era_in;
         end
 
     //BADV
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_BADV) begin
+        if(~rstn) begin
+            csr_badv <= 0;
+        end else if(badv_wen) begin
+            csr_badv <= badv_in;
+        end else if(software_query_en&&addr==`CSR_BADV) begin
             if(wen[ 0]) csr_badv[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_badv[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_badv[ 2]<=wdata[ 2];
@@ -401,13 +423,13 @@ module csr
             if(wen[29]) csr_badv[29]<=wdata[29];
             if(wen[30]) csr_badv[30]<=wdata[30];
             if(wen[31]) csr_badv[31]<=wdata[31];
-        end else if(badv_wen) begin
-            csr_badv <= badv_in;
         end
 
     //EENTRY
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_EENTRY) begin
+        if(~rstn) begin
+            eentry_va <= 0;
+        end else if(software_query_en&&addr==`CSR_EENTRY) begin
             if(wen[ 6]) eentry_va[ 6]<=wdata[ 6];
             if(wen[ 7]) eentry_va[ 7]<=wdata[ 7];
             if(wen[ 8]) eentry_va[ 8]<=wdata[ 8];
@@ -438,7 +460,9 @@ module csr
     
     //TLBRENTRY
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TLBRENTRY) begin
+        if(~rstn) begin
+            tlbrentry_pa <= 0;
+        end else if(software_query_en&&addr==`CSR_TLBRENTRY) begin
             if(wen[ 6]) tlbrentry_pa[ 6]<=wdata[ 6];
             if(wen[ 7]) tlbrentry_pa[ 7]<=wdata[ 7];
             if(wen[ 8]) tlbrentry_pa[ 8]<=wdata[ 8];
@@ -469,7 +493,9 @@ module csr
     
     //SAVE0~3
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_SAVE0) begin
+        if(~rstn) begin
+            csr_save0 <= 0;
+        end else if(software_query_en&&addr==`CSR_SAVE0) begin
             if(wen[ 0]) csr_save0[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_save0[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_save0[ 2]<=wdata[ 2];
@@ -505,7 +531,9 @@ module csr
         end
     
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_SAVE1) begin
+        if(~rstn) begin
+            csr_save1 <= 0;
+        end else if(software_query_en&&addr==`CSR_SAVE1) begin
             if(wen[ 0]) csr_save1[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_save1[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_save1[ 2]<=wdata[ 2];
@@ -541,7 +569,9 @@ module csr
         end
     
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_SAVE2) begin
+        if(~rstn) begin
+            csr_save2 <= 0;
+        end else if(software_query_en&&addr==`CSR_SAVE2) begin
             if(wen[ 0]) csr_save2[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_save2[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_save2[ 2]<=wdata[ 2];
@@ -577,7 +607,9 @@ module csr
         end
     
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_SAVE3) begin
+        if(~rstn) begin
+            csr_save3 <= 0;
+        end else if(software_query_en&&addr==`CSR_SAVE3) begin
             if(wen[ 0]) csr_save3[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_save3[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_save3[ 2]<=wdata[ 2];
@@ -617,14 +649,14 @@ module csr
         if(~rstn) begin
             llbctl_klo <= 0;
             llbctl_rollb <= 0;
-        end else if(software_query_en&&addr==`CSR_LLBCTL) begin
-            if(wen[1]) llbctl_rollb<=0;
-            if(wen[2]) llbctl_klo<=wdata[2];
         end else if(llbit_set) llbctl_rollb<=1;
         else if(llbit_clear_by_other) llbctl_rollb<=0;
         else if(llbit_clear_by_eret) begin 
             llbctl_rollb<=llbctl_klo;
             llbctl_klo<=0;
+        end else if(software_query_en&&addr==`CSR_LLBCTL) begin
+            if(wen[1]) llbctl_rollb<=0;
+            if(wen[2]) llbctl_klo<=wdata[2];
         end
     
     //TIBIDX
@@ -656,14 +688,18 @@ module csr
             if(wen[29]) tlbidx_ps[29]<=wdata[29];
             if(wen[31]) tlbidx_ne[31]<=wdata[31];
         end else begin
-            if(tlb_index_we) tlbidx_index<=tlb_index_in;
+            if(tlb_index_we) tlbidx_index <= tlb_index_in;
             if(tlb_ps_we) tlbidx_ps <= tlb_ps_in;
             if(tlb_ne_we) tlbidx_ne <= tlb_ne_in;
         end
 
     //TLBEHI
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TLBEHI) begin
+        if(~rstn)
+            tlbehi_vppn<=0;
+        else if(exp_vppn_we) begin
+            tlbehi_vppn <= exp_vppn_in;
+        end else if(software_query_en&&addr==`CSR_TLBEHI) begin
             if(wen[13]) tlbehi_vppn[13] <= wdata[13];
             if(wen[14]) tlbehi_vppn[14] <= wdata[14];
             if(wen[15]) tlbehi_vppn[15] <= wdata[15];
@@ -797,7 +833,9 @@ module csr
     
     //PGDL
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_PGDL) begin
+        if(~rstn) begin
+            pgdl_base <= 0;
+        end else if(software_query_en&&addr==`CSR_PGDL) begin
             if(wen[12]) pgdl_base[12] <= wdata[12];
             if(wen[13]) pgdl_base[13] <= wdata[13];
             if(wen[14]) pgdl_base[14] <= wdata[14];
@@ -822,7 +860,9 @@ module csr
     
     //PGDH
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_PGDH) begin
+        if(~rstn) begin
+            pgdh_base <= 0;
+        end else if(software_query_en&&addr==`CSR_PGDH) begin
             if(wen[12]) pgdh_base[12] <= wdata[12];
             if(wen[13]) pgdh_base[13] <= wdata[13];
             if(wen[14]) pgdh_base[14] <= wdata[14];
@@ -928,7 +968,7 @@ module csr
         if(~rstn) begin
             tcfg_en <= 0;
             tcfg_initval <= 0;
-        end else if(software_query_en&&addr==`CSR_TID) begin
+        end else if(software_query_en&&addr==`CSR_TCFG) begin
             if(wen[ 0]) tcfg_en[ 0]     <=wdata[ 0];
             if(wen[ 1]) tcfg_peridic[ 1]<=wdata[ 1];
             if(wen[ 2]) tcfg_initval[ 2]<=wdata[ 2];
@@ -965,7 +1005,7 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TID&&wen[`TCFG_INITVAL])
+        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL])
             just_set_timer<=1;
         else just_set_timer<=0;
     
@@ -979,7 +1019,8 @@ module csr
         //FIXME: 设置TCFG.InitVal后自动重置定时器，这在手册中未提及
         else if(csr_tval==0||just_set_timer) begin
             time_out <= 0;
-            if(tcfg_peridic) csr_tval<={tcfg_initval[`TCFG_INITVAL],2'd0};
+            //计时器的初始值比标准大1，否则给定时器设置0无法触发中断
+            if(tcfg_peridic||just_set_timer) csr_tval<={tcfg_initval[`TCFG_INITVAL],2'd1};
         end else if(tcfg_en) begin
             csr_tval<=csr_tval-1;
             time_out<=csr_tval==1;
@@ -1100,6 +1141,7 @@ module csr
     assign llbit = llbctl_rollb;
     assign tid = csr_tid;
     assign cache_tag = csr_ctag;
+    assign ecode = estat_ecode;
     //end CSR read
     ///////////////////////////////////////
 endmodule
