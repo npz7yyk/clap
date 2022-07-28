@@ -41,7 +41,8 @@ module csr
     output [`PGD_BASE] pgdl_base_out,pgdh_base_out,
 
     //interrupt
-    output has_interrupt,
+    output has_interrupt_cpu,
+    output has_interrupt_idle,
     input [7:0] hardware_int,
 
     //MMU
@@ -1115,7 +1116,8 @@ module csr
     assign era_out = csr_era;
     assign eentry = csr_eentry;
     assign tlbrentry = csr_tlbrentry;
-    assign has_interrupt = crmd_ie&&(ecfg_lie&{csr_estat[`ESTAT_IS]})!=0;
+    assign has_interrupt_cpu  = crmd_ie&&(ecfg_lie&csr_estat[`ESTAT_IS])!=0;
+    assign has_interrupt_idle = csr_estat[`ESTAT_IS]!=0;
     assign translate_mode = {crmd_pg,crmd_da};
     assign direct_i_mat = crmd_datf != 0;
     assign direct_d_mat = crmd_datm != 0;

@@ -269,7 +269,9 @@ module core_top(
     wire  [31:0]  csr_era_out;
     wire  [31:0]  csr_eentry;
     wire  [31:0]  csr_tlbrentry;
-    wire  has_interrupt;
+    wire  has_interrupt_cpu;
+    wire  has_interrupt_idle;
+    assign set_clock_gate = has_interrupt_idle;
     wire  [1:0]  translate_mode;
     wire  direct_i_mat;
     wire  direct_d_mat;
@@ -356,7 +358,8 @@ module core_top(
 
         //interrupt
         .hardware_int            ( intrpt                 ),
-        .has_interrupt           ( has_interrupt          ),
+        .has_interrupt_cpu       ( has_interrupt_cpu      ),
+        .has_interrupt_idle      ( has_interrupt_idle     ),
 
         //MMU
         .translate_mode          ( translate_mode         ),
@@ -705,7 +708,7 @@ module core_top(
         .unknown0(id_unknown0),.unknown1(id_unknown1),
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
-        .has_interrupt(has_interrupt),
+        .has_interrupt(has_interrupt_cpu),
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
         .eu0_ready(~ex_stall),
