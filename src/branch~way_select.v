@@ -25,7 +25,7 @@ module way_select #(
     input                         clk,
     input                         en,
     input wire [HASH_DEPTH - 1:0] waddr,
-    input wire              [3:0] visit,
+    input wire              [3:0] visit,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~way_select.v:28:35: Bits of signal are not used: 'visit'[0]
     input wire [HASH_DEPTH - 1:0] raddr,
 
     output wire             [3:0] select
@@ -35,7 +35,7 @@ module way_select #(
     integer i;
     initial 
         for (i = 0; i < (1 << HASH_DEPTH); i = i + 1)
-            queue[i] <= 8'b00_01_10_11;
+            queue[i] = 8'b00_01_10_11;
 
     wire [1:0] way = {visit[3] | visit[2], visit[3] | visit[1]};
     wire [7:0] queueOld = queue[waddr];

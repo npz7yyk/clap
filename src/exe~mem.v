@@ -1,6 +1,6 @@
 /* verilator lint_off DECLFILENAME */
 module mem0 (
-    //从exe1段输入
+    //从exe0段输入
     input  [4:0]       mem_rd_in,
     input  [31:0]      mem_data_in,
     input  [ 0:0 ]     mem_en_in,
@@ -16,11 +16,10 @@ module mem0 (
     output [31:0]      addr,
     output reg [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ]    w_data_CPU,         //    write data
-    //向exe1段后输出
+    //向exe0段后输出
     output [6:0]       mem_exp_out,
     output [4:0]       mem_rd_out,
     output [0:0]       mem_en_out,
-    output [1:0]       mem_width_out,
     output [0:0]       signed_ext
 );
     assign valid = mem_en_in;
@@ -37,7 +36,6 @@ module mem0 (
     end
 
     assign w_data_CPU   = mem_data_in;
-    assign mem_width_out= mem_width_in;
     assign mem_en_out   = mem_en_in;
     assign mem_exp_out  = mem_exp_in;
     assign mem_rd_out   = mem_en_out?mem_rd_in:0;
@@ -45,18 +43,17 @@ module mem0 (
 endmodule
 
 module mem1 (
-    //从exe1段后输入
+    //从exe0段后输入
     input [6:0]    mem_exp_in,
     input [4:0]    mem_rd_in,
     input [0:0]    mem_en_in,
-    input [1:0]    mem_width_in,
     //从cache输入
     //input addr_valid,                  //    read: addr has been accepted; write: addr and data have been accepted
     input [0:0]    data_valid,                   //    read: data has returned; write: data has been written in
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
     input [31:0]   cache_badv_in,
     input [6:0]    cache_exception,
-    //向exe2后输出
+    //向exe1后输出
     output [6:0]   mem_exp_out,
     output [4:0]   mem_rd_out,
     output [31:0]  mem_data_out,

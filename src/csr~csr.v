@@ -7,7 +7,7 @@ module csr
     COREID = 0,
     ASIDBITS = 10,
     TLBIDX_WIDTH = 4,
-    TIMER_WIDTH = 32
+    TIMER_WIDTH = 32//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:10:5: Parameter is not used: 'TIMER_WIDTH'
 )
 (
     input clk,
@@ -37,7 +37,7 @@ module csr
     input [31:0] badv_in,
     input badv_wen,
     output [31:0] eentry,tlbrentry,
-    input [31:0] pgd_in,
+    input [31:0] pgd_in,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:40:18: Bits of signal are not used: 'pgd_in'[11:0]
     input pgd_wen,
 
     //interrupt
@@ -152,7 +152,7 @@ module csr
     //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
     //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
     //从样例CPU看，TI放在IS[12]
-    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIX ME
+    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIX ME %Warning-WIDTH: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:155:28: Operator ASSIGNW expects 11 bits on the Assign RHS, but Assign RHS's REPLICATE generates 10 bits.
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -689,7 +689,7 @@ module csr
             if(wen[29]) tlbidx_ps[29]<=wdata[29];
             if(wen[31]) tlbidx_ne[31]<=wdata[31];
         end else begin
-            if(tlb_index_we) tlbidx_index <= tlb_index_in;
+            if(tlb_index_we) tlbidx_index <= {11'b0,tlb_index_in};
             if(tlb_ps_we) tlbidx_ps <= tlb_ps_in;
             if(tlb_ne_we) tlbidx_ne <= tlb_ne_in;
         end
@@ -1006,7 +1006,7 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&(addr==`CSR_TCFG&&wen[`TCFG_INITVAL])!=0)
+        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL]!=0)
             just_set_timer<=1;
         else just_set_timer<=0;
     
@@ -1078,7 +1078,7 @@ module csr
     always @* begin
         rdata = 0;
         if(software_query_en)
-            case(addr)
+            case(addr)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:1081:13: Case values incompletely covered (example pattern 0x3)
             `CSR_CRMD     : rdata = csr_crmd     ;
             `CSR_PRMD     : rdata = csr_prmd     ;
             `CSR_EUEN     : rdata = csr_euen     ;
@@ -1118,9 +1118,9 @@ module csr
     assign tlbrentry = csr_tlbrentry;
     assign has_interrupt = crmd_ie&&(ecfg_lie&{csr_estat[`ESTAT_IS]})!=0;
     assign translate_mode = {crmd_pg,crmd_da};
-    assign direct_i_mat = crmd_datf;
-    assign direct_d_mat = crmd_datm;
-    assign tlb_index_out = tlbidx_index;
+    assign direct_i_mat = crmd_datf[0];
+    assign direct_d_mat = crmd_datm[0];
+    assign tlb_index_out = tlbidx_index[4:0];
     assign tlb_ps_out = tlbidx_ps;
     assign tlb_ne_out = tlbidx_ne;
     assign tlb_vppn_out = tlbehi_vppn;

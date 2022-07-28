@@ -41,8 +41,8 @@ reg [0:0]   stall_because_div_real;
 reg [31:0]  div_pc;
 reg [31:0]  div_inst;
  
-wire [31:0] dividend_one_hot;
-wire [31:0] divisor_one_hot;
+// wire [31:0] dividend_one_hot;
+// wire [31:0] divisor_one_hot;
 wire [5:0]  m_pre;
 wire [5:0]  n_pre;
 wire [31:0] a;

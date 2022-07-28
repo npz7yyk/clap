@@ -95,7 +95,7 @@ module exe(
 );
 
 wire [0:0] stall2;
-wire [0:0] stall4;
+wire [0:0] stall4;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/exe~exe.v:98:12: Signal is not used: 'stall4'
 wire[31:0] cache_badv_out;
 
 wire eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
@@ -127,12 +127,10 @@ wire [31:0] mul_rs3_mid;
 wire [6:0]  mem_exp_mid;
 wire [4:0]  mem_rd_mid;
 wire [0:0]  mem_en_mid;
-wire [1:0]  mem_width_mid;
 wire [0:0]  eu1_alu_en_mid;
 wire [4:0]  eu1_alu_rd_mid;
 wire [31:0] eu1_alu_result_mid;
 wire [31:0] mul_ad_mid;
-wire [31:0] branch_pc_mid;
 wire [31:0] branch_addr_calculated_mid;
 wire [0:0]  branch_status_mid;
 wire [0:0]  branch_valid_mid;
@@ -152,7 +150,6 @@ reg  [31:0]  eu1_pc_exe1;
 reg  [6:0]   mem_exp_exe1;
 reg  [4:0]   mem_rd_exe1;
 reg  [0:0]   mem_en_exe1;
-reg  [1:0]   mem_width_exe1;
 reg  [0:0]   mul_sel_exe1;
 reg  [31:0]  mul_sr0_exe1;
 reg  [31:0]  mul_sr1_exe1;
@@ -207,7 +204,6 @@ always @(posedge clk) begin
         mem_exp_exe1,
         mem_rd_exe1,
         mem_en_exe1,
-        mem_width_exe1,
         mul_sel_exe1,
         mul_sr0_exe1,
         mul_sr1_exe1,
@@ -234,7 +230,6 @@ always @(posedge clk) begin
         mem_exp_exe1           <= mem_exp_mid;
         mem_rd_exe1            <= mem_rd_mid;
         mem_en_exe1            <= mem_en_mid;
-        mem_width_exe1         <= mem_width_mid;
         mul_sel_exe1           <= mul_sel_mid;
         mul_sr0_exe1           <= mul_rs0_mid;
         mul_sr1_exe1           <= mul_rs1_mid;
@@ -465,15 +460,13 @@ mem0  u_mem0 (
     .w_data_CPU              ( w_data_CPU      ),
     .mem_exp_out             ( mem_exp_mid     ),
     .mem_rd_out              ( mem_rd_mid      ),
-    .mem_en_out              ( mem_en_mid      ),
-    .mem_width_out           ( mem_width_mid   )
+    .mem_en_out              ( mem_en_mid      )
 );
 
 mem1  u_mem1 (
     .mem_exp_in              ( mem_exp_exe1          ),
     .mem_rd_in               ( mem_rd_exe1           ),
     .mem_en_in               ( mem_en_exe1           ),
-    .mem_width_in            ( mem_width_exe1        ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
     .cache_badv_in           ( cache_badv            ),

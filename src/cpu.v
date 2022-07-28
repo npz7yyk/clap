@@ -259,9 +259,9 @@ module core_top(
     wire  tlb_ppn_1_wen;
     wire  [9:0]  asid_in;
     wire  asid_wen;
-    wire  llbit_set;
-    wire  llbit_clear_by_eret;
-    wire  llbit_clear_by_other;
+    wire  llbit_set;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:262:11: Signal is not driven: 'llbit_set'
+    wire  llbit_clear_by_eret;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:263:11: Signal is not driven: 'llbit_clear_by_eret'
+    wire  llbit_clear_by_other;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:264:11: Signal is not driven: 'llbit_clear_by_other'
 
     wire  [1:0]  privilege;
     wire  [31:0]  csr_era_out;
@@ -295,14 +295,14 @@ module core_top(
     wire  tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
-    wire  [23:0]  tlb_ppn_0_out;
-    wire  [23:0]  tlb_ppn_1_out;
+    wire  [23:0]  tlb_ppn_0_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:298:19: Bits of signal are not used: 'tlb_ppn_0_out'[23:20]
+    wire  [23:0]  tlb_ppn_1_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:299:19: Bits of signal are not used: 'tlb_ppn_1_out'[23:20]
     wire  [9:0]  asid_out;
-    wire  [31:0]  pgdl_out;
-    wire  [31:0]  pgdh_out;
-    wire  llbit;
+    wire  [31:0]  pgdl_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:301:19: Signal is not used: 'pgdl_out'
+    wire  [31:0]  pgdh_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:302:19: Signal is not used: 'pgdh_out'
+    wire  llbit;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:303:11: Signal is not used: 'llbit'
     wire  [31:0]  tid;
-    wire  [31:0]  cache_tag;
+    wire  [31:0]  cache_tag;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:305:19: Signal is not used: 'cache_tag'
 
     wire csr_software_query_en;
     wire [13:0] csr_addr;
@@ -515,7 +515,7 @@ module core_top(
     );
 
     wire [1:0] ex_mem_cacop_code;
-    wire ex_mem_l1i_en,ex_mem_l1d_en,ex_mem_l2_en;
+    wire ex_mem_l1i_en,ex_mem_l1d_en,ex_mem_l2_en;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:518:38: Signal is not used: 'ex_mem_l2_en'
     wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
     wire ex_mem_l1i_complete,ex_mem_l1d_complete,ex_mem_l2_complete;
     wire [31:0] ex_mem_cacop_rj_plus_imm;
@@ -591,7 +591,7 @@ module core_top(
     wire [31:0] if_inst0,if_inst1;
     wire data_valid;
     wire [31:0] if_pc,if_pc_next;
-    wire if_known0,if_known1;
+    wire if_known0,if_known1;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:594:20: Signal is not used: 'if_known1'
     wire [31:0] if_pred_record0,if_pred_record1;
     wire first_inst_jmp;
     wire [6:0] if_exception;
@@ -740,7 +740,7 @@ module core_top(
     wire [31:0] is_eu1_pc,is_eu1_pc_next;
     wire [6:0] is_eu0_exception,is_eu1_exception;
     wire [31:0] is_eu0_badv,is_eu1_badv;
-    wire is_eu0_unknown,is_eu1_unknown;
+    wire is_eu0_unknown,is_eu1_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:743:25: Signal is not used: 'is_eu1_unknown'
 
     execute_unit_input_reg euir0
     (
@@ -787,13 +787,13 @@ module core_top(
     wire  [4:0]  rf_eu0_rj,rf_eu1_rj;
     wire  [4:0]  rf_eu0_rk,rf_eu1_rk;
     wire  [31:0]  rf_eu0_pc,rf_eu1_pc;
-    wire  [31:0]  rf_eu0_pc_next,rf_eu1_pc_next;
-    wire  [6:0]  rf_eu0_exp,rf_eu1_exp;
+    wire  [31:0]  rf_eu0_pc_next,rf_eu1_pc_next;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:790:34: Signal is not used: 'rf_eu1_pc_next'
+    wire  [6:0]  rf_eu0_exp,rf_eu1_exp;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:791:29: Signal is not used: 'rf_eu1_exp'
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm, rf_eu1_imm;
-    wire  [31:0]  rf_eu0_badv,rf_eu1_badv;
-    wire rf_eu0_unknown,rf_eu1_unknown;
+    wire  [31:0]  rf_eu0_badv,rf_eu1_badv;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:795:31: Signal is not used: 'rf_eu1_badv'
+    wire rf_eu0_unknown,rf_eu1_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:796:25: Signal is not used: 'rf_eu1_unknown'
 
     wire rf_wen0;
     wire rf_wen1;
@@ -851,7 +851,7 @@ module core_top(
     wire  [31:0] ex_eu0_badv;
     wire  [31:0] ex_eu0_pc,ex_eu1_pc;
     wire  [31:0] ex_eu0_inst,ex_eu1_inst;
-    wire ex_eu0_unknown;
+    wire ex_eu0_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:854:10: Signal is not driven, nor used: 'ex_eu0_unknown'
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;

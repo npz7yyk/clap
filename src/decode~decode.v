@@ -99,7 +99,7 @@ module decoder
     
     reg [`UOP_ALUOP] alu_op;
     reg alu_op_invalid;
-    wire is_unsigned_imm = inst[30:23]=='b00000110;
+    wire is_unsigned_imm = inst[30:23]=='b00000110;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/decode~decode.v:102:10: Signal is not used: 'is_unsigned_imm'
     always @* begin
         alu_op_invalid=0;
         alu_op=`CTRL_ALU_ADD;
@@ -237,10 +237,10 @@ module decoder
     
     wire [31:0] i12_result = {{20{inst[21]}},inst[21:10]};
     wire [31:0] u12_result = {20'b0,inst[21:10]};
-    wire [31:0] i14_result = {{18{inst[23]}},inst[21:10]};
-    wire [31:0] i16_result = {{14{inst[25]}},inst[25:10]};
+    wire [31:0] i14_result = {{18{inst[23]}},inst[23:10]};
+    wire [31:0] i16_result = {{16{inst[25]}},inst[25:10]};
     wire [31:0] i26_result = {{6{inst[9]}},{inst[9:0],inst[25:10]}};
-    wire [31:0] i20_result = {{12{inst[24]}},inst[24:5],12'b0};
+    wire [31:0] i20_result = {inst[24:5],12'b0};
     
     assign imm = 
         i12_result&{32{is_i12}} |

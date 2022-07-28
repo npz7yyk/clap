@@ -40,7 +40,7 @@ module miss_way_sel_lru(
     assign cmp_result[3] = (visit_num == rank[index][7:6]);
 
     always @(posedge clk) begin
-        if(en)begin
+        if(en)begin//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~miss_way_sel_lru.v:44:13: Case values incompletely covered (example pattern 0x0)
             case(cmp_result)
             4'b0010: begin
                 rank[index][1:0] <= rank[index][3:2];

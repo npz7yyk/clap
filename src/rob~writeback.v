@@ -54,7 +54,7 @@ module writeback
     always @* begin
         set_badv = 0;
         if(eu0_valid)
-            case(eu0_exception)
+            case(eu0_exception)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/rob~writeback.v:57:13: Case values incompletely covered (example pattern 0x0)
             `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS,
             `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_badv = 1;
@@ -63,7 +63,7 @@ module writeback
     always @* begin
         set_vppn = 0;
         if(eu0_valid)
-            case(eu0_exception)
+            case(eu0_exception)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/rob~writeback.v:66:13: Case values incompletely covered (example pattern 0x0)
             `EXP_TLBR, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_vppn = 1;
             endcase

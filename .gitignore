@@ -2,3 +2,6 @@
 *.bin
 a.out 
 .VSCodeCounter
+*/test.s
+*/simu_trace.txt
+*/simu_trace_theirs.txt

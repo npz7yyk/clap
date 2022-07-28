@@ -83,8 +83,8 @@ module data #(
 
     reg [(1 << HASH_DEPTH) - 1:0] vldLower, vldUpper;
     initial begin
-        vldLower <= 32'b0;
-        vldUpper <= 32'b0;
+        vldLower = 32'b0;
+        vldUpper = 32'b0;
     end
 
     assign idIsPair = vldLower[idWaddr] & vldUpper[idWaddr] & idTagLower == idTagUpper;
@@ -549,7 +549,7 @@ module para #(
     wire [HASH_DEPTH - 1:0] bdAddr = bdPC[HASH_DEPTH + 1:2];
 
     reg [(1 << HASH_DEPTH) - 1:0] vld;
-    initial vld <= 64'b0;
+    initial vld = 64'b0;
     always @(posedge clk) begin
         if (!rstn) vld <= 64'b0;
         else if (erEn) begin

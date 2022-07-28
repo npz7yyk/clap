@@ -39,7 +39,7 @@ module icache
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;
-    wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;
+    wire[3:0] hit, mem_we, tagv_we, tagv, way_visit;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~icache.v:42:37: Signal is not driven, nor used: 'tagv'
     wire[2047:0] mem_dout;
     wire[511:0] mem_din;
     wire[3:0] way_replace, way_replace_mbuf;
@@ -98,7 +98,7 @@ module icache
         .clk        (clk),
         .r_addr     (pc_in),
         .w_addr     (addr_pbuf),
-        .addr_rbuf  (addr_rbuf),
+        .addr_rbuf  (addr_rbuf),//%Warning-WIDTH: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~icache.v:101:10: Input port connection 'addr_rbuf' expects 32 bits on the pin connection, but pin connection's VARREF 'addr_rbuf' generates 131 bits.
         .tag        (p_addr[31:12]),
         .we         (tagv_we),
         .tagv_clear (tagv_clear),

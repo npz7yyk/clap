@@ -30,8 +30,7 @@ module forward(
     output reg [31:0] eu1_sr1
     
 );
-wire [0:0] flag;
-  assign flag=  eu0_en_1&&eu0_rj==eu0_rd_1 ;
+
     always @(*) begin
         if(eu0_rj==0)begin
             eu0_sr0=data00;

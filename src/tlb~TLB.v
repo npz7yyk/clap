@@ -106,7 +106,7 @@ module TLB#(
     wire [1:0] found_plv0, found_plv1;
     wire [19:0] found_pfn0, found_pfn1;
     wire [1:0] s0_dmw_mat, s1_dmw_mat;
-    wire [1:0] s0_dmw_mat_obuf, s1_dmw_mat_obuf;
+    wire [1:0] s0_dmw_mat_obuf, s1_dmw_mat_obuf;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB.v:109:16: Signal is not used: 's0_dmw_mat_obuf' %Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB.v:109:33: Signal is not used: 's1_dmw_mat_obuf'
     wire [31:0] s0_dmw_paddr, s1_dmw_paddr;
     wire [31:0] s0_dmw_paddr_obuf, s1_dmw_paddr_obuf;
     wire s0_dmw_hit, s1_dmw_hit;
