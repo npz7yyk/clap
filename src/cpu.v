@@ -127,7 +127,6 @@ module core_top(
         //https://developer.arm.com/documentation/ihi0022/e/AMBA-AXI3-and-AXI4-Protocol-Specification/AXI4-Additional-Signaling/QoS-signaling/QoS-interface-signals?lang=en
         .m_axi_awqos(),
         .m_axi_awregion(),
-        .m_axi_awuser(),
         .m_axi_awvalid(awvalid),
         .m_axi_awready(awready),
 
@@ -135,13 +134,11 @@ module core_top(
         .m_axi_wdata(wdata),
         .m_axi_wstrb(wstrb),
         .m_axi_wlast(wlast),
-        .m_axi_wuser(),
         .m_axi_wvalid(wvalid),
         .m_axi_wready(wready),
 
         .m_axi_bid(bid),
         .m_axi_bresp(bresp),
-        .m_axi_buser(0),
         .m_axi_bvalid(bvalid),
         .m_axi_bready(bready),
 
@@ -155,7 +152,6 @@ module core_top(
         .m_axi_arprot(arprot),
         .m_axi_arqos(),
         .m_axi_arregion(),
-        .m_axi_aruser(),
         .m_axi_arvalid(arvalid),
         .m_axi_arready(arready),
 
@@ -163,7 +159,6 @@ module core_top(
         .m_axi_rdata(rdata),
         .m_axi_rresp(rresp),
         .m_axi_rlast(rlast),
-        .m_axi_ruser(0),
         .m_axi_rvalid(rvalid),
         .m_axi_rready(rready),
 
@@ -177,18 +172,15 @@ module core_top(
         .s_axi_awcache  ({ i_axi_awcache  ,  d_axi_awcache  }),
         .s_axi_awprot   ({ i_axi_awprot   ,  d_axi_awprot   }),
         .s_axi_awqos    (0),
-        .s_axi_awuser   (0),
         .s_axi_awvalid  ({ i_axi_awvalid  ,  d_axi_awvalid  }),
         .s_axi_awready  ({ i_axi_awready  ,  d_axi_awready  }),
         .s_axi_wdata    ({ i_axi_wdata    ,  d_axi_wdata    }),
         .s_axi_wstrb    ({ i_axi_wstrb    ,  d_axi_wstrb    }),
         .s_axi_wlast    ({ i_axi_wlast    ,  d_axi_wlast    }),
-        .s_axi_wuser    (0),
         .s_axi_wvalid   ({ i_axi_wvalid   ,  d_axi_wvalid   }),
         .s_axi_wready   ({ i_axi_wready   ,  d_axi_wready   }),
         .s_axi_bid      ({ i_axi_bid      ,  d_axi_bid      }),
         .s_axi_bresp    ({ i_axi_bresp    ,  d_axi_bresp    }),
-        .s_axi_buser    (),
         .s_axi_bvalid   ({ i_axi_bvalid   ,  d_axi_bvalid   }),
         .s_axi_bready   ({ i_axi_bready   ,  d_axi_bready   }),
         .s_axi_arid     ({ i_axi_arid     ,  d_axi_arid     }),
@@ -200,14 +192,12 @@ module core_top(
         .s_axi_arcache  ({ i_axi_arcache  ,  d_axi_arcache  }),
         .s_axi_arprot   ({ i_axi_arprot   ,  d_axi_arprot   }),
         .s_axi_arqos    (0),
-        .s_axi_aruser   (0),
         .s_axi_arvalid  ({ i_axi_arvalid  ,  d_axi_arvalid  }),
         .s_axi_arready  ({ i_axi_arready  ,  d_axi_arready  }),
         .s_axi_rid      ({ i_axi_rid      ,  d_axi_rid      }),
         .s_axi_rdata    ({ i_axi_rdata    ,  d_axi_rdata    }),
         .s_axi_rresp    ({ i_axi_rresp    ,  d_axi_rresp    }),
         .s_axi_rlast    ({ i_axi_rlast    ,  d_axi_rlast    }),
-        .s_axi_ruser    (),
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
@@ -297,10 +287,10 @@ module core_top(
     wire  tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
-    /* verilator lint_off UNSIGNED */ //([23:20] is useless)
+    /* verilator lint_off UNUSED */ //([23:20] is useless)
     wire  [23:0]  tlb_ppn_0_out;
     wire  [23:0]  tlb_ppn_1_out;
-    // verilator lint_on UNSIGNED
+    // verilator lint_on UNUSED
     wire  [9:0]  asid_out;
     wire  [31:0]  tid;
 
@@ -517,9 +507,9 @@ module core_top(
 
     wire [1:0] ex_mem_cacop_code;
     wire ex_mem_l1i_en,ex_mem_l1d_en;
-    /* verilator lint_off UNSIGNED */ //(useless because L2 cache is not implemented)
+    /* verilator lint_off UNUSED */ //(useless because L2 cache is not implemented)
     wire ex_mem_l2_en;
-    // verilator lint_on UNSIGNED
+    // verilator lint_on UNUSED
     wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
     wire ex_mem_l1i_complete,ex_mem_l1d_complete,ex_mem_l2_complete;
     wire [31:0] ex_mem_cacop_rj_plus_imm;
@@ -797,12 +787,12 @@ module core_top(
     wire  [31:0]  rf_eu0_badv;
     wire rf_eu0_unknown;
 
-    /* verilator lint_off UNSIGNED */ //(useless, reserved for future optimization)
+    /* verilator lint_off UNUSED */ //(useless, reserved for future optimization)
     wire  [31:0] rf_eu1_pc_next;
     wire  [6:0]  rf_eu1_exp;
     wire  [31:0]  rf_eu1_badv;
     wire rf_eu1_unknown;
-    // verilator lint_on UNSIGNED
+    // verilator lint_on UNUSED
 
     wire rf_wen0;
     wire rf_wen1;
@@ -1092,7 +1082,7 @@ module core_top(
         .w_asid         (asid_out),  
 
         
-        .f_index        (stable_counter[3:0]),
+        .f_index        (stable_counter[TLBIDX_WIDTH-1:0]),
         .s_vpn2         (tlb_vppn_out),
         .s_index        (tlb_index_in),
         .s_asid         (asid_out),
@@ -1194,16 +1184,16 @@ module core_top(
         .coreid(0),
         .index(0),
         .valid(debug0_wb_inst!=0),
-        .pc(debug0_wb_pc),
+        .pc({32'd0,debug0_wb_pc}),
         .instr(debug0_wb_inst),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
         .is_CNTinst(0),
         .timer_64_value(stable_counter),
-        .wen(debug0_wb_rf_wen),
-        .wdest(debug0_wb_rf_wnum),
-        .wdata(debug0_wb_rf_wdata),
+        .wen(debug0_wb_rf_wen!=0),
+        .wdest({3'd0,debug0_wb_rf_wnum}),
+        .wdata({32'd0,debug0_wb_rf_wdata}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1214,16 +1204,16 @@ module core_top(
         .coreid(0),
         .index(1),
         .valid(debug1_wb_inst!=0),
-        .pc(debug1_wb_pc),
+        .pc({32'd0,debug1_wb_pc}),
         .instr(debug1_wb_inst),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
         .is_CNTinst(0),
         .timer_64_value(stable_counter),
-        .wen(debug1_wb_rf_wen),
-        .wdest(debug1_wb_rf_wnum),
-        .wdata(debug1_wb_rf_wdata),
+        .wen(debug1_wb_rf_wen!=0),
+        .wdest({3'd0,debug1_wb_rf_wnum}),
+        .wdata({32'd0,debug1_wb_rf_wdata}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1236,7 +1226,7 @@ module core_top(
         .eret(0),
         .intrNo(0),
         .cause(0),
-        .exceptionPC(debug0_wb_pc),
+        .exceptionPC({32'd0,debug0_wb_pc}),
         .exceptionInst(debug0_wb_inst)
     );
 

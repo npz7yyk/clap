@@ -146,9 +146,13 @@ module csr
     wire [31:0] csr_estat;
     assign csr_estat[`ESTAT_IS_0] = estat_is_0;
     //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
-    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
-    //从样例CPU看，TI放在IS[12]
-    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIXME %Warning-WIDTH: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:155:28: Operator ASSIGNW expects 11 bits on the Assign RHS, but Assign RHS's REPLICATE generates 10 bits.
+    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”
+    //询问该公司的技术人员后，我们得知
+    //is[9:2] = hw[7:0] 
+    //is[10] 是 la64的特有中断，在la32r中恒为0
+    //is[11] = TI
+    //is[12] = IPI
+    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,1'b0,hardware_int};
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -1132,8 +1136,8 @@ module csr
     assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
     assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
     assign asid_out = asid_asid;
-    assign pgdl_out = pgdl_base;
-    assign pgdh_out = pgdh_base;
+    assign pgdl_base_out = pgdl_base;
+    assign pgdh_base_out = pgdh_base;
     assign llbit = llbctl_rollb;
     assign tid = csr_tid;
     assign ecode = estat_ecode;

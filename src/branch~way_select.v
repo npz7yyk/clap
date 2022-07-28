@@ -25,9 +25,9 @@ module way_select #(
     input                         clk,
     input                         en,
     input wire [HASH_DEPTH - 1:0] waddr,
-    /* verilator lint_off UNSIGNED */ //(visit[0] is used because it's guaranteed to be one-hot, FIXME: really???)
+    /* verilator lint_off UNUSED */ //(visit[0] is used because it's guaranteed to be one-hot, FIXME: really???)
     input wire              [3:0] visit,
-    // verilator lint_on UNSIGNED
+    // verilator lint_on UNUSED
     input wire [HASH_DEPTH - 1:0] raddr,
 
     output wire             [3:0] select

@@ -30,7 +30,7 @@ THE SOFTWARE.
 /*
  * AXI4 interconnect
  */
- /* verilator lint_off DECLFILENAME */
+/* verilator lint_off DECLFILENAME */
 module axi_interconnect #
 (
     // Number of AXI inputs (slave interfaces)
@@ -45,26 +45,6 @@ module axi_interconnect #
     parameter STRB_WIDTH = (DATA_WIDTH/8),
     // Width of ID signal
     parameter ID_WIDTH = 8,
-    // Propagate awuser signal
-    parameter AWUSER_ENABLE = 0,
-    // Width of awuser signal
-    parameter AWUSER_WIDTH = 1,
-    // Propagate wuser signal
-    parameter WUSER_ENABLE = 0,
-    // Width of wuser signal
-    parameter WUSER_WIDTH = 1,
-    // Propagate buser signal
-    parameter BUSER_ENABLE = 0,
-    // Width of buser signal
-    parameter BUSER_WIDTH = 1,
-    // Propagate aruser signal
-    parameter ARUSER_ENABLE = 0,
-    // Width of aruser signal
-    parameter ARUSER_WIDTH = 1,
-    // Propagate ruser signal
-    parameter RUSER_ENABLE = 0,
-    // Width of ruser signal
-    parameter RUSER_WIDTH = 1,
     // Propagate ID field
     parameter FORWARD_ID = 0,
     // Number of regions per master interface
@@ -102,18 +82,15 @@ module axi_interconnect #
     input  wire [S_COUNT*4-1:0]            s_axi_awcache,
     input  wire [S_COUNT*3-1:0]            s_axi_awprot,
     input  wire [S_COUNT*4-1:0]            s_axi_awqos,
-    input  wire [S_COUNT*AWUSER_WIDTH-1:0] s_axi_awuser,
     input  wire [S_COUNT-1:0]              s_axi_awvalid,
     output wire [S_COUNT-1:0]              s_axi_awready,
     input  wire [S_COUNT*DATA_WIDTH-1:0]   s_axi_wdata,
     input  wire [S_COUNT*STRB_WIDTH-1:0]   s_axi_wstrb,
     input  wire [S_COUNT-1:0]              s_axi_wlast,
-    input  wire [S_COUNT*WUSER_WIDTH-1:0]  s_axi_wuser,
     input  wire [S_COUNT-1:0]              s_axi_wvalid,
     output wire [S_COUNT-1:0]              s_axi_wready,
     output wire [S_COUNT*ID_WIDTH-1:0]     s_axi_bid,
     output wire [S_COUNT*2-1:0]            s_axi_bresp,
-    output wire [S_COUNT*BUSER_WIDTH-1:0]  s_axi_buser,
     output wire [S_COUNT-1:0]              s_axi_bvalid,
     input  wire [S_COUNT-1:0]              s_axi_bready,
     input  wire [S_COUNT*ID_WIDTH-1:0]     s_axi_arid,
@@ -125,14 +102,12 @@ module axi_interconnect #
     input  wire [S_COUNT*4-1:0]            s_axi_arcache,
     input  wire [S_COUNT*3-1:0]            s_axi_arprot,
     input  wire [S_COUNT*4-1:0]            s_axi_arqos,
-    input  wire [S_COUNT*ARUSER_WIDTH-1:0] s_axi_aruser,
     input  wire [S_COUNT-1:0]              s_axi_arvalid,
     output wire [S_COUNT-1:0]              s_axi_arready,
     output wire [S_COUNT*ID_WIDTH-1:0]     s_axi_rid,
     output wire [S_COUNT*DATA_WIDTH-1:0]   s_axi_rdata,
     output wire [S_COUNT*2-1:0]            s_axi_rresp,
     output wire [S_COUNT-1:0]              s_axi_rlast,
-    output wire [S_COUNT*RUSER_WIDTH-1:0]  s_axi_ruser,
     output wire [S_COUNT-1:0]              s_axi_rvalid,
     input  wire [S_COUNT-1:0]              s_axi_rready,
 
@@ -149,18 +124,15 @@ module axi_interconnect #
     output wire [M_COUNT*3-1:0]            m_axi_awprot,
     output wire [M_COUNT*4-1:0]            m_axi_awqos,
     output wire [M_COUNT*4-1:0]            m_axi_awregion,
-    output wire [M_COUNT*AWUSER_WIDTH-1:0] m_axi_awuser,
     output wire [M_COUNT-1:0]              m_axi_awvalid,
     input  wire [M_COUNT-1:0]              m_axi_awready,
     output wire [M_COUNT*DATA_WIDTH-1:0]   m_axi_wdata,
     output wire [M_COUNT*STRB_WIDTH-1:0]   m_axi_wstrb,
     output wire [M_COUNT-1:0]              m_axi_wlast,
-    output wire [M_COUNT*WUSER_WIDTH-1:0]  m_axi_wuser,
     output wire [M_COUNT-1:0]              m_axi_wvalid,
     input  wire [M_COUNT-1:0]              m_axi_wready,
     input  wire [M_COUNT*ID_WIDTH-1:0]     m_axi_bid,
     input  wire [M_COUNT*2-1:0]            m_axi_bresp,
-    input  wire [M_COUNT*BUSER_WIDTH-1:0]  m_axi_buser,
     input  wire [M_COUNT-1:0]              m_axi_bvalid,
     output wire [M_COUNT-1:0]              m_axi_bready,
     output wire [M_COUNT*ID_WIDTH-1:0]     m_axi_arid,
@@ -173,14 +145,12 @@ module axi_interconnect #
     output wire [M_COUNT*3-1:0]            m_axi_arprot,
     output wire [M_COUNT*4-1:0]            m_axi_arqos,
     output wire [M_COUNT*4-1:0]            m_axi_arregion,
-    output wire [M_COUNT*ARUSER_WIDTH-1:0] m_axi_aruser,
     output wire [M_COUNT-1:0]              m_axi_arvalid,
     input  wire [M_COUNT-1:0]              m_axi_arready,
     input  wire [M_COUNT*ID_WIDTH-1:0]     m_axi_rid,
     input  wire [M_COUNT*DATA_WIDTH-1:0]   m_axi_rdata,
     input  wire [M_COUNT*2-1:0]            m_axi_rresp,
     input  wire [M_COUNT-1:0]              m_axi_rlast,
-    input  wire [M_COUNT*RUSER_WIDTH-1:0]  m_axi_ruser,
     input  wire [M_COUNT-1:0]              m_axi_rvalid,
     output wire [M_COUNT-1:0]              m_axi_rready
 );
@@ -188,10 +158,8 @@ module axi_interconnect #
 localparam CL_S_COUNT = $clog2(S_COUNT);
 localparam CL_M_COUNT = $clog2(M_COUNT);
 
-localparam AUSER_WIDTH = AWUSER_WIDTH > ARUSER_WIDTH ? AWUSER_WIDTH : ARUSER_WIDTH;
-
 // default address computation
-function [M_COUNT*M_REGIONS*ADDR_WIDTH-1:0] calcBaseAddrs(input [31:0] dummy);
+function [M_COUNT*M_REGIONS*ADDR_WIDTH-1:0] calcBaseAddrs(input [31:0] _unused_ok);
     integer i;
     reg [ADDR_WIDTH-1:0] base;
     reg [ADDR_WIDTH-1:0] width;
@@ -227,7 +195,7 @@ initial begin
     end
 
     for (i = 0; i < M_COUNT*M_REGIONS; i = i + 1) begin
-        if (M_ADDR_WIDTH[i*32 +: 32] && (M_ADDR_WIDTH[i*32 +: 32] < 12 || M_ADDR_WIDTH[i*32 +: 32] > ADDR_WIDTH)) begin
+        if (M_ADDR_WIDTH[i*32 +: 32]!=0 && (M_ADDR_WIDTH[i*32 +: 32] < 12 || M_ADDR_WIDTH[i*32 +: 32] > ADDR_WIDTH)) begin
             $error("Error: address width out of range (instance %m)");
             $finish;
         end
@@ -235,7 +203,7 @@ initial begin
 
     $display("Addressing configuration for axi_interconnect instance %m");
     for (i = 0; i < M_COUNT*M_REGIONS; i = i + 1) begin
-        if (M_ADDR_WIDTH[i*32 +: 32]) begin
+        if (M_ADDR_WIDTH[i*32 +: 32]!=0) begin
             $display("%2d (%2d): %x / %02d -- %x-%x",
                 i/M_REGIONS, i%M_REGIONS,
                 M_BASE_ADDR_INT[i*ADDR_WIDTH +: ADDR_WIDTH],
@@ -263,7 +231,7 @@ initial begin
 
     for (i = 0; i < M_COUNT*M_REGIONS; i = i + 1) begin
         for (j = i+1; j < M_COUNT*M_REGIONS; j = j + 1) begin
-            if (M_ADDR_WIDTH[i*32 +: 32] && M_ADDR_WIDTH[j*32 +: 32]) begin
+            if (M_ADDR_WIDTH[i*32 +: 32]!=0 && M_ADDR_WIDTH[j*32 +: 32]!=0) begin
                 if (((M_BASE_ADDR_INT[i*ADDR_WIDTH +: ADDR_WIDTH] & ({ADDR_WIDTH{1'b1}} << M_ADDR_WIDTH[i*32 +: 32])) <= (M_BASE_ADDR_INT[j*ADDR_WIDTH +: ADDR_WIDTH] | ({ADDR_WIDTH{1'b1}} >> (ADDR_WIDTH - M_ADDR_WIDTH[j*32 +: 32]))))
                         && ((M_BASE_ADDR_INT[j*ADDR_WIDTH +: ADDR_WIDTH] & ({ADDR_WIDTH{1'b1}} << M_ADDR_WIDTH[j*32 +: 32])) <= (M_BASE_ADDR_INT[i*ADDR_WIDTH +: ADDR_WIDTH] | ({ADDR_WIDTH{1'b1}} >> (ADDR_WIDTH - M_ADDR_WIDTH[i*32 +: 32]))))) begin
                     $display("Overlapping regions:");
@@ -303,7 +271,7 @@ reg [2:0] state_reg = STATE_IDLE, state_next;
 
 reg match;
 
-reg [CL_M_COUNT-1:0] m_select_reg = 2'd0, m_select_next;
+reg [(CL_M_COUNT>0?CL_M_COUNT-1:0):0] m_select_reg = 0, m_select_next;
 reg [ID_WIDTH-1:0] axi_id_reg = {ID_WIDTH{1'b0}}, axi_id_next;
 reg [ADDR_WIDTH-1:0] axi_addr_reg = {ADDR_WIDTH{1'b0}}, axi_addr_next;
 reg axi_addr_valid_reg = 1'b0, axi_addr_valid_next;
@@ -315,9 +283,7 @@ reg [3:0] axi_cache_reg = 4'd0, axi_cache_next;
 reg [2:0] axi_prot_reg = 3'b000, axi_prot_next;
 reg [3:0] axi_qos_reg = 4'd0, axi_qos_next;
 reg [3:0] axi_region_reg = 4'd0, axi_region_next;
-reg [AUSER_WIDTH-1:0] axi_auser_reg = {AUSER_WIDTH{1'b0}}, axi_auser_next;
 reg [1:0] axi_bresp_reg = 2'b00, axi_bresp_next;
-reg [BUSER_WIDTH-1:0] axi_buser_reg = {BUSER_WIDTH{1'b0}}, axi_buser_next;
 
 reg [S_COUNT-1:0] s_axi_awready_reg = 0, s_axi_awready_next;
 reg [S_COUNT-1:0] s_axi_wready_reg = 0, s_axi_wready_next;
@@ -334,7 +300,6 @@ reg  [ID_WIDTH-1:0]    s_axi_rid_int;
 reg  [DATA_WIDTH-1:0]  s_axi_rdata_int;
 reg  [1:0]             s_axi_rresp_int;
 reg                    s_axi_rlast_int;
-reg  [RUSER_WIDTH-1:0] s_axi_ruser_int;
 reg                    s_axi_rvalid_int;
 reg                    s_axi_rready_int_reg = 1'b0;
 wire                   s_axi_rready_int_early;
@@ -342,7 +307,6 @@ wire                   s_axi_rready_int_early;
 reg  [DATA_WIDTH-1:0]  m_axi_wdata_int;
 reg  [STRB_WIDTH-1:0]  m_axi_wstrb_int;
 reg                    m_axi_wlast_int;
-reg  [WUSER_WIDTH-1:0] m_axi_wuser_int;
 reg                    m_axi_wvalid_int;
 reg                    m_axi_wready_int_reg = 1'b0;
 wire                   m_axi_wready_int_early;
@@ -351,7 +315,6 @@ assign s_axi_awready = s_axi_awready_reg;
 assign s_axi_wready = s_axi_wready_reg;
 assign s_axi_bid = {S_COUNT{axi_id_reg}};
 assign s_axi_bresp = {S_COUNT{axi_bresp_reg}};
-assign s_axi_buser = {S_COUNT{BUSER_ENABLE ? axi_buser_reg : {BUSER_WIDTH{1'b0}}}};
 assign s_axi_bvalid = s_axi_bvalid_reg;
 assign s_axi_arready = s_axi_arready_reg;
 
@@ -365,7 +328,6 @@ assign m_axi_awcache = {M_COUNT{axi_cache_reg}};
 assign m_axi_awprot = {M_COUNT{axi_prot_reg}};
 assign m_axi_awqos = {M_COUNT{axi_qos_reg}};
 assign m_axi_awregion = {M_COUNT{axi_region_reg}};
-assign m_axi_awuser = {M_COUNT{AWUSER_ENABLE ? axi_auser_reg[AWUSER_WIDTH-1:0] : {AWUSER_WIDTH{1'b0}}}};
 assign m_axi_awvalid = m_axi_awvalid_reg;
 assign m_axi_bready = m_axi_bready_reg;
 assign m_axi_arid = {M_COUNT{FORWARD_ID ? axi_id_reg : {ID_WIDTH{1'b0}}}};
@@ -378,13 +340,13 @@ assign m_axi_arcache = {M_COUNT{axi_cache_reg}};
 assign m_axi_arprot = {M_COUNT{axi_prot_reg}};
 assign m_axi_arqos = {M_COUNT{axi_qos_reg}};
 assign m_axi_arregion = {M_COUNT{axi_region_reg}};
-assign m_axi_aruser = {M_COUNT{ARUSER_ENABLE ? axi_auser_reg[ARUSER_WIDTH-1:0] : {ARUSER_WIDTH{1'b0}}}};
 assign m_axi_arvalid = m_axi_arvalid_reg;
 assign m_axi_rready = m_axi_rready_reg;
 
 // slave side mux
 wire [(CL_S_COUNT > 0 ? CL_S_COUNT-1 : 0):0] s_select;
 
+/* verilator lint_off UNUSED */
 wire [ID_WIDTH-1:0]     current_s_axi_awid      = s_axi_awid[s_select*ID_WIDTH +: ID_WIDTH];
 wire [ADDR_WIDTH-1:0]   current_s_axi_awaddr    = s_axi_awaddr[s_select*ADDR_WIDTH +: ADDR_WIDTH];
 wire [7:0]              current_s_axi_awlen     = s_axi_awlen[s_select*8 +: 8];
@@ -394,18 +356,15 @@ wire                    current_s_axi_awlock    = s_axi_awlock[s_select];
 wire [3:0]              current_s_axi_awcache   = s_axi_awcache[s_select*4 +: 4];
 wire [2:0]              current_s_axi_awprot    = s_axi_awprot[s_select*3 +: 3];
 wire [3:0]              current_s_axi_awqos     = s_axi_awqos[s_select*4 +: 4];
-wire [AWUSER_WIDTH-1:0] current_s_axi_awuser    = s_axi_awuser[s_select*AWUSER_WIDTH +: AWUSER_WIDTH];
 wire                    current_s_axi_awvalid   = s_axi_awvalid[s_select];
 wire                    current_s_axi_awready   = s_axi_awready[s_select];
 wire [DATA_WIDTH-1:0]   current_s_axi_wdata     = s_axi_wdata[s_select*DATA_WIDTH +: DATA_WIDTH];
 wire [STRB_WIDTH-1:0]   current_s_axi_wstrb     = s_axi_wstrb[s_select*STRB_WIDTH +: STRB_WIDTH];
 wire                    current_s_axi_wlast     = s_axi_wlast[s_select];
-wire [WUSER_WIDTH-1:0]  current_s_axi_wuser     = s_axi_wuser[s_select*WUSER_WIDTH +: WUSER_WIDTH];
 wire                    current_s_axi_wvalid    = s_axi_wvalid[s_select];
 wire                    current_s_axi_wready    = s_axi_wready[s_select];
 wire [ID_WIDTH-1:0]     current_s_axi_bid       = s_axi_bid[s_select*ID_WIDTH +: ID_WIDTH];
 wire [1:0]              current_s_axi_bresp     = s_axi_bresp[s_select*2 +: 2];
-wire [BUSER_WIDTH-1:0]  current_s_axi_buser     = s_axi_buser[s_select*BUSER_WIDTH +: BUSER_WIDTH];
 wire                    current_s_axi_bvalid    = s_axi_bvalid[s_select];
 wire                    current_s_axi_bready    = s_axi_bready[s_select];
 wire [ID_WIDTH-1:0]     current_s_axi_arid      = s_axi_arid[s_select*ID_WIDTH +: ID_WIDTH];
@@ -417,14 +376,12 @@ wire                    current_s_axi_arlock    = s_axi_arlock[s_select];
 wire [3:0]              current_s_axi_arcache   = s_axi_arcache[s_select*4 +: 4];
 wire [2:0]              current_s_axi_arprot    = s_axi_arprot[s_select*3 +: 3];
 wire [3:0]              current_s_axi_arqos     = s_axi_arqos[s_select*4 +: 4];
-wire [ARUSER_WIDTH-1:0] current_s_axi_aruser    = s_axi_aruser[s_select*ARUSER_WIDTH +: ARUSER_WIDTH];
 wire                    current_s_axi_arvalid   = s_axi_arvalid[s_select];
 wire                    current_s_axi_arready   = s_axi_arready[s_select];
 wire [ID_WIDTH-1:0]     current_s_axi_rid       = s_axi_rid[s_select*ID_WIDTH +: ID_WIDTH];
 wire [DATA_WIDTH-1:0]   current_s_axi_rdata     = s_axi_rdata[s_select*DATA_WIDTH +: DATA_WIDTH];
 wire [1:0]              current_s_axi_rresp     = s_axi_rresp[s_select*2 +: 2];
 wire                    current_s_axi_rlast     = s_axi_rlast[s_select];
-wire [RUSER_WIDTH-1:0]  current_s_axi_ruser     = s_axi_ruser[s_select*RUSER_WIDTH +: RUSER_WIDTH];
 wire                    current_s_axi_rvalid    = s_axi_rvalid[s_select];
 wire                    current_s_axi_rready    = s_axi_rready[s_select];
 
@@ -439,18 +396,15 @@ wire [3:0]              current_m_axi_awcache   = m_axi_awcache[m_select_reg*4 +
 wire [2:0]              current_m_axi_awprot    = m_axi_awprot[m_select_reg*3 +: 3];
 wire [3:0]              current_m_axi_awqos     = m_axi_awqos[m_select_reg*4 +: 4];
 wire [3:0]              current_m_axi_awregion  = m_axi_awregion[m_select_reg*4 +: 4];
-wire [AWUSER_WIDTH-1:0] current_m_axi_awuser    = m_axi_awuser[m_select_reg*AWUSER_WIDTH +: AWUSER_WIDTH];
 wire                    current_m_axi_awvalid   = m_axi_awvalid[m_select_reg];
 wire                    current_m_axi_awready   = m_axi_awready[m_select_reg];
 wire [DATA_WIDTH-1:0]   current_m_axi_wdata     = m_axi_wdata[m_select_reg*DATA_WIDTH +: DATA_WIDTH];
 wire [STRB_WIDTH-1:0]   current_m_axi_wstrb     = m_axi_wstrb[m_select_reg*STRB_WIDTH +: STRB_WIDTH];
 wire                    current_m_axi_wlast     = m_axi_wlast[m_select_reg];
-wire [WUSER_WIDTH-1:0]  current_m_axi_wuser     = m_axi_wuser[m_select_reg*WUSER_WIDTH +: WUSER_WIDTH];
 wire                    current_m_axi_wvalid    = m_axi_wvalid[m_select_reg];
 wire                    current_m_axi_wready    = m_axi_wready[m_select_reg];
 wire [ID_WIDTH-1:0]     current_m_axi_bid       = m_axi_bid[m_select_reg*ID_WIDTH +: ID_WIDTH];
 wire [1:0]              current_m_axi_bresp     = m_axi_bresp[m_select_reg*2 +: 2];
-wire [BUSER_WIDTH-1:0]  current_m_axi_buser     = m_axi_buser[m_select_reg*BUSER_WIDTH +: BUSER_WIDTH];
 wire                    current_m_axi_bvalid    = m_axi_bvalid[m_select_reg];
 wire                    current_m_axi_bready    = m_axi_bready[m_select_reg];
 wire [ID_WIDTH-1:0]     current_m_axi_arid      = m_axi_arid[m_select_reg*ID_WIDTH +: ID_WIDTH];
@@ -463,16 +417,15 @@ wire [3:0]              current_m_axi_arcache   = m_axi_arcache[m_select_reg*4 +
 wire [2:0]              current_m_axi_arprot    = m_axi_arprot[m_select_reg*3 +: 3];
 wire [3:0]              current_m_axi_arqos     = m_axi_arqos[m_select_reg*4 +: 4];
 wire [3:0]              current_m_axi_arregion  = m_axi_arregion[m_select_reg*4 +: 4];
-wire [ARUSER_WIDTH-1:0] current_m_axi_aruser    = m_axi_aruser[m_select_reg*ARUSER_WIDTH +: ARUSER_WIDTH];
 wire                    current_m_axi_arvalid   = m_axi_arvalid[m_select_reg];
 wire                    current_m_axi_arready   = m_axi_arready[m_select_reg];
 wire [ID_WIDTH-1:0]     current_m_axi_rid       = m_axi_rid[m_select_reg*ID_WIDTH +: ID_WIDTH];
 wire [DATA_WIDTH-1:0]   current_m_axi_rdata     = m_axi_rdata[m_select_reg*DATA_WIDTH +: DATA_WIDTH];
 wire [1:0]              current_m_axi_rresp     = m_axi_rresp[m_select_reg*2 +: 2];
 wire                    current_m_axi_rlast     = m_axi_rlast[m_select_reg];
-wire [RUSER_WIDTH-1:0]  current_m_axi_ruser     = m_axi_ruser[m_select_reg*RUSER_WIDTH +: RUSER_WIDTH];
 wire                    current_m_axi_rvalid    = m_axi_rvalid[m_select_reg];
 wire                    current_m_axi_rready    = m_axi_rready[m_select_reg];
+/* verilator lint_on UNUSED */
 
 // arbiter instance
 wire [S_COUNT*2-1:0] request;
@@ -536,9 +489,7 @@ always @* begin
     axi_prot_next = axi_prot_reg;
     axi_qos_next = axi_qos_reg;
     axi_region_next = axi_region_reg;
-    axi_auser_next = axi_auser_reg;
     axi_bresp_next = axi_bresp_reg;
-    axi_buser_next = axi_buser_reg;
 
     s_axi_awready_next = 0;
     s_axi_wready_next = 0;
@@ -554,13 +505,11 @@ always @* begin
     s_axi_rdata_int = current_m_axi_rdata;
     s_axi_rresp_int = current_m_axi_rresp;
     s_axi_rlast_int = current_m_axi_rlast;
-    s_axi_ruser_int = current_m_axi_ruser;
     s_axi_rvalid_int = 1'b0;
 
     m_axi_wdata_int = current_s_axi_wdata;
     m_axi_wstrb_int = current_s_axi_wstrb;
     m_axi_wlast_int = current_s_axi_wlast;
-    m_axi_wuser_int = current_s_axi_wuser;
     m_axi_wvalid_int = 1'b0;
 
     case (state_reg)
@@ -584,7 +533,6 @@ always @* begin
                     axi_cache_next = current_s_axi_arcache;
                     axi_prot_next = current_s_axi_arprot;
                     axi_qos_next = current_s_axi_arqos;
-                    axi_auser_next = current_s_axi_aruser;
                     s_axi_arready_next[s_select] = 1'b1;
                 end else  begin
                     // writing
@@ -599,7 +547,6 @@ always @* begin
                     axi_cache_next = current_s_axi_awcache;
                     axi_prot_next = current_s_axi_awprot;
                     axi_qos_next = current_s_axi_awqos;
-                    axi_auser_next = current_s_axi_awuser;
                     s_axi_awready_next[s_select] = 1'b1;
                 end
 
@@ -614,9 +561,13 @@ always @* begin
             match = 1'b0;
             for (i = 0; i < M_COUNT; i = i + 1) begin
                 for (j = 0; j < M_REGIONS; j = j + 1) begin
-                    if (M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32] && (!M_SECURE[i] || !axi_prot_reg[1]) && ((read ? M_CONNECT_READ : M_CONNECT_WRITE) & (1 << (s_select+i*S_COUNT))) && (axi_addr_reg >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]) == (M_BASE_ADDR_INT[(i*M_REGIONS+j)*ADDR_WIDTH +: ADDR_WIDTH] >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32])) begin
-                        m_select_next = i;
-                        axi_region_next = j;
+                    if (M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]!=0 && 
+                        (!M_SECURE[i] || !axi_prot_reg[1]) && 
+                        ((read ? M_CONNECT_READ : M_CONNECT_WRITE) & (1 << (s_select+i*S_COUNT)))!=0 && 
+                        (axi_addr_reg >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]) == 
+                            (M_BASE_ADDR_INT[(i*M_REGIONS+j)*ADDR_WIDTH +: ADDR_WIDTH] >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32])) begin
+                        m_select_next = i[(CL_M_COUNT>0?CL_M_COUNT-1:0):0];
+                        axi_region_next = j[3:0];
                         match = 1'b1;
                     end
                 end
@@ -658,7 +609,6 @@ always @* begin
                 m_axi_wdata_int = current_s_axi_wdata;
                 m_axi_wstrb_int = current_s_axi_wstrb;
                 m_axi_wlast_int = current_s_axi_wlast;
-                m_axi_wuser_int = current_s_axi_wuser;
                 m_axi_wvalid_int = 1'b1;
 
                 if (current_s_axi_wlast) begin
@@ -713,7 +663,6 @@ always @* begin
                 s_axi_rdata_int = current_m_axi_rdata;
                 s_axi_rresp_int = current_m_axi_rresp;
                 s_axi_rlast_int = current_m_axi_rlast;
-                s_axi_ruser_int = current_m_axi_ruser;
                 s_axi_rvalid_int = 1'b1;
 
                 if (current_m_axi_rlast) begin
@@ -733,7 +682,6 @@ always @* begin
             s_axi_rdata_int = {DATA_WIDTH{1'b0}};
             s_axi_rresp_int = 2'b11;
             s_axi_rlast_int = axi_len_reg == 0;
-            s_axi_ruser_int = {RUSER_WIDTH{1'b0}};
             s_axi_rvalid_int = 1'b1;
 
             if (s_axi_rready_int_reg) begin
@@ -750,7 +698,7 @@ always @* begin
         STATE_WAIT_IDLE: begin
             // wait for idle state; wait untl grant valid is deasserted
 
-            if (!grant_valid || acknowledge) begin
+            if (!grant_valid || acknowledge!=0) begin
                 state_next = STATE_IDLE;
             end else begin
                 state_next = STATE_WAIT_IDLE;
@@ -798,9 +746,7 @@ always @(posedge clk) begin
     axi_prot_reg <= axi_prot_next;
     axi_qos_reg <= axi_qos_next;
     axi_region_reg <= axi_region_next;
-    axi_auser_reg <= axi_auser_next;
     axi_bresp_reg <= axi_bresp_next;
-    axi_buser_reg <= axi_buser_next;
 end
 
 // output datapath logic (R channel)
@@ -808,14 +754,12 @@ reg [ID_WIDTH-1:0]    s_axi_rid_reg    = {ID_WIDTH{1'b0}};
 reg [DATA_WIDTH-1:0]  s_axi_rdata_reg  = {DATA_WIDTH{1'b0}};
 reg [1:0]             s_axi_rresp_reg  = 2'd0;
 reg                   s_axi_rlast_reg  = 1'b0;
-reg [RUSER_WIDTH-1:0] s_axi_ruser_reg  = 1'b0;
-reg [S_COUNT-1:0]     s_axi_rvalid_reg = 1'b0, s_axi_rvalid_next;
+reg [S_COUNT-1:0]     s_axi_rvalid_reg = 0, s_axi_rvalid_next;
 
 reg [ID_WIDTH-1:0]    temp_s_axi_rid_reg    = {ID_WIDTH{1'b0}};
 reg [DATA_WIDTH-1:0]  temp_s_axi_rdata_reg  = {DATA_WIDTH{1'b0}};
 reg [1:0]             temp_s_axi_rresp_reg  = 2'd0;
 reg                   temp_s_axi_rlast_reg  = 1'b0;
-reg [RUSER_WIDTH-1:0] temp_s_axi_ruser_reg  = 1'b0;
 reg                   temp_s_axi_rvalid_reg = 1'b0, temp_s_axi_rvalid_next;
 
 // datapath control
@@ -827,7 +771,6 @@ assign s_axi_rid = {S_COUNT{s_axi_rid_reg}};
 assign s_axi_rdata = {S_COUNT{s_axi_rdata_reg}};
 assign s_axi_rresp = {S_COUNT{s_axi_rresp_reg}};
 assign s_axi_rlast = {S_COUNT{s_axi_rlast_reg}};
-assign s_axi_ruser = {S_COUNT{RUSER_ENABLE ? s_axi_ruser_reg : {RUSER_WIDTH{1'b0}}}};
 assign s_axi_rvalid = s_axi_rvalid_reg;
 
 // enable ready input next cycle if output is ready or the temp reg will not be filled on the next cycle (output reg empty or no input)
@@ -863,7 +806,7 @@ end
 
 always @(posedge clk) begin
     if (rst) begin
-        s_axi_rvalid_reg <= 1'b0;
+        s_axi_rvalid_reg <= 0;
         s_axi_rready_int_reg <= 1'b0;
         temp_s_axi_rvalid_reg <= 1'b0;
     end else begin
@@ -878,13 +821,11 @@ always @(posedge clk) begin
         s_axi_rdata_reg <= s_axi_rdata_int;
         s_axi_rresp_reg <= s_axi_rresp_int;
         s_axi_rlast_reg <= s_axi_rlast_int;
-        s_axi_ruser_reg <= s_axi_ruser_int;
     end else if (store_axi_r_temp_to_output) begin
         s_axi_rid_reg <= temp_s_axi_rid_reg;
         s_axi_rdata_reg <= temp_s_axi_rdata_reg;
         s_axi_rresp_reg <= temp_s_axi_rresp_reg;
         s_axi_rlast_reg <= temp_s_axi_rlast_reg;
-        s_axi_ruser_reg <= temp_s_axi_ruser_reg;
     end
 
     if (store_axi_r_int_to_temp) begin
@@ -892,7 +833,6 @@ always @(posedge clk) begin
         temp_s_axi_rdata_reg <= s_axi_rdata_int;
         temp_s_axi_rresp_reg <= s_axi_rresp_int;
         temp_s_axi_rlast_reg <= s_axi_rlast_int;
-        temp_s_axi_ruser_reg <= s_axi_ruser_int;
     end
 end
 
@@ -900,13 +840,11 @@ end
 reg [DATA_WIDTH-1:0]  m_axi_wdata_reg  = {DATA_WIDTH{1'b0}};
 reg [STRB_WIDTH-1:0]  m_axi_wstrb_reg  = {STRB_WIDTH{1'b0}};
 reg                   m_axi_wlast_reg  = 1'b0;
-reg [WUSER_WIDTH-1:0] m_axi_wuser_reg  = 1'b0;
 reg [M_COUNT-1:0]     m_axi_wvalid_reg = 1'b0, m_axi_wvalid_next;
 
 reg [DATA_WIDTH-1:0]  temp_m_axi_wdata_reg  = {DATA_WIDTH{1'b0}};
 reg [STRB_WIDTH-1:0]  temp_m_axi_wstrb_reg  = {STRB_WIDTH{1'b0}};
 reg                   temp_m_axi_wlast_reg  = 1'b0;
-reg [WUSER_WIDTH-1:0] temp_m_axi_wuser_reg  = 1'b0;
 reg                   temp_m_axi_wvalid_reg = 1'b0, temp_m_axi_wvalid_next;
 
 // datapath control
@@ -917,7 +855,6 @@ reg store_axi_w_temp_to_output;
 assign m_axi_wdata = {M_COUNT{m_axi_wdata_reg}};
 assign m_axi_wstrb = {M_COUNT{m_axi_wstrb_reg}};
 assign m_axi_wlast = {M_COUNT{m_axi_wlast_reg}};
-assign m_axi_wuser = {M_COUNT{WUSER_ENABLE ? m_axi_wuser_reg : {WUSER_WIDTH{1'b0}}}};
 assign m_axi_wvalid = m_axi_wvalid_reg;
 
 // enable ready input next cycle if output is ready or the temp reg will not be filled on the next cycle (output reg empty or no input)
@@ -967,19 +904,16 @@ always @(posedge clk) begin
         m_axi_wdata_reg <= m_axi_wdata_int;
         m_axi_wstrb_reg <= m_axi_wstrb_int;
         m_axi_wlast_reg <= m_axi_wlast_int;
-        m_axi_wuser_reg <= m_axi_wuser_int;
     end else if (store_axi_w_temp_to_output) begin
         m_axi_wdata_reg <= temp_m_axi_wdata_reg;
         m_axi_wstrb_reg <= temp_m_axi_wstrb_reg;
         m_axi_wlast_reg <= temp_m_axi_wlast_reg;
-        m_axi_wuser_reg <= temp_m_axi_wuser_reg;
     end
 
     if (store_axi_w_int_to_temp) begin
         temp_m_axi_wdata_reg <= m_axi_wdata_int;
         temp_m_axi_wstrb_reg <= m_axi_wstrb_int;
         temp_m_axi_wlast_reg <= m_axi_wlast_int;
-        temp_m_axi_wuser_reg <= m_axi_wuser_int;
     end
 end
 

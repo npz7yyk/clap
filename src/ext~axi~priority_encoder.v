@@ -24,6 +24,8 @@ THE SOFTWARE.
 
 // Language: Verilog 2001
 
+/* verilator lint_off UNOPTFLAT */
+
 `resetall
 `default_nettype none
 
@@ -83,7 +85,7 @@ generate
     end
 endgenerate
 
-assign output_valid = stage_valid[LEVELS-1];
+assign output_valid = stage_valid[LEVELS-1]!=0;
 assign output_encoded = stage_enc[LEVELS-1];
 assign output_unencoded = 1 << output_encoded;
 
