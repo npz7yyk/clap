@@ -191,7 +191,9 @@ module decoder
 
     wire invtlb_invalid = is_invalid_tlb && inst[4:0]>5'h6; //INVTLB指令的op无效
     
-    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid;
+    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid
+    //当IF段出现异常时，认为指令错误
+        ||exception!=0;
     //////////////////////////////////////
     
     /////////////////////////////////////
