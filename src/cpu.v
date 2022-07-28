@@ -968,7 +968,8 @@ module core_top(
         .clear_mem              (clear_mem),
 
         .clear_clock_gate_require(clear_clock_gate_require),
-        .clear_clock_gate(clear_clock_gate)
+        .clear_clock_gate(clear_clock_gate),
+        .has_interrupt_cpu(has_interrupt_cpu)
     );
     assign tlb_ps_we = tlb_other_we;
     assign tlb_vppn_we = tlb_other_we;
