@@ -205,6 +205,7 @@ module id_stage
     wire [6:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
     wire is_syscall0,is_syscall1;
     wire is_break0,is_break1;
+    wire is_priviledged0,is_priviledged1;
     decoder decoder0
     (
         .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==0?
@@ -217,13 +218,14 @@ module id_stage
         .unknown(unknown0_out),
         .invalid_instruction(invalid0),
         .is_syscall(is_syscall0),
-        .is_break(is_break0)
+        .is_break(is_break0),
+        .is_priviledged(is_priviledged0)
     );
     assign exception0_out = exception0_ICQlsmuv != 0 ? exception0_ICQlsmuv:
         ({7{invalid0}}&`EXP_INE |
          {7{is_syscall0}}&`EXP_SYS |
          {7{is_break0}}&`EXP_BRK |
-         {7{plv!=0&&uop0[`UOP_PRIVILEDGED]}}&`EXP_IPE);
+         {7{plv!=0&&is_priviledged0}}&`EXP_IPE);
     decoder decoder1
     (
         .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==1?
@@ -236,11 +238,12 @@ module id_stage
         .unknown(unknown1_out),
         .invalid_instruction(invalid1),
         .is_syscall(is_syscall1),
-        .is_break(is_break1)
+        .is_break(is_break1),
+        .is_priviledged(is_priviledged1)
     );
     assign exception1_out = exception1_ICQlsmuv != 0 ? exception1_ICQlsmuv:
         ({7{invalid1}}&`EXP_INE |
          {7{is_syscall1}}&`EXP_SYS |
          {7{is_break1}}&`EXP_BRK |
-         {7{plv!=0&&uop1[`UOP_PRIVILEDGED]}}&`EXP_IPE);
+         {7{plv!=0&&is_priviledged1}}&`EXP_IPE);
 endmodule

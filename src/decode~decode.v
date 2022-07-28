@@ -31,6 +31,7 @@ module decoder
     output invalid_instruction,
     output is_syscall,
     output is_break,
+    output is_priviledged,
     output [`WIDTH_UOP-1:0] uop,
     output [31:0] imm,
     output [4:0] rd,
@@ -133,6 +134,8 @@ module decoder
     end
 
     assign uop[`UOP_PRIVILEDGED] = type_[`ITYPE_IDX_CACHE] | type_[`ITYPE_IDX_TLB] | type_[`ITYPE_IDX_CSR] | type_[`ITYPE_IDX_ERET] | type_[`ITYPE_IDX_IDLE];
+    //Hit类的CACOP指令可以在用户态下执行
+    assign is_priviledged = uop[`UOP_PRIVILEDGED]&&!(type_[`ITYPE_IDX_CACHE]&&inst[4:3]==2);
     
     reg [3:0] cond;
     reg br_invalid;
