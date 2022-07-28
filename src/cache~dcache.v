@@ -52,7 +52,8 @@ module dcache(
     input                   is_atom,
     output                  llbit_set,
     //atom store
-    input                   llbit
+    input                   llbit,
+    output                  llbit_clear
     );
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -281,7 +282,8 @@ module dcache(
         .tagv_clear         (tagv_clear),
         .cacop_complete     (cacop_complete),
         .cacop_ready        (cacop_ready),
-        .llbit_set          (llbit_set)
+        .llbit_set          (llbit_set),
+        .llbit_clear        (llbit_clear)
 
         //.tlb_exception      (tlb_exception)
     );

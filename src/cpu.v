@@ -1036,7 +1036,8 @@ module core_top(
         .tlb_exception  (dtlb_exp),
         .is_atom        (ex_is_atom),
         .llbit          (llbit),
-        .llbit_set      (llbit_set)
+        .llbit_set      (llbit_set),
+        .llbit_clear    (llbit_clear_by_other)
     );
     wire tlb_e_in;
     wire tlb_g_in;

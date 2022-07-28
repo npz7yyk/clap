@@ -55,7 +55,8 @@ module main_FSM_d(
     output reg cacop_complete,
     output reg cacop_ready,
     output reg tagv_clear,
-    output reg llbit_set
+    output reg llbit_set,
+    output reg llbit_clear
     );
     parameter IDLE          = 8'b00000001;
     parameter LOOKUP        = 8'b00000010;
@@ -135,6 +136,7 @@ module main_FSM_d(
             // check uncache
             else if(uncache) begin
                 if(op == READ) nxt = REPLACE;
+                else if(is_atom_rbuf && op == WRITE && !llbit_rbuf) nxt = EXTRA_READY;
                 else nxt = MISS;
             end
             else if(is_atom_rbuf && op == WRITE && !llbit_rbuf) begin
@@ -203,6 +205,7 @@ module main_FSM_d(
         r_length = 8'd15;                   w_length = 8'd15;
         tagv_clear = 0;                     cacop_complete = 0;
         cacop_ready = 0;                    llbit_set = 0;
+        llbit_clear = 0;
         case(crt)
         IDLE: begin
             rbuf_we     = 1;
@@ -217,6 +220,9 @@ module main_FSM_d(
                 if(op == READ && is_atom_rbuf) begin
                     llbit_set = 1;
                 end
+                if(op == WRITE && is_atom_rbuf) begin
+                    llbit_clear = 1;
+                end
                 if(!cache_hit || uncache) begin
                     mbuf_we     = 1;
                     wbuf_AXI_we = 1;
@@ -228,7 +234,7 @@ module main_FSM_d(
                     way_sel_en  = 1;
                     cache_ready = 1;
                     cacop_ready = 1;
-                    if(op == WRITE)begin
+                    if(op == WRITE && !(is_atom_rbuf && !llbit_rbuf))begin
                         mem_en          = hit;
                         mem_we          = mem_we_normal;
                         dirty_we        = hit;
