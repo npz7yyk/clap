@@ -1028,16 +1028,16 @@ module core_top(
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
-        .s0_mem_type    (2),
-        .s0_en          (~if_buf_full&translate_mode[1]),
+        .s0_mem_type    (use_tlb_s0_by_exe?0:2),
+        .s0_en          (!if_buf_full&&translate_mode[1] || use_tlb_s0_by_exe),
         .s0_exception   (itlb_exp),
 
         .s1_vaddr       (use_tlb_s1_by_exe?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .s1_paddr       (ex_mem_paddr),
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
-        .s1_mem_type    ({1'b0, ex_mem_op}),
-        .s1_en          (ex_mem_valid&&translate_mode[1]),
+        .s1_mem_type    (use_tlb_s1_by_exe?0:{1'b0, ex_mem_op}),
+        .s1_en          (ex_mem_valid&&translate_mode[1] || use_tlb_s1_by_exe),
         .s1_exception   (dtlb_exp),
 
 

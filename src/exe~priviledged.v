@@ -87,8 +87,6 @@ module exe_privliedged(
     reg [0:0] inst_16;
     reg [1:0] inst_11_10;
     reg [4:0] inst_4_0;
-    reg [6:0] cacop_exp;
-    reg [31:0] cacop_badv;
 
     always @(posedge clk)
         if(~rstn) state <= S_INIT;
@@ -128,9 +126,9 @@ module exe_privliedged(
             default: next_state = S_L2_REQ;
             endcase
         end
-        S_L1I_REQ :next_state = l1i_ready   ? S_L1I_WAIT:S_L1I_REQ ;
-        S_L1D_REQ :next_state = l1d_ready   ? S_L1D_WAIT:S_L1D_REQ ;
-        S_L2_REQ  :next_state = l2_ready    ? S_L2_WAIT :S_L2_REQ  ;
+        S_L1I_REQ :next_state = l1i_ready?(l1i_complete?S_DONE_L1I:S_L1I_WAIT):S_L1I_REQ ;
+        S_L1D_REQ :next_state = l1d_ready?(l1d_complete?S_DONE_L1D:S_L1D_WAIT):S_L1D_REQ ;
+        S_L2_REQ  :next_state = l2_ready ?(l2_complete ?S_DONE_L2 :S_L2_WAIT ):S_L2_REQ  ;
         S_L1I_WAIT:next_state = l1i_complete? S_DONE_L1I:S_L1I_WAIT;
         S_L1D_WAIT:next_state = l1d_complete? S_DONE_L1D:S_L1D_WAIT;
         S_L2_WAIT :next_state = l2_complete ? S_DONE_L2 :S_L2_WAIT ;
@@ -164,9 +162,7 @@ module exe_privliedged(
             cacop_rj_plus_imm <= 0;
             {use_tlb_s0,use_tlb_s1}<= 0;
             exp_out<=0;
-            cacop_exp<=0;
             badv_out<=0;
-            cacop_badv<=0;
         end else case(next_state)
             S_INIT: begin
                 en_out<=0;
@@ -249,8 +245,6 @@ module exe_privliedged(
                 pc_target<=pc_next;
                 cacop_code <= inst[4:3];
                 cacop_rj_plus_imm <= sr0+imm;
-                cacop_exp<=0;
-                cacop_badv<=0;
             end
             S_L1I_REQ: begin
                 l1i_en <= 1;
@@ -258,16 +252,15 @@ module exe_privliedged(
             end
             S_L1I_WAIT: begin
                 l1i_en <= 0;
-                cacop_exp<=cacop_exp|cacop_iexp_in;
-                cacop_badv<=cacop_badv|cacop_ibadv_in;
             end
             S_DONE_L1I: begin
+                l1i_en <= 0;
                 stall_because_priv<=0;
                 flush <= 1;
                 use_tlb_s0 <= 0;
                 en_out<=1;
-                exp_out<=cacop_exp|cacop_iexp_in;
-                badv_out<=cacop_badv|cacop_ibadv_in;
+                exp_out<=cacop_iexp_in;
+                badv_out<=cacop_ibadv_in;
             end
             S_L1D_REQ: begin
                 l1d_en <= 1;
@@ -275,16 +268,15 @@ module exe_privliedged(
             end
             S_L1D_WAIT: begin
                 l1d_en <= 0;
-                cacop_exp<=cacop_exp|cacop_dexp_in;
-                cacop_badv<=cacop_badv|cacop_dbadv_in;
             end
             S_DONE_L1D: begin
+                l1d_en <= 0;
                 stall_because_priv<=0;
                 flush <= 1;
                 use_tlb_s1 <= 0;
                 en_out<=1;
-                exp_out<=cacop_exp|cacop_dexp_in;
-                badv_out<=cacop_badv|cacop_dbadv_in;
+                exp_out<=cacop_dexp_in;
+                badv_out<=cacop_dbadv_in;
             end
             S_L2_REQ: begin
                 l2_en <= 1;
@@ -293,6 +285,7 @@ module exe_privliedged(
                 l2_en <= 0;
             end
             S_DONE_L2: begin
+                l2_en <= 0;
                 stall_because_priv<=0;
                 flush <= 1;
                 en_out<=1;

@@ -258,7 +258,8 @@ module main_FSM_d(
             end
         end
         CACOP_COPE: begin
-            if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
+            if(exception != 0) cacop_complete = 1;
+            else if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
                 tagv_clear          = 1;
                 tagv_we             = tagv_we_inst;
                 dirty_we            = tagv_we_inst;
