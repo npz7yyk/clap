@@ -10,6 +10,7 @@ module TLB#(
     input  [              31:0] s0_vaddr,
     input  [               9:0] s0_asid,
     input  [               1:0] s0_plv,
+
     // 取指 = 2'd2;
     // LOAD = 2'd0;
     // STORE = 2'd1;

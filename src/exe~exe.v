@@ -62,7 +62,8 @@ module exe(
     //从cache输入
     input [0:0]             data_valid,           //    read: data has returned; write: data has been written in
     input [ 31:0 ]          r_data_CPU,           //    read data to CPU
-    input [ 31:0 ]          cache_badv,
+    input [ 31:0 ]          dcache_badv,
+    input [ 31:0 ]          icache_badv,
     input [ 6:0 ]           dcache_exception,
     input [ 6:0 ]           icache_exception,
 
@@ -96,7 +97,7 @@ module exe(
 );
 
 wire [0:0] stall2;
-wire[31:0] cache_badv_out;
+wire[31:0] cache_badv_out,priv_badv_out;
 
 wire eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
 wire eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
@@ -282,7 +283,7 @@ always @(posedge clk) begin
         data_out0         <= data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0         <= eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out           <= exp_exe1|mem_exp_out|priv_exp_out;
-        badv_out          <= badv_exe1|cache_badv_out;
+        badv_out          <= badv_exe1|cache_badv_out|priv_badv_out;
         eu0_pc_out        <= eu0_pc_exe1|div_pc_out;
         eu0_inst          <= inst0_mid|div_inst_out;
     end 
@@ -468,7 +469,7 @@ mem1  u_mem1 (
     .mem_en_in               ( mem_en_exe1           ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
-    .cache_badv_in           ( cache_badv            ),
+    .cache_badv_in           ( dcache_badv           ),
     .cache_exception         ( dcache_exception      ),
 
     .mem_exp_out             ( mem_exp_out           ),
@@ -480,23 +481,24 @@ mem1  u_mem1 (
 );
 
 div  u_div (
-    .clk                     ( clk                                                                                                               ),
-    .rstn                    ( rstn&&!flush_by_writeback                                                                                         ),
-    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_priv&&!stall2&&!flush&&!div_en_out),
-    .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                                                                                           ),
-    .div_sign                ( eu0_uop_in[`UOP_SIGN]                                                                                             ),
-    .div_sr0                 ( eu0_sr0                                                                                                           ),
-    .div_sr1                 ( eu0_sr1                                                                                                           ),
-    .div_addr_in             ( eu0_rd_in                                                                                                         ),
-    .div_pc_in               ( eu0_pc_in                                                                                                         ),
-    .div_inst_in             ( eu0_uop_in[`UOP_ORIGINAL_INST]                                                                                    ),
+    .clk                     ( clk                      ),
+    .rstn                    ( rstn&&!flush_by_writeback),
+    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_priv
+                               &&!stall2&&!flush&&!div_en_out),
+    .div_op                  ( eu0_uop_in[`UOP_MD_SEL]  ),
+    .div_sign                ( eu0_uop_in[`UOP_SIGN]    ),
+    .div_sr0                 ( eu0_sr0                  ),
+    .div_sr1                 ( eu0_sr1                  ),
+    .div_addr_in             ( eu0_rd_in                ),
+    .div_pc_in               ( eu0_pc_in                ),
+    .div_inst_in             ( eu0_uop_in[`UOP_ORIGINAL_INST]),
 
-    .div_en_out              ( div_en_out                                                                                                        ),
-    .stall_because_div       ( stall_because_div                                                                                                 ),
-    .div_result              ( div_result                                                                                                        ),
-    .div_addr_out            ( div_addr_out                                                                                                      ),
-    .div_pc_out              ( div_pc_out                                                                                                        ),
-    .div_inst_out            (div_inst_out                                                                                                       )
+    .div_en_out              ( div_en_out               ),
+    .stall_because_div       ( stall_because_div        ),
+    .div_result              ( div_result               ),
+    .div_addr_out            ( div_addr_out             ),
+    .div_pc_out              ( div_pc_out               ),
+    .div_inst_out            (div_inst_out              )
 );
 
 //特权指令
@@ -517,6 +519,7 @@ exe_privliedged exe_privliedged
     .sr0(eu0_sr0),
     .sr1(eu0_sr1),
     .exp_out(priv_exp_out),
+    .badv_out(priv_badv_out),
 
     .en_out (priv_en_out),
     .pc_target(priv_pc),
@@ -540,6 +543,9 @@ exe_privliedged exe_privliedged
     .use_tlb_s1(use_tlb_s1),
     .cacop_dexp_in(dcache_exception),
     .cacop_iexp_in(icache_exception),
+    .cacop_dbadv_in(dcache_badv),
+    .cacop_ibadv_in(icache_badv),
+
 
     .era(era),
     .restore_state(restore_state),

@@ -117,7 +117,7 @@ module main_FSM_i(
         tagv_clear = 0;
         cacop_ready = 0;
         cacop_complete = 0;
-        case(crt)
+        case(crt)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~main_FSM_i.v:120:9: Case values incompletely covered (example pattern 0x6)
         IDLE: begin
             rbuf_we = 1;
             cache_ready = 1;
@@ -157,7 +157,8 @@ module main_FSM_i(
             end
         end
         CACOP_COPE: begin
-            if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
+            if(exception != 0) cacop_complete = 1;
+            else if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
                 tagv_clear          = 1;
                 tagv_we             = tagv_we_inst;
                 data_valid          = 1;
