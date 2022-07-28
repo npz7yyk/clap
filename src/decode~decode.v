@@ -99,7 +99,6 @@ module decoder
     
     reg [`UOP_ALUOP] alu_op;
     reg alu_op_invalid;
-    wire is_unsigned_imm = inst[30:23]=='b00000110;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/decode~decode.v:102:10: Signal is not used: 'is_unsigned_imm'
     always @* begin
         alu_op_invalid=0;
         alu_op=`CTRL_ALU_ADD;

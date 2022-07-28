@@ -39,11 +39,15 @@ module branch_unit #(
 
     input wire                    exVld,            // whether signal from ex is valid
     input wire [ADDR_WIDTH - 1:0] exPC,             // pc of instruction under execution
-    input wire [ADDR_WIDTH - 1:0] exPCTar,          // branch target of this instruction %Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~branch_unit.v:42:35: Bits of signal are not used: 'exPCTar'[1:0]
+    // verilator lint_off UNSIGNED (exPCTar[1:0] unused)
+    input wire [ADDR_WIDTH - 1:0] exPCTar,          // branch target of this instruction
+    // verilator lint_on UNSIGNED
     input wire              [1:0] exType,           // instruction type
     input wire                    exBranch,         // whether this instruction branches
     input wire                    exWrong,          // ex pc wrongly predicted
-    input wire                    exKnown,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~branch_unit.v:46:35: Signal is not used: 'exKnown'
+    // verilator lint_off UNSIGNED (left for future optimization)
+    input wire                    exKnown,
+    // verilator lint_on UNSIGNED
 
     output wire [ADDR_WIDTH - 1:0] pdPC,            // pc predicted
     output wire                    pdBranch,        // whether a branch is predicted
@@ -59,7 +63,7 @@ module branch_unit #(
     wire [ADDR_WIDTH - 1:0] ifFactData1, ifFactData2;
     wire [0:0] erFactLower;
     wire [0:0] erFactUpper;
-    wire [0:0] exFactExist;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~branch_unit.v:62:16: Signal is not used: 'exFactExist'
+    wire [0:0] exFactExist;
     wire [0:0] ifFactExist1;
     wire [0:0] ifFactExist2;
     fact #(

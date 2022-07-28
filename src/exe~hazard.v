@@ -19,8 +19,7 @@ module hazard (
     input  [0:0] stall_because_div,
     input  [0:0] stall_because_priv,
     output [0:0] stall,
-    output [0:0] stall2,
-    output [0:0] stall4
+    output [0:0] stall2
 );
 wire [0:0] stall_because_mul;
 wire [0:0] stall_because_mem;
@@ -38,7 +37,7 @@ assign stall_because_mem  = eu0_rd!=0
                             && !stall_because_cache;
 
 assign stall2             = stall_because_mem||stall_because_mul;
-assign stall4             = eu0_exp_out!=0||eu0_exp_exe1!=0;
+wire stall4             = eu0_exp_out!=0||eu0_exp_exe1!=0;
 assign stall              = stall4||stall2||stall_because_div||stall_because_cache||stall_because_priv;
 
 

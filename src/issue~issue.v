@@ -38,7 +38,6 @@ module is_stage
     //execute unit #0
     output eu0_en,
     input eu0_ready,
-    input eu0_finish,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/issue~issue.v:41:11: Signal is not used: 'eu0_finish'
     output [`WIDTH_UOP-1:0] eu0_uop,
     output [4:0] eu0_rd,eu0_rj,eu0_rk,
     output [31:0] eu0_imm,
@@ -49,7 +48,6 @@ module is_stage
     //execute unit #1 //ALU only
     output eu1_en,
     input eu1_ready,
-    input eu1_finish,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/issue~issue.v:52:11: Signal is not used: 'eu1_finish'
     output [`WIDTH_UOP-1:0] eu1_uop,
     output [4:0] eu1_rd,eu1_rj,eu1_rk,
     output [31:0] eu1_imm,

@@ -19,7 +19,7 @@ module cache_exception_d(
         HALF: begin
             if(addr_rbuf[0]) exception_temp = `EXP_ALE;
         end
-        default:;
+        default: exception_temp = 0;
         endcase
     end
     assign exception = {7{~cacop_en_rbuf}} & exception_temp;

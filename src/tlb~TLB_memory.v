@@ -157,7 +157,7 @@ module TLB_memory#(
                         tlb_e[j] <= 0;
                 end
             end
-            default:;
+            default: ;
             endcase
         end 
         else if(we) begin

@@ -36,7 +36,7 @@ module exe_privliedged(
     //cache
     output reg [1:0] cacop_code,// code[4:3]
     output reg l1i_en,l1d_en,l2_en,
-    input l1i_ready,l1d_ready,l2_ready,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/exe~priviledged.v:39:21: Signal is not used: 'l1d_ready'
+    input l1i_ready,l1d_ready,l2_ready,
     input l1i_complete,l1d_complete,l2_complete,
     output reg [31:0] cacop_rj_plus_imm,
     output reg use_tlb_s0,use_tlb_s1,
@@ -124,7 +124,7 @@ module exe_privliedged(
             endcase
         end
         S_L1I_REQ :next_state = l1i_ready   ? S_L1I_WAIT:S_L1I_REQ ;
-        S_L1D_REQ :next_state = l1i_ready   ? S_L1D_WAIT:S_L1D_REQ ;
+        S_L1D_REQ :next_state = l1d_ready   ? S_L1D_WAIT:S_L1D_REQ ;
         S_L2_REQ  :next_state = l2_ready    ? S_L2_WAIT :S_L2_REQ  ;
         S_L1I_WAIT:next_state = l1i_complete? S_DONE_L1I:S_L1I_WAIT;
         S_L1D_WAIT:next_state = l1d_complete? S_DONE_L1D:S_L1D_WAIT;

@@ -6,8 +6,7 @@ module csr
 #(
     COREID = 0,
     ASIDBITS = 10,
-    TLBIDX_WIDTH = 4,
-    TIMER_WIDTH = 32//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:10:5: Parameter is not used: 'TIMER_WIDTH'
+    TLBIDX_WIDTH = 4
 )
 (
     input clk,
@@ -37,8 +36,9 @@ module csr
     input [31:0] badv_in,
     input badv_wen,
     output [31:0] eentry,tlbrentry,
-    input [31:0] pgd_in,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:40:18: Bits of signal are not used: 'pgd_in'[11:0]
-    input pgd_wen,
+    input [`PGD_BASE] pgd_base_in,
+    input pgd_base_wen,
+    output [`PGD_BASE] pgdl_base_out,pgdh_base_out,
 
     //interrupt
     output has_interrupt,
@@ -70,7 +70,6 @@ module csr
     output tlb_global_0_out,            tlb_global_1_out,
     output [23:0] tlb_ppn_0_out,        tlb_ppn_1_out,
     output [9:0] asid_out,
-    output [31:0] pgdl_out,pgdh_out,
     
     //TLB (write port)
     input [TLBIDX_WIDTH-1:0] tlb_index_in,
@@ -103,10 +102,7 @@ module csr
     input llbit_clear_by_other,
 
     //timer
-    output [31:0] tid,
-
-    //cache tag
-    output [31:0] cache_tag
+    output [31:0] tid
 );
     reg timer_int;      //定时器中断
     ///////////////////////////////////////
@@ -152,7 +148,7 @@ module csr
     //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
     //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
     //从样例CPU看，TI放在IS[12]
-    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIX ME %Warning-WIDTH: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:155:28: Operator ASSIGNW expects 11 bits on the Assign RHS, but Assign RHS's REPLICATE generates 10 bits.
+    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};//FIXME %Warning-WIDTH: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:155:28: Operator ASSIGNW expects 11 bits on the Assign RHS, but Assign RHS's REPLICATE generates 10 bits.
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -890,8 +886,8 @@ module csr
     always @(posedge clk)
         if(~rstn)
             csr_pgd <= 0;
-        else if(pgd_wen)
-            csr_pgd[`PGD_BASE] <= pgd_in[`PGD_BASE];
+        else if(pgd_base_wen)
+            csr_pgd[`PGD_BASE] <= pgd_base_in[`PGD_BASE];
     
     //DMW0~1
     always @(posedge clk)
@@ -1076,40 +1072,39 @@ module csr
     ///////////////////////////////////////
     //CSR read
     always @* begin
-        rdata = 0;
-        if(software_query_en)
-            case(addr)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/csr~csr.v:1081:13: Case values incompletely covered (example pattern 0x3)
-            `CSR_CRMD     : rdata = csr_crmd     ;
-            `CSR_PRMD     : rdata = csr_prmd     ;
-            `CSR_EUEN     : rdata = csr_euen     ;
-            `CSR_ECFG     : rdata = csr_ecfg     ;
-            `CSR_ESTAT    : rdata = csr_estat    ;
-            `CSR_ERA      : rdata = csr_era      ;
-            `CSR_BADV     : rdata = csr_badv     ;
-            `CSR_EENTRY   : rdata = csr_eentry   ;
-            `CSR_TLBIDX   : rdata = csr_tlbidx   ;
-            `CSR_TLBEHI   : rdata = csr_tlbehi   ;
-            `CSR_TLBELO0  : rdata = csr_tlbelo0  ;
-            `CSR_TLBELO1  : rdata = csr_tlbelo1  ;
-            `CSR_ASID     : rdata = csr_asid     ;
-            `CSR_PGDL     : rdata = csr_pgdl     ;
-            `CSR_PGDH     : rdata = csr_pgdh     ;
-            `CSR_PGD      : rdata = csr_pgd      ;
-            `CSR_CPUID    : rdata = csr_cpuid    ;
-            `CSR_SAVE0    : rdata = csr_save0    ;
-            `CSR_SAVE1    : rdata = csr_save1    ;
-            `CSR_SAVE2    : rdata = csr_save2    ;
-            `CSR_SAVE3    : rdata = csr_save3    ;
-            `CSR_TID      : rdata = csr_tid      ;
-            `CSR_TCFG     : rdata = csr_tcfg     ;
-            `CSR_TVAL     : rdata = csr_tval     ;
-            `CSR_TICLR    : rdata = csr_ticlr    ;
-            `CSR_LLBCTL   : rdata = csr_llbctl   ;
-            `CSR_TLBRENTRY: rdata = csr_tlbrentry;
-            `CSR_CTAG     : rdata = csr_ctag     ;
-            `CSR_DMW0     : rdata = csr_dmw0     ;
-            `CSR_DMW1     : rdata = csr_dmw1     ;
-            endcase
+        case(addr)
+        `CSR_CRMD     : rdata = csr_crmd     ;
+        `CSR_PRMD     : rdata = csr_prmd     ;
+        `CSR_EUEN     : rdata = csr_euen     ;
+        `CSR_ECFG     : rdata = csr_ecfg     ;
+        `CSR_ESTAT    : rdata = csr_estat    ;
+        `CSR_ERA      : rdata = csr_era      ;
+        `CSR_BADV     : rdata = csr_badv     ;
+        `CSR_EENTRY   : rdata = csr_eentry   ;
+        `CSR_TLBIDX   : rdata = csr_tlbidx   ;
+        `CSR_TLBEHI   : rdata = csr_tlbehi   ;
+        `CSR_TLBELO0  : rdata = csr_tlbelo0  ;
+        `CSR_TLBELO1  : rdata = csr_tlbelo1  ;
+        `CSR_ASID     : rdata = csr_asid     ;
+        `CSR_PGDL     : rdata = csr_pgdl     ;
+        `CSR_PGDH     : rdata = csr_pgdh     ;
+        `CSR_PGD      : rdata = csr_pgd      ;
+        `CSR_CPUID    : rdata = csr_cpuid    ;
+        `CSR_SAVE0    : rdata = csr_save0    ;
+        `CSR_SAVE1    : rdata = csr_save1    ;
+        `CSR_SAVE2    : rdata = csr_save2    ;
+        `CSR_SAVE3    : rdata = csr_save3    ;
+        `CSR_TID      : rdata = csr_tid      ;
+        `CSR_TCFG     : rdata = csr_tcfg     ;
+        `CSR_TVAL     : rdata = csr_tval     ;
+        `CSR_TICLR    : rdata = csr_ticlr    ;
+        `CSR_LLBCTL   : rdata = csr_llbctl   ;
+        `CSR_TLBRENTRY: rdata = csr_tlbrentry;
+        `CSR_CTAG     : rdata = csr_ctag     ;
+        `CSR_DMW0     : rdata = csr_dmw0     ;
+        `CSR_DMW1     : rdata = csr_dmw1     ;
+        default       : rdata = 0            ;
+        endcase
     end
     
     assign privilege = crmd_plv;
@@ -1137,11 +1132,10 @@ module csr
     assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
     assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
     assign asid_out = asid_asid;
-    assign pgdl_out = csr_pgdl;
-    assign pgdh_out = csr_pgdh;
+    assign pgdl_out = pgdl_base;
+    assign pgdh_out = pgdh_base;
     assign llbit = llbctl_rollb;
     assign tid = csr_tid;
-    assign cache_tag = csr_ctag;
     assign ecode = estat_ecode;
     //end CSR read
     ///////////////////////////////////////

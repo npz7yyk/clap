@@ -95,7 +95,6 @@ module exe(
 );
 
 wire [0:0] stall2;
-wire [0:0] stall4;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/exe~exe.v:98:12: Signal is not used: 'stall4'
 wire[31:0] cache_badv_out;
 
 wire eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
@@ -328,8 +327,7 @@ hazard  u_hazard (
     .stall_because_priv       ( stall_because_priv     ),
  
     .stall                    ( stall                  ),
-    .stall2                   ( stall2                 ),
-    .stall4                   ( stall4                 )
+    .stall2                   ( stall2                 )
 );
 
 forward  u_forward (

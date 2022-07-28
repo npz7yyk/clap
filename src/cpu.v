@@ -1,5 +1,7 @@
 `include "uop.vh"
 `include "exception.vh"
+`include "csr.vh"
+
 /* verilator lint_off DECLFILENAME */
 module core_top(
     input           aclk,
@@ -223,8 +225,12 @@ module core_top(
     wire  csr_era_wen;
     wire  [31:0]  csr_badv_in;
     wire  csr_badv_wen;
-    wire  [31:0]  csr_pgd_in;
+
+    wire  [`PGD_BASE]  csr_pgd_in;
     wire  csr_pgd_wen;
+    wire  [`PGD_BASE]  pgdl_out;
+    wire  [`PGD_BASE]  pgdh_out;
+
     wire  [TLBIDX_WIDTH-1:0]  tlb_index_in;
     wire  tlb_index_we;
     wire  [5:0]  tlb_ps_in;
@@ -259,10 +265,6 @@ module core_top(
     wire  tlb_ppn_1_wen;
     wire  [9:0]  asid_in;
     wire  asid_wen;
-    wire  llbit_set;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:262:11: Signal is not driven: 'llbit_set'
-    wire  llbit_clear_by_eret;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:263:11: Signal is not driven: 'llbit_clear_by_eret'
-    wire  llbit_clear_by_other;//%Warning-UNDRIVEN: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:264:11: Signal is not driven: 'llbit_clear_by_other'
-
     wire  [1:0]  privilege;
     wire  [31:0]  csr_era_out;
     wire  [31:0]  csr_eentry;
@@ -295,14 +297,17 @@ module core_top(
     wire  tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
-    wire  [23:0]  tlb_ppn_0_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:298:19: Bits of signal are not used: 'tlb_ppn_0_out'[23:20]
-    wire  [23:0]  tlb_ppn_1_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:299:19: Bits of signal are not used: 'tlb_ppn_1_out'[23:20]
+    // verilator lint_off UNSIGNED ([23:20] is useless)
+    wire  [23:0]  tlb_ppn_0_out;
+    wire  [23:0]  tlb_ppn_1_out;
+    // verilator lint_on UNSIGNED
     wire  [9:0]  asid_out;
-    wire  [31:0]  pgdl_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:301:19: Signal is not used: 'pgdl_out'
-    wire  [31:0]  pgdh_out;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:302:19: Signal is not used: 'pgdh_out'
-    wire  llbit;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:303:11: Signal is not used: 'llbit'
     wire  [31:0]  tid;
-    wire  [31:0]  cache_tag;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:305:19: Signal is not used: 'cache_tag'
+
+    wire  llbit_set;
+    wire  llbit_clear_by_eret;
+    wire  llbit_clear_by_other;
+    wire  llbit;
 
     wire csr_software_query_en;
     wire [13:0] csr_addr;
@@ -430,10 +435,7 @@ module core_top(
         .llbit_clear_by_other    ( llbit_clear_by_other   ),
         
         //timer
-        .tid                     ( tid                    ),
-
-        //cache tag
-        .cache_tag               ( cache_tag              )
+        .tid                     ( tid                    )
     );
 
     wire if_buf_full;
@@ -487,7 +489,7 @@ module core_top(
     //         id_category0_reg <= id_category0;
     //         id_category1_reg <= id_category1;
     //     end
-    wire [0:0] ex_branch_unknown;
+    wire ex_branch_unknown;
     branch_unit the_branch_predict
     (
         .clk(aclk),.rstn(aresetn),
@@ -515,7 +517,10 @@ module core_top(
     );
 
     wire [1:0] ex_mem_cacop_code;
-    wire ex_mem_l1i_en,ex_mem_l1d_en,ex_mem_l2_en;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:518:38: Signal is not used: 'ex_mem_l2_en'
+    wire ex_mem_l1i_en,ex_mem_l1d_en;
+    // verilator lint_off UNSIGNED (useless because L2 cache is not implemented)
+    wire ex_mem_l2_en;
+    // verilator lint_on UNSIGNED
     wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
     wire ex_mem_l1i_complete,ex_mem_l1d_complete,ex_mem_l2_complete;
     wire [31:0] ex_mem_cacop_rj_plus_imm;
@@ -591,7 +596,7 @@ module core_top(
     wire [31:0] if_inst0,if_inst1;
     wire data_valid;
     wire [31:0] if_pc,if_pc_next;
-    wire if_known0,if_known1;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:594:20: Signal is not used: 'if_known1'
+    wire if_known0,if_known1;
     wire [31:0] if_pred_record0,if_pred_record1;
     wire first_inst_jmp;
     wire [6:0] if_exception;
@@ -665,7 +670,7 @@ module core_top(
         .exception0_out(id_exception0),.exception1_out(id_exception1),
         .badv0_out(id_badv0),.badv1_out(id_badv1),
         .pred_record0(if_pred_record0),.pred_record1(if_pred_record1),
-        .unknown0_in(~if_known0),.unknown1_in(~if_known0),
+        .unknown0_in(~if_known0),.unknown1_in(~if_known1),
         .unknown0_out(id_unknown0),.unknown1_out(id_unknown1),
        
         .feedback_valid(id_feedback_valid),
@@ -740,7 +745,7 @@ module core_top(
     wire [31:0] is_eu1_pc,is_eu1_pc_next;
     wire [6:0] is_eu0_exception,is_eu1_exception;
     wire [31:0] is_eu0_badv,is_eu1_badv;
-    wire is_eu0_unknown,is_eu1_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:743:25: Signal is not used: 'is_eu1_unknown'
+    wire is_eu0_unknown,is_eu1_unknown;
 
     execute_unit_input_reg euir0
     (
@@ -787,13 +792,20 @@ module core_top(
     wire  [4:0]  rf_eu0_rj,rf_eu1_rj;
     wire  [4:0]  rf_eu0_rk,rf_eu1_rk;
     wire  [31:0]  rf_eu0_pc,rf_eu1_pc;
-    wire  [31:0]  rf_eu0_pc_next,rf_eu1_pc_next;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:790:34: Signal is not used: 'rf_eu1_pc_next'
-    wire  [6:0]  rf_eu0_exp,rf_eu1_exp;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:791:29: Signal is not used: 'rf_eu1_exp'
+    wire  [31:0]  rf_eu0_pc_next;
+    wire  [6:0]  rf_eu0_exp;
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm, rf_eu1_imm;
-    wire  [31:0]  rf_eu0_badv,rf_eu1_badv;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:795:31: Signal is not used: 'rf_eu1_badv'
-    wire rf_eu0_unknown,rf_eu1_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:796:25: Signal is not used: 'rf_eu1_unknown'
+    wire  [31:0]  rf_eu0_badv;
+    wire rf_eu0_unknown;
+
+    // verilator lint_off UNSIGNED (useless, reserved for future optimization)
+    wire  [31:0] rf_eu1_pc_next;
+    wire  [6:0]  rf_eu1_exp;
+    wire  [31:0]  rf_eu1_badv;
+    wire rf_eu1_unknown;
+    // verilator lint_on UNSIGNED
 
     wire rf_wen0;
     wire rf_wen1;
@@ -820,7 +832,7 @@ module core_top(
         .eu0_exp_in    (is_eu0_exception),.eu1_exp_in   (is_eu1_exception),
         .eu0_imm_in    (is_eu0_imm    ), .eu1_imm_in    (is_eu1_imm    ),
         .eu0_badv_in   (is_eu0_badv),    .eu1_badv_in   (is_eu1_badv),
-        .eu0_unknown_in(is_eu0_unknown), .eu1_unknown_in(is_eu0_unknown),
+        .eu0_unknown_in(is_eu0_unknown), .eu1_unknown_in(is_eu1_unknown),
 
         .eu0_en_out     (rf_eu0_en        ), .eu1_en_out     (rf_eu1_en        ),
         .eu0_uop_out    (rf_eu0_uop       ), .eu1_uop_out    (rf_eu1_uop       ),
@@ -851,7 +863,6 @@ module core_top(
     wire  [31:0] ex_eu0_badv;
     wire  [31:0] ex_eu0_pc,ex_eu1_pc;
     wire  [31:0] ex_eu0_inst,ex_eu1_inst;
-    wire ex_eu0_unknown;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cpu.v:854:10: Signal is not driven, nor used: 'ex_eu0_unknown'
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
@@ -1168,6 +1179,8 @@ module core_top(
         .expcode_wen(csr_expcode_wen),
         .badv(csr_badv_in),
         .badv_wen(csr_badv_wen),
+        .pgdl(pgdl_out),
+        .pgdh(pgdh_out),
         .pgd(csr_pgd_in),
         .pgd_wen(csr_pgd_wen)
     );

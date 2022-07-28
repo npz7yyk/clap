@@ -125,7 +125,9 @@ module id_stage
     wire valid1 = valid1_before_predecode & ~set_pc_due_to_inst0;
     wire [31:0] pc_next_after_predecode = set_pc?probably_right_destination:pc_next_in;
 
-    wire empty;            //FIFO空 %Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/decode~id_stage.v:128:10: Signal is not used: 'empty'
+    // verilator lint_off UNSIGNED
+    wire empty;            //FIFO空
+    // verilator lint_on UNSIGNED
     
     //用交叠法实现伪双端口循环队列，浪费12.5%的空间，以简化push/pop逻辑
     //[31:0] 指令; [63:32] pc；[95:64] pc_next; [102:96] exception; [134:103] badv; [135] unknown

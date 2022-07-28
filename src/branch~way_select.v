@@ -25,7 +25,9 @@ module way_select #(
     input                         clk,
     input                         en,
     input wire [HASH_DEPTH - 1:0] waddr,
-    input wire              [3:0] visit,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~way_select.v:28:35: Bits of signal are not used: 'visit'[0]
+    // verilator lint_off UNSIGNED (visit[0] is used because it's guaranteed to be one-hot, FIXME: really???)
+    input wire              [3:0] visit,
+    // verilator lint_on UNSIGNED
     input wire [HASH_DEPTH - 1:0] raddr,
 
     output wire             [3:0] select
