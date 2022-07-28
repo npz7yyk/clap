@@ -940,8 +940,10 @@ module core_top(
         .csr_rdata  (csr_rdata),
         .csr_wen    (csr_wen),
         .csr_wdata  (csr_wdata),
+
         .era(csr_era_out),
         .restore_state(csr_restore_state),
+        .llbit_clear_by_eret(llbit_clear_by_eret),
 
         .cacop_code(ex_mem_cacop_code),
         .l1i_en(ex_mem_l1i_en),

@@ -31,8 +31,10 @@ module exe_privliedged(
     output reg [31:0] csr_wen,      //bit write enable
     output reg [31:0] csr_wdata,
 
+    //ertn
     input [31:0] era,
     output reg restore_state,
+    output reg llbit_clear_by_eret,
 
     //cache
     output reg [1:0] cacop_code,// code[4:3]
@@ -183,6 +185,7 @@ module exe_privliedged(
             badv_out<=0;
             clear_clock_gate_require<=0;
             clear_clock_gate<=0;
+            llbit_clear_by_eret<=0;
         end else case(next_state)
             S_INIT: begin
                 en_out<=0;
@@ -242,11 +245,13 @@ module exe_privliedged(
                 pc_target <= era;
                 restore_state <= 1;
                 stall_because_priv<=1;
+                llbit_clear_by_eret<=1;
             end
             S_DONE_ERTN: begin
                 restore_state <= 0;
                 en_out<=1;
                 flush<=1;
+                llbit_clear_by_eret<=0;
                 stall_because_priv<=0;
             end
             S_DONE_TLB: begin

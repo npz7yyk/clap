@@ -76,8 +76,10 @@ module exe(
     input [31:0]            csr_rdata,//read first
     output  [31:0]          csr_wen,      //bit write enable
     output  [31:0]          csr_wdata,
+
     input [31:0]            era,
     output [0:0]            restore_state,
+    output                  llbit_clear_by_eret,
 
     //cache
     output [1:0] cacop_code,// code[4:3]
@@ -555,9 +557,10 @@ exe_privliedged exe_privliedged
     .cacop_dbadv_in(dcache_badv),
     .cacop_ibadv_in(icache_badv),
 
-
     .era(era),
     .restore_state(restore_state),
+    .llbit_clear_by_eret(llbit_clear_by_eret),
+
     .fill_mode(fill_mode),
     .check_mode(check_mode),
     .tlb_we(tlb_we),
