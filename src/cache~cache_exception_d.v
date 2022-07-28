@@ -12,13 +12,14 @@ module cache_exception_d(
     reg [6:0] exception_temp;
     always @(*) begin
         exception_temp = 0;
-        case(type_)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~cache_exception_d.v:15:9: Case values incompletely covered (example pattern 0x0)
+        case(type_)
         WORD: begin
             if(addr_rbuf[1:0]!=0) exception_temp = `EXP_ALE;
         end
         HALF: begin
             if(addr_rbuf[0]) exception_temp = `EXP_ALE;
         end
+        default:;
         endcase
     end
     assign exception = {7{~cacop_en_rbuf}} & exception_temp;

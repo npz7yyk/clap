@@ -49,17 +49,17 @@ module dcache(
     output                  cacop_complete,
     output                  cacop_ready
     );
-    wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~dcache.v:52:19: Signal is not driven, nor used: 'hit_write'
+    wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
     wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit, hit_mbuf;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~dcache.v:56:107: Signal is not driven, nor used: 'hit_mbuf'
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_temp;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
-    wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~dcache.v:62:45: Signal is not driven, nor used: 'w_line_to_AXI'
+    wire [511:0] w_line_AXI, miss_sel_data, mem_din;
     wire [2047:0] mem_dout;
     wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
 
@@ -99,7 +99,6 @@ module dcache(
         .clk                (clk),
         .rstn               (rstn),
         .w_buf_we           (wbuf_AXI_we),
-        .wready             (w_data_ready),
         .bvalid             (b_valid),
         .awvalid            (w_req),
         .awready            (w_rdy),

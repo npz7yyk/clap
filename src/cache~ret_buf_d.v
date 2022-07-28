@@ -15,9 +15,6 @@ module ret_buf_d(
     parameter HALF = 4'b0011;
     parameter WORD = 4'b1111;
     parameter READ = 1'b0;
-    parameter WRITE = 1'b1;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~ret_buf_d.v:18:15: Parameter is not used: 'WRITE'
-    wire [31:0]test_hi;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~ret_buf_d.v:19:16: Signal is not used: 'test_hi'
-    assign test_hi = w_data_AXI[511:480];
     reg [3:0] count;
     initial begin
         count = 0;

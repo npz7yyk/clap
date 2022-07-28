@@ -199,7 +199,7 @@ module main_FSM_d(
         r_length = 8'd15;                   w_length = 8'd15;
         tagv_clear = 0;                     cacop_complete = 0;
         cacop_ready = 0;
-        case(crt)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~main_FSM_d.v:202:9: Case values incompletely covered (example pattern 0x0)
+        case(crt)
         IDLE: begin
             rbuf_we     = 1;
             cache_ready = 1;
@@ -279,6 +279,7 @@ module main_FSM_d(
             wbuf_AXI_reset  = 1;
             cache_ready     = 1;
         end
+        default:;
         endcase
     end
 

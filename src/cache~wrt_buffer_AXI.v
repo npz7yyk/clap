@@ -3,7 +3,6 @@ module wrt_buffer_AXI(
     input clk,
     input rstn,
     input w_buf_we,
-    input wready,//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~wrt_buffer_AXI.v:6:11: Signal is not used: 'wready'
     input bvalid,
     input awvalid,
     input awready,
@@ -64,7 +63,7 @@ module wrt_buffer_AXI(
     always @(*) begin
         wvalid = 0; wlast = 0; bready = 0;
         wrt_AXI_finish = 0;
-        case(crt)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~wrt_buffer_AXI.v:67:9: Case values incompletely covered (example pattern 0x0)
+        case(crt)
         REQUEST: begin
             wvalid = 1;
             if(count == 4'd15 && !uncache) wlast = 1;
@@ -78,6 +77,7 @@ module wrt_buffer_AXI(
         FINISH: begin
             wrt_AXI_finish = 1;
         end
+        default:;
         endcase
     end
     always @(posedge clk)begin

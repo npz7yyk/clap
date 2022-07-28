@@ -21,11 +21,12 @@ module reg_file(
     end
     //write
     always@(posedge clk)begin
-        case(we)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/cache~reg_file.v:24:9: Case values incompletely covered (example pattern 0x0)
+        case(we)
         WAY0: regs[w_addr][0] <= w_data;
         WAY1: regs[w_addr][1] <= w_data;
         WAY2: regs[w_addr][2] <= w_data;
         WAY3: regs[w_addr][3] <= w_data;
+        default:;
         endcase
     end
     //read

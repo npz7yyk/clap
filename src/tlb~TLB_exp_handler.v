@@ -38,10 +38,11 @@ module TLB_exp_handler(
         else if(!s0_found)  s0_exception_temp = `EXP_TLBR;
         // PIF, PIL, PIS
         else if(!found_v0) begin
-            case (s0_mem_type)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB_exp_handler.v:41:13: Case values incompletely covered (example pattern 0x3)
+            case (s0_mem_type)
                 FETCH: s0_exception_temp = `EXP_PIF;
                 LOAD:  s0_exception_temp = `EXP_PIL;
                 STORE: s0_exception_temp = `EXP_PIS; 
+                default:;
             endcase
         end
         //PPI
@@ -56,10 +57,11 @@ module TLB_exp_handler(
         else if(!s1_found)  s1_exception_temp = `EXP_TLBR;
         // PIF, PIL, PIS
         else if(!found_v1) begin
-            case (s1_mem_type)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB_exp_handler.v:59:13: Case values incompletely covered (example pattern 0x3)
+            case (s1_mem_type)
                 FETCH: s1_exception_temp = `EXP_PIF;
                 LOAD:  s1_exception_temp = `EXP_PIL;
                 STORE: s1_exception_temp = `EXP_PIS; 
+                default:;
             endcase
         end
         //PPI

@@ -124,7 +124,7 @@ module TLB_memory#(
     integer j;
     always @(posedge clk) begin
         if(clear_mem != 0) begin
-            case(clear_mem)//%Warning-CASEINCOMPLETE: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB_memory.v:127:13: Case values incompletely covered (example pattern 0x0)
+            case(clear_mem)
             CLEAR_ALL: begin
                 for(j = 0; j < TLBNUM; j = j + 1) begin
                     tlb_e[j] <= 0;
@@ -157,6 +157,7 @@ module TLB_memory#(
                         tlb_e[j] <= 0;
                 end
             end
+            default:;
             endcase
         end 
         else if(we) begin

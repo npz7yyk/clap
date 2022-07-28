@@ -106,7 +106,8 @@ module TLB#(
     wire [1:0] found_plv0, found_plv1;
     wire [19:0] found_pfn0, found_pfn1;
     wire [1:0] s0_dmw_mat, s1_dmw_mat;
-    wire [1:0] s0_dmw_mat_obuf, s1_dmw_mat_obuf;//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB.v:109:16: Signal is not used: 's0_dmw_mat_obuf' %Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/tlb~TLB.v:109:33: Signal is not used: 's1_dmw_mat_obuf'
+    wire [1:0] s0_dmw_mat_obuf, s1_dmw_mat_obuf;
+    wire [1:0] s0_tlb_mat_obuf, s1_tlb_mat_obuf;
     wire [31:0] s0_dmw_paddr, s1_dmw_paddr;
     wire [31:0] s0_dmw_paddr_obuf, s1_dmw_paddr_obuf;
     wire s0_dmw_hit, s1_dmw_hit;
@@ -294,7 +295,7 @@ module TLB#(
                           found_v0,        found_d0,          s0_plv,         found_plv0,      found_mat0,
                           s0_dmw_mat,      s0_dmw_paddr,      s0_dmw_hit,     s0_en}),
         .dout           ({found_pfn0_obuf,   found_ps0_obuf, s0_found_obuf,   s0_mem_type_obuf, 
-                          found_v0_obuf,   found_d0_obuf,     s0_plv_obuf,    found_plv0_obuf, s0_mat, 
+                          found_v0_obuf,   found_d0_obuf,     s0_plv_obuf,    found_plv0_obuf, s0_tlb_mat_obuf, 
                           s0_dmw_mat_obuf, s0_dmw_paddr_obuf, s0_dmw_hit_obuf, s0_en_obuf})
     );
     register#(20+6+1+2+1+1+2+2+2+2+32+1+1) output_s1_buffer(
@@ -305,7 +306,7 @@ module TLB#(
                           found_v1,        found_d1,          s1_plv,         found_plv1,      found_mat1,
                           s1_dmw_mat,      s1_dmw_paddr,      s1_dmw_hit,     s1_en}),
         .dout           ({found_pfn1_obuf,   found_ps1_obuf, s1_found_obuf,   s1_mem_type_obuf, 
-                          found_v1_obuf,   found_d1_obuf,     s1_plv_obuf,    found_plv1_obuf, s1_mat,
+                          found_v1_obuf,   found_d1_obuf,     s1_plv_obuf,    found_plv1_obuf, s1_tlb_mat_obuf,
                           s1_dmw_mat_obuf, s1_dmw_paddr_obuf, s1_dmw_hit_obuf, s1_en_obuf})
     );
     register#(32) out_s0_vaddr(
@@ -329,6 +330,10 @@ module TLB#(
         .s1_dmw_hit     (s1_dmw_hit_obuf),
         .s0_addr        (s0_vaddr_obuf),
         .s1_addr        (s1_vaddr_obuf),
+        .s0_dmw_mat     (s0_dmw_mat_obuf),
+        .s1_dmw_mat     (s1_dmw_mat_obuf),
+        .s0_tlb_mat     (s0_tlb_mat_obuf),
+        .s1_tlb_mat     (s1_tlb_mat_obuf),
         .s0_dmw_paddr   (s0_dmw_paddr_obuf),
         .s1_dmw_paddr   (s1_dmw_paddr_obuf),
         .s0_pfn         (found_pfn0_obuf),
@@ -336,7 +341,9 @@ module TLB#(
         .found_ps0      (found_ps0_obuf),
         .found_ps1      (found_ps1_obuf),
         .s0_paddr       (s0_paddr),
-        .s1_paddr       (s1_paddr)
+        .s1_paddr       (s1_paddr),
+        .s0_mat         (s0_mat),
+        .s1_mat         (s1_mat)
     );
 
     /* exeption coping */
