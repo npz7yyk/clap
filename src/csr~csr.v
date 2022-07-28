@@ -1113,8 +1113,8 @@ module csr
     assign tlbrentry = csr_tlbrentry;
     assign has_interrupt = crmd_ie&&(ecfg_lie&{csr_estat[`ESTAT_IS]})!=0;
     assign translate_mode = {crmd_pg,crmd_da};
-    assign direct_i_mat = crmd_datf[0];
-    assign direct_d_mat = crmd_datm[0];
+    assign direct_i_mat = crmd_datf != 0;
+    assign direct_d_mat = crmd_datm != 0;
     assign tlb_index_out = tlbidx_index[4:0];
     assign tlb_ps_out = tlbidx_ps;
     assign tlb_ne_out = tlbidx_ne;

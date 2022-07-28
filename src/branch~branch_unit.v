@@ -39,13 +39,13 @@ module branch_unit #(
 
     input wire                    exVld,            // whether signal from ex is valid
     input wire [ADDR_WIDTH - 1:0] exPC,             // pc of instruction under execution
-    // verilator lint_off UNSIGNED (exPCTar[1:0] unused)
+    /* verilator lint_off UNSIGNED */ // (exPCTar[1:0] unused)
     input wire [ADDR_WIDTH - 1:0] exPCTar,          // branch target of this instruction
     // verilator lint_on UNSIGNED
     input wire              [1:0] exType,           // instruction type
     input wire                    exBranch,         // whether this instruction branches
     input wire                    exWrong,          // ex pc wrongly predicted
-    // verilator lint_off UNSIGNED (left for future optimization)
+    /* verilator lint_off UNSIGNED */ // (left for future optimization)
     input wire                    exKnown,
     // verilator lint_on UNSIGNED
 

@@ -297,7 +297,7 @@ module core_top(
     wire  tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
-    // verilator lint_off UNSIGNED ([23:20] is useless)
+    /* verilator lint_off UNSIGNED */ //([23:20] is useless)
     wire  [23:0]  tlb_ppn_0_out;
     wire  [23:0]  tlb_ppn_1_out;
     // verilator lint_on UNSIGNED
@@ -348,8 +348,10 @@ module core_top(
         .badv_wen                ( csr_badv_wen           ),
         .eentry                  ( csr_eentry             ),
         .tlbrentry               ( csr_tlbrentry          ),
-        .pgd_in                  ( csr_pgd_in             ),
-        .pgd_wen                 ( csr_pgd_wen            ),
+        .pgd_base_in             ( csr_pgd_in             ),
+        .pgd_base_wen            ( csr_pgd_wen            ),
+        .pgdl_base_out           ( pgdl_out               ),
+        .pgdh_base_out           ( pgdh_out               ),
 
         //interrupt
         .hardware_int            ( intrpt                 ),
@@ -391,9 +393,6 @@ module core_top(
         .asid_out                ( asid_out               ),
         .asid_in                 ( asid_in                ),
         .asid_wen                ( asid_wen               ),
-
-        .pgdl_out                ( pgdl_out               ),
-        .pgdh_out                ( pgdh_out               ),
 
         .tlb_index_in            ( tlb_index_in           ),
         .tlb_index_we            ( tlb_index_we           ),
@@ -518,7 +517,7 @@ module core_top(
 
     wire [1:0] ex_mem_cacop_code;
     wire ex_mem_l1i_en,ex_mem_l1d_en;
-    // verilator lint_off UNSIGNED (useless because L2 cache is not implemented)
+    /* verilator lint_off UNSIGNED */ //(useless because L2 cache is not implemented)
     wire ex_mem_l2_en;
     // verilator lint_on UNSIGNED
     wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
@@ -709,7 +708,6 @@ module core_top(
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
         .eu0_ready(~ex_stall),
-        .eu0_finish(1),
         .eu0_uop(is_eu0_uop_3qW1U3J0hMn),
         .eu0_rd(is_eu0_rd_3qW1U3J0hMn),
         .eu0_rj(is_eu0_rj_3qW1U3J0hMn),
@@ -723,7 +721,6 @@ module core_top(
         
         .eu1_en(is_eu1_en_3qW1U3J0hMn),
         .eu1_ready(~ex_stall),
-        .eu1_finish(1),
         .eu1_uop(is_eu1_uop_3qW1U3J0hMn),
         .eu1_rd(is_eu1_rd_3qW1U3J0hMn),
         .eu1_rj(is_eu1_rj_3qW1U3J0hMn),
@@ -800,7 +797,7 @@ module core_top(
     wire  [31:0]  rf_eu0_badv;
     wire rf_eu0_unknown;
 
-    // verilator lint_off UNSIGNED (useless, reserved for future optimization)
+    /* verilator lint_off UNSIGNED */ //(useless, reserved for future optimization)
     wire  [31:0] rf_eu1_pc_next;
     wire  [6:0]  rf_eu1_exp;
     wire  [31:0]  rf_eu1_badv;
@@ -978,6 +975,7 @@ module core_top(
         .clk            (aclk),
         .rstn           (aresetn),
         .valid          (ex_mem_valid),
+        .cache_ready    (),
         .op             (ex_mem_op),
         .uncache        (~direct_d_mat),
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
