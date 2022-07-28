@@ -40,7 +40,8 @@ module exe_privliedged(
     input l1i_complete,l1d_complete,l2_complete,
     output reg [31:0] cacop_rj_plus_imm,
     output reg use_tlb_s0,use_tlb_s1,
-    input [6:0] cacop_exp_in,
+    input [6:0] cacop_dexp_in,
+    input [6:0] cacop_iexp_in,
 
     //TLB
     output reg fill_mode,
@@ -249,12 +250,14 @@ module exe_privliedged(
             end
             S_L1I_WAIT: begin
                 l1i_en <= 0;
+                cacop_exp<=cacop_exp|cacop_iexp_in;
             end
             S_DONE_L1I: begin
                 stall_because_priv<=0;
                 flush <= 1;
                 use_tlb_s0 <= 0;
                 en_out<=1;
+                exp_out<=cacop_exp;
             end
             S_L1D_REQ: begin
                 l1d_en <= 1;
@@ -262,7 +265,7 @@ module exe_privliedged(
             end
             S_L1D_WAIT: begin
                 l1d_en <= 0;
-                cacop_exp<=cacop_exp|cacop_exp_in;
+                cacop_exp<=cacop_exp|cacop_dexp_in;
             end
             S_DONE_L1D: begin
                 stall_because_priv<=0;

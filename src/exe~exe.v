@@ -63,7 +63,8 @@ module exe(
     input [0:0]             data_valid,           //    read: data has returned; write: data has been written in
     input [ 31:0 ]          r_data_CPU,           //    read data to CPU
     input [ 31:0 ]          cache_badv,
-    input [ 6:0 ]           cache_exception,
+    input [ 6:0 ]           dcache_exception,
+    input [ 6:0 ]           icache_exception,
 
     //CSR
     output [0:0]            csr_software_query_en,
@@ -468,7 +469,7 @@ mem1  u_mem1 (
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
     .cache_badv_in           ( cache_badv            ),
-    .cache_exception         ( cache_exception       ),
+    .cache_exception         ( dcache_exception      ),
 
     .mem_exp_out             ( mem_exp_out           ),
     .mem_rd_out              ( mem_rd_out            ),
@@ -537,7 +538,8 @@ exe_privliedged exe_privliedged
     .cacop_rj_plus_imm(cacop_rj_plus_imm),
     .use_tlb_s0(use_tlb_s0),
     .use_tlb_s1(use_tlb_s1),
-    .cacop_exp_in(cache_exception),
+    .cacop_dexp_in(dcache_exception),
+    .cacop_iexp_in(icache_exception),
 
     .era(era),
     .restore_state(restore_state),
