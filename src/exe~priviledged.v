@@ -55,32 +55,42 @@ module exe_privliedged(
     output reg tlb_other_we,
     output reg [31:0] clear_vaddr,
     output reg [9:0] clear_asid,
-    output reg [2:0] clear_mem
+    output reg [2:0] clear_mem,
+
+    //IDLE
+    //进入
+    output reg clear_clock_gate_require,//请求清除clock gate
+    output reg clear_clock_gate,        //真正清除clock gate
+    input icache_idle,dcache_idle
 ); 
     localparam
-        S_INIT      = 23'b00000000000000000000001,
-        S_CSR       = 23'b00000000000000000000010,
-        S_CACOP     = 23'b00000000000000000000100,
-        S_TLB       = 23'b00000000000000000001000,
-        S_IDLE      = 23'b00000000000000000010000,
-        S_ERTN      = 23'b00000000000000000100000,
-        S_DONE_CSR  = 23'b00000000000000001000000,
-        S_DONE_ERTN = 23'b00000000000000010000000,
-        S_DONE_TLB  = 23'b00000000000000100000000,
-        S_L1I_REQ   = 23'b00000000000001000000000,
-        S_L1D_REQ   = 23'b00000000000010000000000,
-        S_L2_REQ    = 23'b00000000000100000000000,
-        S_L1I_WAIT  = 23'b00000000001000000000000,
-        S_L1D_WAIT  = 23'b00000000010000000000000,
-        S_L2_WAIT   = 23'b00000000100000000000000,
-        S_DONE_L1I  = 23'b00000001000000000000000,
-        S_DONE_L1D  = 23'b00000010000000000000000,
-        S_DONE_L2   = 23'b00000100000000000000000,
-        S_TLB_SRCH  = 23'b00001000000000000000000,
-        S_TLB_RD    = 23'b00010000000000000000000,
-        S_TLB_WR    = 23'b00100000000000000000000,
-        S_TLB_FILL  = 23'b01000000000000000000000,
-        S_INVTLB    = 23'b10000000000000000000000;
+        S_INIT      = 27'b000000000000000000000000001,
+        S_CSR       = 27'b000000000000000000000000010,
+        S_CACOP     = 27'b000000000000000000000000100,
+        S_TLB       = 27'b000000000000000000000001000,
+        S_IDLE      = 27'b000000000000000000000010000,
+        S_ERTN      = 27'b000000000000000000000100000,
+        S_DONE_CSR  = 27'b000000000000000000001000000,
+        S_DONE_ERTN = 27'b000000000000000000010000000,
+        S_DONE_TLB  = 27'b000000000000000000100000000,
+        S_L1I_REQ   = 27'b000000000000000001000000000,
+        S_L1D_REQ   = 27'b000000000000000010000000000,
+        S_L2_REQ    = 27'b000000000000000100000000000,
+        S_L1I_WAIT  = 27'b000000000000001000000000000,
+        S_L1D_WAIT  = 27'b000000000000010000000000000,
+        S_L2_WAIT   = 27'b000000000000100000000000000,
+        S_DONE_L1I  = 27'b000000000001000000000000000,
+        S_DONE_L1D  = 27'b000000000010000000000000000,
+        S_DONE_L2   = 27'b000000000100000000000000000,
+        S_TLB_SRCH  = 27'b000000001000000000000000000,
+        S_TLB_RD    = 27'b000000010000000000000000000,
+        S_TLB_WR    = 27'b000000100000000000000000000,
+        S_TLB_FILL  = 27'b000001000000000000000000000,
+        S_INVTLB    = 27'b000010000000000000000000000,
+        S_DONE_IDLE = 27'b000100000000000000000000000,
+        S_IDLE_WAIT1= 27'b001000000000000000000000000,
+        S_IDLE_WAIT2= 27'b010000000000000000000000000,
+        S_IDLE_PERF = 27'b100000000000000000000000000;
     reg [22:0] state,next_state;
 
     reg [1:0] which_cache;
@@ -132,7 +142,11 @@ module exe_privliedged(
         S_L1I_WAIT:next_state = l1i_complete? S_DONE_L1I:S_L1I_WAIT;
         S_L1D_WAIT:next_state = l1d_complete? S_DONE_L1D:S_L1D_WAIT;
         S_L2_WAIT :next_state = l2_complete ? S_DONE_L2 :S_L2_WAIT ;
-        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB,S_DONE_L1I,S_DONE_L1D,S_DONE_L2:
+        S_IDLE: next_state = S_IDLE_WAIT1;
+        S_IDLE_WAIT1: next_state = S_IDLE_WAIT2;
+        S_IDLE_WAIT2: next_state = icache_idle&&dcache_idle? S_IDLE_PERF:S_IDLE_WAIT2;
+        S_IDLE_PERF: next_state = S_DONE_IDLE;
+        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB,S_DONE_L1I,S_DONE_L1D,S_DONE_L2,S_DONE_IDLE:
             next_state = S_INIT;
         endcase
     end
@@ -163,6 +177,8 @@ module exe_privliedged(
             {use_tlb_s0,use_tlb_s1}<= 0;
             exp_out<=0;
             badv_out<=0;
+            clear_clock_gate_require<=0;
+            clear_clock_gate<=0;
         end else case(next_state)
             S_INIT: begin
                 en_out<=0;
@@ -286,6 +302,27 @@ module exe_privliedged(
             end
             S_DONE_L2: begin
                 l2_en <= 0;
+                stall_because_priv<=0;
+                flush <= 1;
+                en_out<=1;
+            end
+            S_IDLE: begin
+                stall_because_priv<=1;
+                pc_target<=pc_next;
+                clear_clock_gate_require <= 1;
+            end
+            S_IDLE_WAIT1: begin
+
+            end
+            S_IDLE_WAIT2: begin
+
+            end
+            S_IDLE_PERF: begin
+                clear_clock_gate <= 1;
+            end
+            S_DONE_IDLE: begin
+                clear_clock_gate_require <= 0;
+                clear_clock_gate <= 0;
                 stall_because_priv<=0;
                 flush <= 1;
                 en_out<=1;

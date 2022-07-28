@@ -62,6 +62,16 @@ module core_top(
     output [31:0] debug1_wb_rf_wdata,
     output [31:0] debug1_wb_inst
 );
+    wire clk;
+    wire clear_clock_gate,set_clock_gate;
+    wire clear_clock_gate_require;
+    clock_gate clock_gate
+    (
+        .aclk(aclk),
+        .clk(clk),
+        .clear_clock_gate(clear_clock_gate),
+        .set_clock_gate(set_clock_gate)
+    );
     assign wid = awid;
     assign arlock[1] = 0;
     assign awlock[1] = 0;
@@ -113,7 +123,7 @@ module core_top(
         .ID_WIDTH(4)
     )
     the_axi_interconnect(
-        .clk(aclk),.rst(~aresetn),
+        .clk(clk),.rst(~aresetn),
 
         //master
         .m_axi_awid(awid),
@@ -310,7 +320,8 @@ module core_top(
         .TLBIDX_WIDTH(TLBIDX_WIDTH)
     )
     the_csr (
-        .clk                     ( aclk                   ),
+        .clk                     ( clk                    ),
+        .stable_clk              ( aclk                   ),
         .rstn                    ( aresetn                ),
 
         .privilege               ( privilege              ),
@@ -428,14 +439,14 @@ module core_top(
     );
 
     wire if_buf_full;
-    wire cache_ready;
-    wire pc_stall_n=cache_ready & ~if_buf_full;
+    wire icache_ready;
+    wire pc_stall_n=icache_ready & ~if_buf_full;
     
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
-    always @(posedge aclk) begin
+    always @(posedge clk) begin
         if(~aresetn)
             //龙芯架构32位精简版参考手册 v1.00 p. 53
             pc <= 32'h1C000000;
@@ -461,7 +472,7 @@ module core_top(
     // reg [31:0] id_pc_for_predict_reg;
     // reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
     // reg [1:0] id_category0_reg,id_category1_reg;
-    // always @(posedge aclk)
+    // always @(posedge clk)
     //     if(~aresetn) begin
     //         id_feedback_valid_reg<=0;
     //         id_pc_for_predict_reg<=0;
@@ -481,7 +492,7 @@ module core_top(
     wire ex_branch_unknown;
     branch_unit the_branch_predict
     (
-        .clk(aclk),.rstn(aresetn),
+        .clk(clk),.rstn(aresetn),
 
         .ifVld(pc_stall_n),.ifPC(pc),
 
@@ -525,10 +536,10 @@ module core_top(
     wire [6:0] if_exception_qt4WxiD7aL7;
     wire [31:0] if_badv_qt4WxiD7aL7;
     icache #(99) the_icache (
-        .clk            (aclk),
+        .clk            (clk),
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
-        .valid          (~if_buf_full),
+        .valid          (~if_buf_full&~clear_clock_gate_require),
         .uncache        (~direct_i_mat),
         .pc_in          (ex_mem_l1i_en?ex_mem_cacop_rj_plus_imm:pc),
         .p_addr         (p_pc),
@@ -537,7 +548,7 @@ module core_top(
         .data_valid     (data_valid_qt4WxiD7aL7),
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc_qt4WxiD7aL7),
-        .cache_ready    (cache_ready),
+        .cache_ready    (icache_ready),
         .exception      (if_exception_qt4WxiD7aL7),
         .badv           (if_badv_qt4WxiD7aL7),
         .r_length       (i_axi_arlen),
@@ -602,7 +613,7 @@ module core_top(
 
     decode_unit_input_reg duir
     (
-        .clk(aclk),
+        .clk(clk),
         .rstn(aresetn),
         .flush(set_pc_by_decoder||set_pc_by_executer||set_pc_by_writeback),
         
@@ -634,7 +645,7 @@ module core_top(
     );
     
     id_stage the_decoder (
-        .clk(aclk), .rstn(aresetn),
+        .clk(clk), .rstn(aresetn),
         .flush(set_pc_by_executer||set_pc_by_writeback),
         .read_en(id_read_en),
         .full(if_buf_full),
@@ -682,7 +693,7 @@ module core_top(
     wire [31:0] is_eu0_badv_3qW1U3J0hMn,is_eu1_badv_3qW1U3J0hMn;
     wire is_eu0_unknown_3qW1U3J0hMn,is_eu1_unknown_3qW1U3J0hMn;
     is_stage the_issue (
-        .clk(aclk),.rstn(aresetn),
+        .clk(clk),.rstn(aresetn),
         .num_read(id_read_en),
         .flush(set_pc_by_executer||set_pc_by_writeback),
         
@@ -736,7 +747,7 @@ module core_top(
 
     execute_unit_input_reg euir0
     (
-        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
         
         .en_in(is_eu0_en_3qW1U3J0hMn),.en_out(is_eu0_en),
         .uop_in(is_eu0_uop_3qW1U3J0hMn),.uop_out(is_eu0_uop),
@@ -753,7 +764,7 @@ module core_top(
 
     execute_unit_input_reg euir1
     (
-        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
         
         .en_in(is_eu1_en_3qW1U3J0hMn),.en_out(is_eu1_en),
         .uop_in(is_eu1_uop_3qW1U3J0hMn),.uop_out(is_eu1_uop),
@@ -802,7 +813,7 @@ module core_top(
     wire [31:0]rf_wdata1;
 
     register_file  the_register (
-        .clk                     ( aclk              ),
+        .clk                     ( clk               ),
         .rstn                    ( aresetn           ),
         .stall                   ( ex_stall          ),
         .flush                   ( set_pc_by_executer||set_pc_by_writeback ),
@@ -860,6 +871,7 @@ module core_top(
     wire ex_mem_data_valid;
     wire [31:0] ex_mem_badv;
     wire [6:0] ex_mem_exception;
+    wire ex_mem_dcache_ready;
     wire fill_mode, check_mode, tlb_we, tlb_other_we;
     wire [9:0] clear_asid;
     wire [31:0] clear_vaddr;
@@ -867,7 +879,7 @@ module core_top(
     wire[0:0]ex_is_atom;
 
     exe  the_exe (
-        .clk           (aclk          ),
+        .clk           (clk           ),
         .rstn          (aresetn       ),
         .flush_by_writeback(set_pc_by_writeback),
         .eu0_en_in     (rf_eu0_en     ), .eu1_en_in (rf_eu1_en ),
@@ -916,6 +928,8 @@ module core_top(
         .dcache_exception        ( ex_mem_exception ),
         .icache_exception        ( if_exception_qt4WxiD7aL7 ),
         .is_atom_out             ( ex_is_atom ),
+        .dcache_ready            ( ex_mem_dcache_ready ),
+        .icache_ready            ( icache_ready ),
 
         .csr_software_query_en(csr_software_query_en),
         .csr_addr   (csr_addr),
@@ -947,7 +961,10 @@ module core_top(
         .tlb_other_we           (tlb_other_we),
         .clear_vaddr            (clear_vaddr),
         .clear_asid             (clear_asid),
-        .clear_mem              (clear_mem)
+        .clear_mem              (clear_mem),
+
+        .clear_clock_gate_require(clear_clock_gate_require),
+        .clear_clock_gate(clear_clock_gate)
     );
     assign tlb_ps_we = tlb_other_we;
     assign tlb_vppn_we = tlb_other_we;
@@ -966,10 +983,10 @@ module core_top(
     assign asid_wen = tlb_other_we;
     dcache the_dcache
     (
-        .clk            (aclk),
+        .clk            (clk),
         .rstn           (aresetn),
-        .valid          (ex_mem_valid),
-        .cache_ready    (),
+        .valid          (ex_mem_valid&~clear_clock_gate_require),
+        .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
         .uncache        (~direct_d_mat),
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
@@ -1025,7 +1042,7 @@ module core_top(
     assign tlb_ppn_1_in[23:20] = 0;
 
     TLB the_tlb(
-        .clk            (aclk),
+        .clk            (clk),
         .rstn           (aresetn),
         .ad_mode        (translate_mode),
 

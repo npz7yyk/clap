@@ -67,6 +67,8 @@ module exe(
     input [ 31:0 ]          icache_badv,
     input [ 6:0 ]           dcache_exception,
     input [ 6:0 ]           icache_exception,
+    input                   dcache_ready,
+    input                   icache_ready,
 
     //CSR
     output [0:0]            csr_software_query_en,
@@ -94,7 +96,11 @@ module exe(
     output [0:0]            tlb_other_we,
     output [31:0]           clear_vaddr,
     output [9:0]            clear_asid,
-    output [2:0]            clear_mem
+    output [2:0]            clear_mem,
+
+    //IDLE
+    output clear_clock_gate_require,//请求清除clock gate
+    output clear_clock_gate        //真正清除clock gate
 );
 
 wire [0:0] stall2;
@@ -560,7 +566,12 @@ exe_privliedged exe_privliedged
     .tlb_other_we(tlb_other_we),
     .clear_vaddr(clear_vaddr),
     .clear_asid(clear_asid),
-    .clear_mem(clear_mem)
+    .clear_mem(clear_mem),
+
+    .clear_clock_gate_require(clear_clock_gate_require),
+    .clear_clock_gate(clear_clock_gate),
+    .icache_idle(icache_ready),
+    .dcache_idle(dcache_ready)
 );
 
 wire[31:0]eu1_alu_sr1;

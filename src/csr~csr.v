@@ -9,7 +9,7 @@ module csr
     TLBIDX_WIDTH = 4
 )
 (
-    input clk,
+    input clk, stable_clk,
     input rstn,
     //software query port (exe stage)
     input software_query_en,
@@ -1012,7 +1012,7 @@ module csr
     
     //TVAL
     reg time_out;
-    always @(posedge clk)
+    always @(posedge stable_clk)
         if(~rstn) begin
             csr_tval <= 0;
             time_out <= 0;
@@ -1028,7 +1028,7 @@ module csr
         end
     
     //TICLR
-    always @(posedge clk)
+    always @(posedge stable_clk)
         if(~rstn||software_query_en&&addr==`CSR_TICLR&&wen[`TICLR_CLR]&&wdata[`TICLR_CLR])
             timer_int <= 0;
         else if(time_out)
@@ -1138,7 +1138,8 @@ module csr
     assign asid_out = asid_asid;
     assign pgdl_base_out = pgdl_base;
     assign pgdh_base_out = pgdh_base;
-    assign llbit = llbctl_rollb;
+    //llbit对CPU写优先
+    assign llbit = llbctl_rollb|llbit_set;
     assign tid = csr_tid;
     assign ecode = estat_ecode;
     //end CSR read
