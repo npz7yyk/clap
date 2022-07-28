@@ -100,8 +100,7 @@ module exe(
 
     //IDLE
     output clear_clock_gate_require,//请求清除clock gate
-    output clear_clock_gate,        //真正清除clock gate
-    input has_interrupt_cpu
+    output clear_clock_gate        //真正清除clock gate
 );
 
 wire [0:0] stall2;
@@ -556,6 +555,7 @@ exe_privliedged exe_privliedged
     .cacop_dbadv_in(dcache_badv),
     .cacop_ibadv_in(icache_badv),
 
+
     .era(era),
     .restore_state(restore_state),
     .fill_mode(fill_mode),
@@ -571,8 +571,7 @@ exe_privliedged exe_privliedged
     .clear_clock_gate_require(clear_clock_gate_require),
     .clear_clock_gate(clear_clock_gate),
     .icache_idle(icache_ready),
-    .dcache_idle(dcache_ready),
-    .has_interrupt_cpu(has_interrupt_cpu)
+    .dcache_idle(dcache_ready)
 );
 
 wire[31:0]eu1_alu_sr1;
