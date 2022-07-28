@@ -233,8 +233,8 @@ module decoder
         type_[`ITYPE_IDX_MEM]&inst[27] |
         is_alu_sfti;
     wire is_u12 = is_alu_imm&inst[24];//andi、ori、xori的inst[24]都等于1
-    wire is_i14 = type_[`ITYPE_IDX_MEM]&~inst[27] |
-        type_[`ITYPE_IDX_CSR];
+    wire is_i14 = type_[`ITYPE_IDX_CSR];
+    wire is_i14_sll2 = type_[`ITYPE_IDX_MEM]&~inst[27];
     wire is_i16 = type_[`ITYPE_IDX_BR]&~is_b_or_bl;
     wire is_i26 = is_b_or_bl;
     wire is_i20 = is_pcadd|is_lui;
@@ -245,11 +245,13 @@ module decoder
     wire [31:0] i16_result = {{16{inst[25]}},inst[25:10]};
     wire [31:0] i26_result = {{6{inst[9]}},{inst[9:0],inst[25:10]}};
     wire [31:0] i20_result = {inst[24:5],12'b0};
+    wire [31:0] i14_sll2_result = {{10{inst[23]}},inst[23:10],2'b0};
     
     assign imm = 
         i12_result&{32{is_i12}} |
         u12_result&{32{is_u12}} |
         i14_result&{32{is_i14}} |
+        i14_sll2_result&{32{is_i14_sll2}} |
         i16_result&{32{is_i16}} |
         i26_result&{32{is_i26}} |
         i20_result&{32{is_i20}};
