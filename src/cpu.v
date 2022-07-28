@@ -864,6 +864,7 @@ module core_top(
     wire [9:0] clear_asid;
     wire [31:0] clear_vaddr;
     wire[2:0] clear_mem;
+    wire[0:0]ex_is_atom;
 
     exe  the_exe (
         .clk           (aclk          ),
@@ -914,6 +915,7 @@ module core_top(
         .icache_badv             ( if_badv_qt4WxiD7aL7 ),
         .dcache_exception        ( ex_mem_exception ),
         .icache_exception        ( if_exception_qt4WxiD7aL7 ),
+        .is_atom_out             ( ex_is_atom ),
 
         .csr_software_query_en(csr_software_query_en),
         .csr_addr   (csr_addr),
@@ -1008,7 +1010,10 @@ module core_top(
         .cacop_ready    (ex_mem_l1d_ready),
         .cacop_complete (ex_mem_l1d_complete),
 
-        .tlb_exception  (dtlb_exp)
+        .tlb_exception  (dtlb_exp),
+        .is_atom        (ex_is_atom),
+        .llbit          (llbit),
+        .llbit_set      (llbit_set)
     );
     wire tlb_e_in;
     wire tlb_g_in;

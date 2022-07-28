@@ -10,12 +10,14 @@ module mem0 (
     input  [ 1:0 ]     mem_width_in,
     input  [6:0]       mem_exp_in,
     input  [0:0]       mem_sign,
+    input  [0:0]       is_atom_in,
     //向cache输出
     output [0:0]       valid,                 //    valid request
     output [0:0]       op,                    //    write: 1, read: 0
     output [31:0]      addr,
     output reg [ 3:0 ] write_type,          //    byte write enable
     output [ 31:0 ]    w_data_CPU,         //    write data
+    output [0:0]       is_atom_out,
     //向exe0段后输出
     output [6:0]       mem_exp_out,
     output [4:0]       mem_rd_out,
@@ -24,7 +26,7 @@ module mem0 (
 );
     assign valid = mem_en_in;
     assign op    = mem_write;
-    assign addr  = mem_sr+mem_imm;
+    assign addr  = mem_sr + mem_imm;
 
     always @(*) begin
         case (mem_width_in)
@@ -34,7 +36,7 @@ module mem0 (
             default: write_type = 'b1111;
         endcase
     end
-
+    assign is_atom_out  = is_atom_in;
     assign w_data_CPU   = mem_data_in;
     assign mem_en_out   = mem_en_in;
     assign mem_exp_out  = mem_exp_in;
@@ -62,7 +64,7 @@ module mem1 (
     //向全局输出
     output [0:0]   stall_because_cache
 );
-    assign stall_because_cache =  mem_en_in&!(data_valid | (|cache_exception));
+    assign stall_because_cache = mem_en_in&!(data_valid | (|cache_exception));
     assign mem_exp_out         = {7{mem_en_in}}&(mem_exp_in|cache_exception);
     assign mem_data_out        = {32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
     assign mem_rd_out          = {5{mem_en_out}}&mem_rd_in;

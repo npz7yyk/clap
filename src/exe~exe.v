@@ -59,6 +59,7 @@ module exe(
     output [0:0]            signed_ext,
     output [ 3:0 ]          write_type,           //    byte write enable
     output [ 31:0 ]         w_data_CPU,           //    write data
+     output [0:0]           is_atom_out,
     //从cache输入
     input [0:0]             data_valid,           //    read: data has returned; write: data has been written in
     input [ 31:0 ]          r_data_CPU,           //    read data to CPU
@@ -451,16 +452,18 @@ mem0  u_mem0 (
     .mem_width_in            ( eu0_uop_in[`UOP_MEM_WIDTH]),
     .mem_exp_in              (eu0_exp_in                 ),
     .mem_sign                ( eu0_uop_in[`UOP_SIGN]     ),
+    .is_atom_in              ( eu0_uop_in[`UOP_MEM_ATM]  ),
 
-    .valid                   ( valid                     ),
-    .op                      ( op                        ),
-    .addr(addr),
-    .signed_ext(signed_ext),
+    .valid                   ( valid           ),
+    .op                      ( op              ),
+    .addr                    ( addr            ),
+    .signed_ext              ( signed_ext      ),
     .write_type              ( write_type      ),
     .w_data_CPU              ( w_data_CPU      ),
     .mem_exp_out             ( mem_exp_mid     ),
     .mem_rd_out              ( mem_rd_mid      ),
-    .mem_en_out              ( mem_en_mid      )
+    .mem_en_out              ( mem_en_mid      ),
+    .is_atom_out             ( is_atom_out     )
 );
 
 mem1  u_mem1 (
