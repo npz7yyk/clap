@@ -190,6 +190,7 @@ module predict_unit #(
     wire [ADDR_WIDTH - 3:0] pc_choose = reason ?
         info2[ADDR_WIDTH - 1:2] : info1[ADDR_WIDTH - 1:2];
 
-    assign pc_new = {pc_new[ADDR_WIDTH -1:3],3'b0}+8;
+    assign pc_new = branch ?
+        {pc_choose, 2'b00} :{pc_new[ADDR_WIDTH -1:3],3'b0}+8;
 
 endmodule
