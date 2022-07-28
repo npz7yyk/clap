@@ -68,6 +68,7 @@ module core_top(
     clock_gate clock_gate
     (
         .aclk(aclk),
+        .resetn(aresetn),
         .clk(clk),
         .clear_clock_gate(clear_clock_gate),
         .set_clock_gate(set_clock_gate)
