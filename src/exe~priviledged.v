@@ -1,4 +1,5 @@
 `include "uop.vh"
+`include "exception.vh"
 
 //执行特权指令
 /* verilator lint_off DECLFILENAME */
@@ -61,7 +62,8 @@ module exe_privliedged(
     //进入
     output reg clear_clock_gate_require,//请求清除clock gate
     output reg clear_clock_gate,        //真正清除clock gate
-    input icache_idle,dcache_idle
+    input icache_idle,dcache_idle,
+    input has_interrupt_cpu
 ); 
     localparam
         S_INIT      = 29'b00000000000000000000000000001,
@@ -330,6 +332,9 @@ module exe_privliedged(
             S_IDLE_WAIT4: begin
             end
             S_DONE_IDLE: begin
+                //如果IDLE等待期间出现中断，IDLE将带上中断例外
+                if(has_interrupt_cpu)
+                    exp_out <= `EXP_INT;
                 clear_clock_gate_require <= 0;
                 clear_clock_gate <= 0;
                 stall_because_priv<=0;
