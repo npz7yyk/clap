@@ -503,6 +503,7 @@ module para #(
 
     input wire                    bdEn,             // whether we need to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
+    input wire                    bdKnown,          // whether we know this instruction
     input wire                    bdBack,           // instruction branch direction
     input wire              [1:0] bdType,           // instruction type
     input wire                    bdBranch,         // whether a branch is needed
@@ -586,7 +587,7 @@ module para #(
         .new_   (update)
     );
 
-    assign wdata_ex = vld[waddr_ex] ? update : init;
+    assign wdata_ex = bdKnown ? update : init;
 
     assign ifVldLower = vld[raddr_p1];
     assign ifVldUpper = vld[raddr_p2];
@@ -611,6 +612,7 @@ module past #(
 
     input wire              [3:0] bdSel,            // which block to update 
     input wire [ADDR_WIDTH - 1:0] bdPC,             // instruction PC
+    input wire                    bdKnown,          // whether we know this instruction
     input wire                    bdBack,           // instruction branch target
     input wire              [1:0] bdType,           // instruction type
     input wire                    bdBranch,         // whether a branch is needed
@@ -649,6 +651,7 @@ module past #(
 
         .bdEn           (bdSel[0]),
         .bdPC           (bdPC),
+        .bdKnown        (bdKnown),
         .bdBack         (bdBack),
         .bdType         (bdType),
         .bdBranch       (bdBranch),
@@ -675,6 +678,7 @@ module past #(
 
         .bdEn           (bdSel[1]),
         .bdPC           (bdPC),
+        .bdKnown        (bdKnown),
         .bdBack         (bdBack),
         .bdType         (bdType),
         .bdBranch       (bdBranch),
@@ -701,6 +705,7 @@ module past #(
 
         .bdEn           (bdSel[2]),
         .bdPC           (bdPC),
+        .bdKnown        (bdKnown),
         .bdBack         (bdBack),
         .bdType         (bdType),
         .bdBranch       (bdBranch),
@@ -727,6 +732,7 @@ module past #(
 
         .bdEn           (bdSel[3]),
         .bdPC           (bdPC),
+        .bdKnown        (bdKnown),
         .bdBack         (bdBack),
         .bdType         (bdType),
         .bdBranch       (bdBranch),

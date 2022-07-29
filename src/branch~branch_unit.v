@@ -119,6 +119,7 @@ module branch_unit #(
 
         .bdSel          (exFactSel),
         .bdPC           (exPC),
+        .bdKnown        (exKnown),
         .bdBack         (exBack),
         .bdType         (exType),
         .bdBranch       (exBranch),
