@@ -101,6 +101,7 @@ module exe_privliedged(
     reg [0:0] inst_16;
     reg [1:0] inst_11_10;
     reg [4:0] inst_4_0;
+    reg [31:0] sr0_save,imm_save;
 
     always @(posedge clk)
         if(~rstn) state <= S_INIT;
@@ -179,7 +180,8 @@ module exe_privliedged(
             tlb_other_we <= 0;
             cacop_code <= 0;
             {l1i_en,l1d_en,l2_en} <= 0;
-            cacop_rj_plus_imm <= 0;
+            sr0_save <= 0;
+            imm_save <= 0;
             {use_tlb_s0,use_tlb_s1}<= 0;
             exp_out<=0;
             badv_out<=0;
@@ -269,11 +271,13 @@ module exe_privliedged(
                 stall_because_priv<=1;
                 pc_target<=pc_next;
                 cacop_code <= inst[4:3];
-                cacop_rj_plus_imm <= sr0+imm;
+                sr0_save <= sr0;
+                imm_save <= imm;
             end
             S_L1I_REQ: begin
                 l1i_en <= 1;
                 use_tlb_s0 <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L1I_WAIT: begin
                 l1i_en <= 0;
@@ -290,6 +294,7 @@ module exe_privliedged(
             S_L1D_REQ: begin
                 l1d_en <= 1;
                 use_tlb_s1 <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L1D_WAIT: begin
                 l1d_en <= 0;
@@ -305,6 +310,7 @@ module exe_privliedged(
             end
             S_L2_REQ: begin
                 l2_en <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L2_WAIT: begin
                 l2_en <= 0;
