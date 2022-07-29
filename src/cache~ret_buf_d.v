@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module ret_buf_d(
     input clk,
     input [31:0] addr_rbuf,
@@ -14,9 +15,6 @@ module ret_buf_d(
     parameter HALF = 4'b0011;
     parameter WORD = 4'b1111;
     parameter READ = 1'b0;
-    parameter WRITE = 1'b1;
-    wire [31:0]test_hi;
-    assign test_hi = w_data_AXI[511:480];
     reg [3:0] count;
     initial begin
         count = 0;

@@ -1,5 +1,7 @@
 `include "exception.vh"
+`include "csr.vh"
 
+/* verilator lint_off DECLFILENAME */
 module writeback
 (   
     input eu0_valid,eu1_valid,
@@ -44,8 +46,8 @@ module writeback
     output expcode_wen,
     output [31:0] badv,
     output badv_wen,
-    input [31:0] pgdl,pgdh,
-    output [31:0] pgd,
+    input [`PGD_BASE] pgdl,pgdh,
+    output [`PGD_BASE] pgd,
     output pgd_wen
 );
     wire has_exception = eu0_valid && eu0_exception!=0;
@@ -58,6 +60,7 @@ module writeback
             `EXP_TLBR, `EXP_ADEF, `EXP_ADEM, `EXP_ALE, `EXP_PIL, `EXP_PIS,
             `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_badv = 1;
+            default: set_badv = 0;
             endcase
     end
     always @* begin
@@ -66,6 +69,7 @@ module writeback
             case(eu0_exception)
             `EXP_TLBR, `EXP_PIL, `EXP_PIS, `EXP_PIF, `EXP_PME, `EXP_PPI:
                 set_vppn = 1;
+            default: set_vppn = 0;
             endcase
     end
     assign set_pc = has_exception;

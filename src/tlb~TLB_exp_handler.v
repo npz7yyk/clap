@@ -1,4 +1,5 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module TLB_exp_handler(
     input s0_found,
     input s0_en,
@@ -41,6 +42,7 @@ module TLB_exp_handler(
                 FETCH: s0_exception_temp = `EXP_PIF;
                 LOAD:  s0_exception_temp = `EXP_PIL;
                 STORE: s0_exception_temp = `EXP_PIS; 
+                default: s0_exception_temp = 0;
             endcase
         end
         //PPI
@@ -59,6 +61,7 @@ module TLB_exp_handler(
                 FETCH: s1_exception_temp = `EXP_PIF;
                 LOAD:  s1_exception_temp = `EXP_PIL;
                 STORE: s1_exception_temp = `EXP_PIS; 
+                default: s1_exception_temp = 0;
             endcase
         end
         //PPI

@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module ret_buf_i(
     input clk,
     input[31:0] r_data_AXI,
@@ -14,9 +15,9 @@ module ret_buf_i(
 
     always @(posedge clk) begin
         if(ret_valid)begin
-            mem_din = (mem_din >> 32) | {r_data_AXI, 480'b0};
+            mem_din <= (mem_din >> 32) | {r_data_AXI, 480'b0};
         end
-        if(ret_finish) fill_finish = 1;
-        else fill_finish = 0;
+        if(ret_finish) fill_finish <= 1;
+        else fill_finish <= 0;
     end
 endmodule

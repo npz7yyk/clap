@@ -1,6 +1,8 @@
 `include "uop.vh"
 `include "exception.vh"
+`include "csr.vh"
 
+/* verilator lint_off DECLFILENAME */
 module core_top(
     input           aclk,
     input           aresetn,
@@ -60,6 +62,17 @@ module core_top(
     output [31:0] debug1_wb_rf_wdata,
     output [31:0] debug1_wb_inst
 );
+    wire clk;
+    wire clear_clock_gate,set_clock_gate;
+    wire clear_clock_gate_require;
+    clock_gate clock_gate
+    (
+        .aclk(aclk),
+        .resetn(aresetn),
+        .clk(clk),
+        .clear_clock_gate(clear_clock_gate),
+        .set_clock_gate(set_clock_gate)
+    );
     assign wid = awid;
     assign arlock[1] = 0;
     assign awlock[1] = 0;
@@ -111,7 +124,7 @@ module core_top(
         .ID_WIDTH(4)
     )
     the_axi_interconnect(
-        .clk(aclk),.rst(~aresetn),
+        .clk(clk),.rst(~aresetn),
 
         //master
         .m_axi_awid(awid),
@@ -125,7 +138,6 @@ module core_top(
         //https://developer.arm.com/documentation/ihi0022/e/AMBA-AXI3-and-AXI4-Protocol-Specification/AXI4-Additional-Signaling/QoS-signaling/QoS-interface-signals?lang=en
         .m_axi_awqos(),
         .m_axi_awregion(),
-        .m_axi_awuser(),
         .m_axi_awvalid(awvalid),
         .m_axi_awready(awready),
 
@@ -133,13 +145,11 @@ module core_top(
         .m_axi_wdata(wdata),
         .m_axi_wstrb(wstrb),
         .m_axi_wlast(wlast),
-        .m_axi_wuser(),
         .m_axi_wvalid(wvalid),
         .m_axi_wready(wready),
 
         .m_axi_bid(bid),
         .m_axi_bresp(bresp),
-        .m_axi_buser(0),
         .m_axi_bvalid(bvalid),
         .m_axi_bready(bready),
 
@@ -153,7 +163,6 @@ module core_top(
         .m_axi_arprot(arprot),
         .m_axi_arqos(),
         .m_axi_arregion(),
-        .m_axi_aruser(),
         .m_axi_arvalid(arvalid),
         .m_axi_arready(arready),
 
@@ -161,7 +170,6 @@ module core_top(
         .m_axi_rdata(rdata),
         .m_axi_rresp(rresp),
         .m_axi_rlast(rlast),
-        .m_axi_ruser(0),
         .m_axi_rvalid(rvalid),
         .m_axi_rready(rready),
 
@@ -175,18 +183,15 @@ module core_top(
         .s_axi_awcache  ({ i_axi_awcache  ,  d_axi_awcache  }),
         .s_axi_awprot   ({ i_axi_awprot   ,  d_axi_awprot   }),
         .s_axi_awqos    (0),
-        .s_axi_awuser   (0),
         .s_axi_awvalid  ({ i_axi_awvalid  ,  d_axi_awvalid  }),
         .s_axi_awready  ({ i_axi_awready  ,  d_axi_awready  }),
         .s_axi_wdata    ({ i_axi_wdata    ,  d_axi_wdata    }),
         .s_axi_wstrb    ({ i_axi_wstrb    ,  d_axi_wstrb    }),
         .s_axi_wlast    ({ i_axi_wlast    ,  d_axi_wlast    }),
-        .s_axi_wuser    (0),
         .s_axi_wvalid   ({ i_axi_wvalid   ,  d_axi_wvalid   }),
         .s_axi_wready   ({ i_axi_wready   ,  d_axi_wready   }),
         .s_axi_bid      ({ i_axi_bid      ,  d_axi_bid      }),
         .s_axi_bresp    ({ i_axi_bresp    ,  d_axi_bresp    }),
-        .s_axi_buser    (),
         .s_axi_bvalid   ({ i_axi_bvalid   ,  d_axi_bvalid   }),
         .s_axi_bready   ({ i_axi_bready   ,  d_axi_bready   }),
         .s_axi_arid     ({ i_axi_arid     ,  d_axi_arid     }),
@@ -198,14 +203,12 @@ module core_top(
         .s_axi_arcache  ({ i_axi_arcache  ,  d_axi_arcache  }),
         .s_axi_arprot   ({ i_axi_arprot   ,  d_axi_arprot   }),
         .s_axi_arqos    (0),
-        .s_axi_aruser   (0),
         .s_axi_arvalid  ({ i_axi_arvalid  ,  d_axi_arvalid  }),
         .s_axi_arready  ({ i_axi_arready  ,  d_axi_arready  }),
         .s_axi_rid      ({ i_axi_rid      ,  d_axi_rid      }),
         .s_axi_rdata    ({ i_axi_rdata    ,  d_axi_rdata    }),
         .s_axi_rresp    ({ i_axi_rresp    ,  d_axi_rresp    }),
         .s_axi_rlast    ({ i_axi_rlast    ,  d_axi_rlast    }),
-        .s_axi_ruser    (),
         .s_axi_rvalid   ({ i_axi_rvalid   ,  d_axi_rvalid   }),
         .s_axi_rready   ({ i_axi_rready   ,  d_axi_rready   })
     );
@@ -223,8 +226,12 @@ module core_top(
     wire  csr_era_wen;
     wire  [31:0]  csr_badv_in;
     wire  csr_badv_wen;
-    wire  [31:0]  csr_pgd_in;
+
+    wire  [`PGD_BASE]  csr_pgd_in;
     wire  csr_pgd_wen;
+    wire  [`PGD_BASE]  pgdl_out;
+    wire  [`PGD_BASE]  pgdh_out;
+
     wire  [TLBIDX_WIDTH-1:0]  tlb_index_in;
     wire  tlb_index_we;
     wire  [5:0]  tlb_ps_in;
@@ -259,15 +266,13 @@ module core_top(
     wire  tlb_ppn_1_wen;
     wire  [9:0]  asid_in;
     wire  asid_wen;
-    wire  llbit_set;
-    wire  llbit_clear_by_eret;
-    wire  llbit_clear_by_other;
-
     wire  [1:0]  privilege;
     wire  [31:0]  csr_era_out;
     wire  [31:0]  csr_eentry;
     wire  [31:0]  csr_tlbrentry;
-    wire  has_interrupt;
+    wire  has_interrupt_cpu;
+    wire  has_interrupt_idle;
+    assign set_clock_gate = has_interrupt_idle;
     wire  [1:0]  translate_mode;
     wire  direct_i_mat;
     wire  direct_d_mat;
@@ -295,14 +300,17 @@ module core_top(
     wire  tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
+    /* verilator lint_off UNUSED */ //([23:20] is useless)
     wire  [23:0]  tlb_ppn_0_out;
     wire  [23:0]  tlb_ppn_1_out;
+    // verilator lint_on UNUSED
     wire  [9:0]  asid_out;
-    wire  [31:0]  pgdl_out;
-    wire  [31:0]  pgdh_out;
-    wire  llbit;
     wire  [31:0]  tid;
-    wire  [31:0]  cache_tag;
+
+    wire  llbit_set;
+    wire  llbit_clear_by_eret;
+    wire  llbit_clear_by_other;
+    wire  llbit;
 
     wire csr_software_query_en;
     wire [13:0] csr_addr;
@@ -315,7 +323,8 @@ module core_top(
         .TLBIDX_WIDTH(TLBIDX_WIDTH)
     )
     the_csr (
-        .clk                     ( aclk                   ),
+        .clk                     ( clk                    ),
+        .stable_clk              ( aclk                   ),
         .rstn                    ( aresetn                ),
 
         .privilege               ( privilege              ),
@@ -343,12 +352,15 @@ module core_top(
         .badv_wen                ( csr_badv_wen           ),
         .eentry                  ( csr_eentry             ),
         .tlbrentry               ( csr_tlbrentry          ),
-        .pgd_in                  ( csr_pgd_in             ),
-        .pgd_wen                 ( csr_pgd_wen            ),
+        .pgd_base_in             ( csr_pgd_in             ),
+        .pgd_base_wen            ( csr_pgd_wen            ),
+        .pgdl_base_out           ( pgdl_out               ),
+        .pgdh_base_out           ( pgdh_out               ),
 
         //interrupt
         .hardware_int            ( intrpt                 ),
-        .has_interrupt           ( has_interrupt          ),
+        .has_interrupt_cpu       ( has_interrupt_cpu      ),
+        .has_interrupt_idle      ( has_interrupt_idle     ),
 
         //MMU
         .translate_mode          ( translate_mode         ),
@@ -386,9 +398,6 @@ module core_top(
         .asid_out                ( asid_out               ),
         .asid_in                 ( asid_in                ),
         .asid_wen                ( asid_wen               ),
-
-        .pgdl_out                ( pgdl_out               ),
-        .pgdh_out                ( pgdh_out               ),
 
         .tlb_index_in            ( tlb_index_in           ),
         .tlb_index_we            ( tlb_index_we           ),
@@ -430,21 +439,18 @@ module core_top(
         .llbit_clear_by_other    ( llbit_clear_by_other   ),
         
         //timer
-        .tid                     ( tid                    ),
-
-        //cache tag
-        .cache_tag               ( cache_tag              )
+        .tid                     ( tid                    )
     );
 
     wire if_buf_full;
-    wire cache_ready;
-    wire pc_stall_n=cache_ready & ~if_buf_full;
+    wire icache_ready;
+    wire pc_stall_n=icache_ready & ~if_buf_full;
     
     reg [31:0] pc;
     wire [31:0] pc_next;
     wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
     wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
-    always @(posedge aclk) begin
+    always @(posedge clk) begin
         if(~aresetn)
             //龙芯架构32位精简版参考手册 v1.00 p. 53
             pc <= 32'h1C000000;
@@ -463,13 +469,14 @@ module core_top(
     wire [31:0] id_jmpdist0,id_jmpdist1;
     wire [1:0] id_category0,id_category1,ex_br_category;
     wire ex_feedback_valid,ex_did_jump;
-    wire pred_known;
+    wire pred_known0,pred_known1;
+    wire [31:0] pred_record0,pred_record1;
     wire pd_branch,pd_reason;
     // reg id_feedback_valid_reg;
     // reg [31:0] id_pc_for_predict_reg;
     // reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
     // reg [1:0] id_category0_reg,id_category1_reg;
-    // always @(posedge aclk)
+    // always @(posedge clk)
     //     if(~aresetn) begin
     //         id_feedback_valid_reg<=0;
     //         id_pc_for_predict_reg<=0;
@@ -486,9 +493,10 @@ module core_top(
     //         id_category0_reg <= id_category0;
     //         id_category1_reg <= id_category1;
     //     end
+    wire ex_branch_unknown;
     branch_unit the_branch_predict
     (
-        .clk(aclk),.rstn(aresetn),
+        .clk(clk),.rstn(aresetn),
 
         .ifVld(pc_stall_n),.ifPC(pc),
 
@@ -503,16 +511,20 @@ module core_top(
         .exType(ex_br_category),
         .exBranch(ex_did_jump),
         .exWrong(set_pc_by_executer),
-        .exKnown(~branch_unknown),
+        .exKnown(~ex_branch_unknown),
 
         .pdPC(pc_next),
-        .pdKnown(pred_known),
+        .pdKnown1(pred_known0),.pdKnown2(pred_known1),
+        .pdAddrType1(pred_record0),.pdAddrType2(pred_record1),
         .pdBranch(pd_branch),
         .pdReason(pd_reason)
     );
 
     wire [1:0] ex_mem_cacop_code;
-    wire ex_mem_l1i_en,ex_mem_l1d_en,ex_mem_l2_en;
+    wire ex_mem_l1i_en,ex_mem_l1d_en;
+    /* verilator lint_off UNUSED */ //(useless because L2 cache is not implemented)
+    wire ex_mem_l2_en;
+    // verilator lint_on UNUSED
     wire ex_mem_l1i_ready,ex_mem_l1d_ready,ex_mem_l2_ready;
     wire ex_mem_l1i_complete,ex_mem_l1d_complete,ex_mem_l2_complete;
     wire [31:0] ex_mem_cacop_rj_plus_imm;
@@ -522,24 +534,25 @@ module core_top(
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7;
     wire [31:0] p_pc;
-    wire if_known_qt4WxiD7aL7;
+    wire if_known0_qt4WxiD7aL7,if_known1_qt4WxiD7aL7;
+    wire [31:0] if_pred_record0_qt4WxiD7aL7,if_pred_record1_qt4WxiD7aL7;
     wire first_inst_jmp_qt4WxiD7aL7;
     wire [6:0] if_exception_qt4WxiD7aL7;
     wire [31:0] if_badv_qt4WxiD7aL7;
-    icache #(34) the_icache (
-        .clk            (aclk),
+    icache #(99) the_icache (
+        .clk            (clk),
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
-        .valid          (~if_buf_full),
+        .valid          (~if_buf_full&~clear_clock_gate_require),
         .uncache        (~direct_i_mat),
         .pc_in          (ex_mem_l1i_en?ex_mem_cacop_rj_plus_imm:pc),
         .p_addr         (p_pc),
-        .cookie_in      ({pd_branch&~pd_reason,pred_known,pc_next}),
-        .cookie_out     ({first_inst_jmp_qt4WxiD7aL7,if_known_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7}),
+        .cookie_in      ({pred_record0,pred_record1,pd_branch&~pd_reason,pred_known0,pred_known1,pc_next}),
+        .cookie_out     ({if_pred_record0_qt4WxiD7aL7,if_pred_record1_qt4WxiD7aL7,first_inst_jmp_qt4WxiD7aL7,if_known0_qt4WxiD7aL7,if_known1_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7}),
         .data_valid     (data_valid_qt4WxiD7aL7),
         .r_data_CPU     (r_data_CPU),
         .pc_out         (if_pc_qt4WxiD7aL7),
-        .cache_ready    (cache_ready),
+        .cache_ready    (icache_ready),
         .exception      (if_exception_qt4WxiD7aL7),
         .badv           (if_badv_qt4WxiD7aL7),
         .r_length       (i_axi_arlen),
@@ -587,7 +600,8 @@ module core_top(
     wire [31:0] if_inst0,if_inst1;
     wire data_valid;
     wire [31:0] if_pc,if_pc_next;
-    wire if_known;
+    wire if_known0,if_known1;
+    wire [31:0] if_pred_record0,if_pred_record1;
     wire first_inst_jmp;
     wire [6:0] if_exception;
     wire [31:0] if_badv;
@@ -603,14 +617,17 @@ module core_top(
 
     decode_unit_input_reg duir
     (
-        .clk(aclk),
+        .clk(clk),
         .rstn(aresetn),
         .flush(set_pc_by_decoder||set_pc_by_executer||set_pc_by_writeback),
         
         .input_valid_in(data_valid_qt4WxiD7aL7),
         .inst0_in(r_data_CPU[31:0]),
         .inst1_in(r_data_CPU[63:32]),
-        .known_in(if_known_qt4WxiD7aL7),
+        .known0_in(if_known0_qt4WxiD7aL7),
+        .known1_in(if_known1_qt4WxiD7aL7),
+        .pred_record0_in(if_pred_record0_qt4WxiD7aL7),
+        .pred_record1_in(if_pred_record1_qt4WxiD7aL7),
         .first_inst_jmp_in(first_inst_jmp_qt4WxiD7aL7),
         .exception_in(if_exception_qt4WxiD7aL7),
         .badv_in(if_badv_qt4WxiD7aL7),
@@ -620,7 +637,10 @@ module core_top(
         .input_valid_out(data_valid),
         .inst0_out(if_inst0),
         .inst1_out(if_inst1),
-        .known_out(if_known),
+        .known0_out(if_known0),
+        .known1_out(if_known1),
+        .pred_record0_out(if_pred_record0),
+        .pred_record1_out(if_pred_record1),
         .first_inst_jmp_out(first_inst_jmp),
         .exception_out(if_exception),
         .badv_out(if_badv),
@@ -629,7 +649,7 @@ module core_top(
     );
     
     id_stage the_decoder (
-        .clk(aclk), .rstn(aresetn),
+        .clk(clk), .rstn(aresetn),
         .flush(set_pc_by_executer||set_pc_by_writeback),
         .read_en(id_read_en),
         .full(if_buf_full),
@@ -653,7 +673,8 @@ module core_top(
         .badv_in(if_badv),
         .exception0_out(id_exception0),.exception1_out(id_exception1),
         .badv0_out(id_badv0),.badv1_out(id_badv1),
-        .unknown0_in(~if_known),.unknown1_in(~if_known),
+        .pred_record0(if_pred_record0),.pred_record1(if_pred_record1),
+        .unknown0_in(~if_known0),.unknown1_in(~if_known1),
         .unknown0_out(id_unknown0),.unknown1_out(id_unknown1),
        
         .feedback_valid(id_feedback_valid),
@@ -664,7 +685,9 @@ module core_top(
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)
     );
-    wire  ex_stall;
+    wire [0:0] ex_stall;
+    wire [0:0] ex_stall3;
+    wire [0:0] ex_stall4;
     wire is_eu0_en_3qW1U3J0hMn,is_eu1_en_3qW1U3J0hMn;
     wire [`WIDTH_UOP-1:0] is_eu0_uop_3qW1U3J0hMn,is_eu1_uop_3qW1U3J0hMn;
     wire [4:0] is_eu0_rd_3qW1U3J0hMn,is_eu0_rj_3qW1U3J0hMn,is_eu0_rk_3qW1U3J0hMn;
@@ -675,8 +698,11 @@ module core_top(
     wire [6:0] is_eu0_exception_3qW1U3J0hMn,is_eu1_exception_3qW1U3J0hMn;
     wire [31:0] is_eu0_badv_3qW1U3J0hMn,is_eu1_badv_3qW1U3J0hMn;
     wire is_eu0_unknown_3qW1U3J0hMn,is_eu1_unknown_3qW1U3J0hMn;
+    wire [0:0]stall_by_conflict;
+ 
+    assign ex_stall = ex_stall3||ex_stall4;
     is_stage the_issue (
-        .clk(aclk),.rstn(aresetn),
+        .clk(clk),.rstn(aresetn),
         .num_read(id_read_en),
         .flush(set_pc_by_executer||set_pc_by_writeback),
         
@@ -688,11 +714,10 @@ module core_top(
         .unknown0(id_unknown0),.unknown1(id_unknown1),
         .pc0(id_pc0),.pc1(id_pc1),
         .pc_next0(id_pc_next0),.pc_next1(id_pc_next1),
-        .has_interrupt(has_interrupt),
+        .has_interrupt(has_interrupt_cpu),
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
-        .eu0_ready(~ex_stall),
-        .eu0_finish(1),
+        .eu0_ready(~(ex_stall||stall_by_conflict)),
         .eu0_uop(is_eu0_uop_3qW1U3J0hMn),
         .eu0_rd(is_eu0_rd_3qW1U3J0hMn),
         .eu0_rj(is_eu0_rj_3qW1U3J0hMn),
@@ -706,7 +731,6 @@ module core_top(
         
         .eu1_en(is_eu1_en_3qW1U3J0hMn),
         .eu1_ready(~ex_stall),
-        .eu1_finish(1),
         .eu1_uop(is_eu1_uop_3qW1U3J0hMn),
         .eu1_rd(is_eu1_rd_3qW1U3J0hMn),
         .eu1_rj(is_eu1_rj_3qW1U3J0hMn),
@@ -732,7 +756,7 @@ module core_top(
 
     execute_unit_input_reg euir0
     (
-        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall||stall_by_conflict),
         
         .en_in(is_eu0_en_3qW1U3J0hMn),.en_out(is_eu0_en),
         .uop_in(is_eu0_uop_3qW1U3J0hMn),.uop_out(is_eu0_uop),
@@ -749,7 +773,7 @@ module core_top(
 
     execute_unit_input_reg euir1
     (
-        .clk(aclk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall||stall_by_conflict),
         
         .en_in(is_eu1_en_3qW1U3J0hMn),.en_out(is_eu1_en),
         .uop_in(is_eu1_uop_3qW1U3J0hMn),.uop_out(is_eu1_uop),
@@ -775,13 +799,20 @@ module core_top(
     wire  [4:0]  rf_eu0_rj,rf_eu1_rj;
     wire  [4:0]  rf_eu0_rk,rf_eu1_rk;
     wire  [31:0]  rf_eu0_pc,rf_eu1_pc;
-    wire  [31:0]  rf_eu0_pc_next,rf_eu1_pc_next;
-    wire  [6:0]  rf_eu0_exp,rf_eu1_exp;
+    wire  [31:0]  rf_eu0_pc_next;
+    wire  [6:0]  rf_eu0_exp;
     wire  [31:0]  rf_eu0_read_dataj, rf_eu1_read_dataj;
     wire  [31:0]  rf_eu0_read_datak, rf_eu1_read_datak;
     wire  [31:0]  rf_eu0_imm, rf_eu1_imm;
-    wire  [31:0]  rf_eu0_badv,rf_eu1_badv;
-    wire rf_eu0_unknown,rf_eu1_unknown;
+    wire  [31:0]  rf_eu0_badv;
+    wire rf_eu0_unknown;
+
+    /* verilator lint_off UNUSED */ //(useless, reserved for future optimization)
+    wire  [31:0] rf_eu1_pc_next;
+    wire  [6:0]  rf_eu1_exp;
+    wire  [31:0]  rf_eu1_badv;
+    wire rf_eu1_unknown;
+    // verilator lint_on UNUSED
 
     wire rf_wen0;
     wire rf_wen1;
@@ -791,10 +822,11 @@ module core_top(
     wire [31:0]rf_wdata1;
 
     register_file  the_register (
-        .clk                     ( aclk              ),
+        .clk                     ( clk               ),
         .rstn                    ( aresetn           ),
         .stall                   ( ex_stall          ),
         .flush                   ( set_pc_by_executer||set_pc_by_writeback ),
+        .stall_by_conflict       ( stall_by_conflict ),
         
         .stable_counter(stable_counter),
         .counter_id(tid),
@@ -808,7 +840,7 @@ module core_top(
         .eu0_exp_in    (is_eu0_exception),.eu1_exp_in   (is_eu1_exception),
         .eu0_imm_in    (is_eu0_imm    ), .eu1_imm_in    (is_eu1_imm    ),
         .eu0_badv_in   (is_eu0_badv),    .eu1_badv_in   (is_eu1_badv),
-        .eu0_unknown_in(is_eu0_unknown), .eu1_unknown_in(is_eu0_unknown),
+        .eu0_unknown_in(is_eu0_unknown), .eu1_unknown_in(is_eu1_unknown),
 
         .eu0_en_out     (rf_eu0_en        ), .eu1_en_out     (rf_eu1_en        ),
         .eu0_uop_out    (rf_eu0_uop       ), .eu1_uop_out    (rf_eu1_uop       ),
@@ -839,7 +871,6 @@ module core_top(
     wire  [31:0] ex_eu0_badv;
     wire  [31:0] ex_eu0_pc,ex_eu1_pc;
     wire  [31:0] ex_eu0_inst,ex_eu1_inst;
-    wire ex_eu0_unknown;
     
     wire  ex_mem_valid;
     wire  [0:0]  ex_mem_op;
@@ -850,13 +881,15 @@ module core_top(
     wire ex_mem_data_valid;
     wire [31:0] ex_mem_badv;
     wire [6:0] ex_mem_exception;
+    wire ex_mem_dcache_ready;
     wire fill_mode, check_mode, tlb_we, tlb_other_we;
     wire [9:0] clear_asid;
     wire [31:0] clear_vaddr;
-    wire[2:0] clear_mem;
+    wire [2:0] clear_mem;
+    wire [0:0]ex_is_atom;
 
     exe  the_exe (
-        .clk           (aclk          ),
+        .clk           (clk           ),
         .rstn          (aresetn       ),
         .flush_by_writeback(set_pc_by_writeback),
         .eu0_en_in     (rf_eu0_en     ), .eu1_en_in (rf_eu1_en ),
@@ -882,7 +915,8 @@ module core_top(
         .eu0_pc_out(ex_eu0_pc),  .eu1_pc_out(ex_eu1_pc),
         .eu0_inst(ex_eu0_inst),  .eu1_inst(ex_eu1_inst),
 
-        .stall                   ( ex_stall              ),
+        .stall3                  ( ex_stall3              ),
+        .stall4                  ( ex_stall4              ),
         .flush                   ( set_pc_by_executer    ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),
@@ -894,22 +928,29 @@ module core_top(
 
         .valid                   ( ex_mem_valid                    ),
         .op                      ( ex_mem_op                       ),
-        .addr                    ( ex_mem_addr),
-        .signed_ext              ( ex_signed_ext),
+        .addr                    ( ex_mem_addr ),
+        .signed_ext              ( ex_signed_ext ),
         .write_type              ( ex_mem_write_type               ),
         .w_data_CPU              ( ex_mem_w_data_CPU               ),
-        .data_valid             ( ex_mem_data_valid),
-        .r_data_CPU             ( ex_mem_r_data_CPU),
-        .cache_badv             ( ex_mem_badv),
-        .cache_exception        ( ex_mem_exception),
+        .data_valid              ( ex_mem_data_valid ),
+        .r_data_CPU              ( ex_mem_r_data_CPU ),
+        .dcache_badv             ( ex_mem_badv ),
+        .icache_badv             ( if_badv_qt4WxiD7aL7 ),
+        .dcache_exception        ( ex_mem_exception ),
+        .icache_exception        ( if_exception_qt4WxiD7aL7 ),
+        .is_atom_out             ( ex_is_atom ),
+        .dcache_ready            ( ex_mem_dcache_ready ),
+        .icache_ready            ( icache_ready ),
 
         .csr_software_query_en(csr_software_query_en),
         .csr_addr   (csr_addr),
         .csr_rdata  (csr_rdata),
         .csr_wen    (csr_wen),
         .csr_wdata  (csr_wdata),
+
         .era(csr_era_out),
         .restore_state(csr_restore_state),
+        .llbit_clear_by_eret(llbit_clear_by_eret),
 
         .cacop_code(ex_mem_cacop_code),
         .l1i_en(ex_mem_l1i_en),
@@ -933,7 +974,10 @@ module core_top(
         .tlb_other_we           (tlb_other_we),
         .clear_vaddr            (clear_vaddr),
         .clear_asid             (clear_asid),
-        .clear_mem              (clear_mem)
+        .clear_mem              (clear_mem),
+
+        .clear_clock_gate_require(clear_clock_gate_require),
+        .clear_clock_gate(clear_clock_gate)
     );
     assign tlb_ps_we = tlb_other_we;
     assign tlb_vppn_we = tlb_other_we;
@@ -952,9 +996,10 @@ module core_top(
     assign asid_wen = tlb_other_we;
     dcache the_dcache
     (
-        .clk            (aclk),
+        .clk            (clk),
         .rstn           (aresetn),
-        .valid          (ex_mem_valid),
+        .valid          (ex_mem_valid&~clear_clock_gate_require),
+        .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
         .uncache        (~direct_d_mat),
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
@@ -995,7 +1040,11 @@ module core_top(
         .cacop_ready    (ex_mem_l1d_ready),
         .cacop_complete (ex_mem_l1d_complete),
 
-        .tlb_exception  (dtlb_exp)
+        .tlb_exception  (dtlb_exp),
+        .is_atom        (ex_is_atom),
+        .llbit          (llbit),
+        .llbit_set      (llbit_set),
+        .llbit_clear    (llbit_clear_by_other)
     );
     wire tlb_e_in;
     wire tlb_g_in;
@@ -1007,24 +1056,24 @@ module core_top(
     assign tlb_ppn_1_in[23:20] = 0;
 
     TLB the_tlb(
-        .clk            (aclk),
+        .clk            (clk),
         .rstn           (aresetn),
         .ad_mode        (translate_mode),
 
-        .s0_vaddr       (use_tlb_s0_by_exe?exe_mem_cacop_rj_plus_imm:pc),
+        .s0_vaddr       (use_tlb_s0_by_exe?ex_mem_cacop_rj_plus_imm:pc),
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
-        .s0_mem_type    (2),
-        .s0_en          (~if_buf_full&translate_mode[1]),
+        .s0_mem_type    (use_tlb_s0_by_exe?0:2),
+        .s0_en          (!if_buf_full&&translate_mode[1] || use_tlb_s0_by_exe),
         .s0_exception   (itlb_exp),
 
         .s1_vaddr       (use_tlb_s1_by_exe?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .s1_paddr       (ex_mem_paddr),
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
-        .s1_mem_type    ({1'b0, ex_mem_op}),
-        .s1_en          (ex_mem_valid&&translate_mode[1]),
+        .s1_mem_type    (use_tlb_s1_by_exe?0:{1'b0, ex_mem_op}),
+        .s1_en          (ex_mem_valid&&translate_mode[1] || use_tlb_s1_by_exe),
         .s1_exception   (dtlb_exp),
 
 
@@ -1071,7 +1120,7 @@ module core_top(
         .w_asid         (asid_out),  
 
         
-        .f_index        (stable_counter[3:0]),
+        .f_index        (stable_counter[TLBIDX_WIDTH-1:0]),
         .s_vpn2         (tlb_vppn_out),
         .s_index        (tlb_index_in),
         .s_asid         (asid_out),
@@ -1156,6 +1205,8 @@ module core_top(
         .expcode_wen(csr_expcode_wen),
         .badv(csr_badv_in),
         .badv_wen(csr_badv_wen),
+        .pgdl(pgdl_out),
+        .pgdh(pgdh_out),
         .pgd(csr_pgd_in),
         .pgd_wen(csr_pgd_wen)
     );
@@ -1171,16 +1222,16 @@ module core_top(
         .coreid(0),
         .index(0),
         .valid(debug0_wb_inst!=0),
-        .pc(debug0_wb_pc),
+        .pc({32'd0,debug0_wb_pc}),
         .instr(debug0_wb_inst),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
         .is_CNTinst(0),
         .timer_64_value(stable_counter),
-        .wen(debug0_wb_rf_wen),
-        .wdest(debug0_wb_rf_wnum),
-        .wdata(debug0_wb_rf_wdata),
+        .wen(debug0_wb_rf_wen!=0),
+        .wdest({3'd0,debug0_wb_rf_wnum}),
+        .wdata({32'd0,debug0_wb_rf_wdata}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1191,16 +1242,16 @@ module core_top(
         .coreid(0),
         .index(1),
         .valid(debug1_wb_inst!=0),
-        .pc(debug1_wb_pc),
+        .pc({32'd0,debug1_wb_pc}),
         .instr(debug1_wb_inst),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
         .is_CNTinst(0),
         .timer_64_value(stable_counter),
-        .wen(debug1_wb_rf_wen),
-        .wdest(debug1_wb_rf_wnum),
-        .wdata(debug1_wb_rf_wdata),
+        .wen(debug1_wb_rf_wen!=0),
+        .wdest({3'd0,debug1_wb_rf_wnum}),
+        .wdata({32'd0,debug1_wb_rf_wdata}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1213,7 +1264,7 @@ module core_top(
         .eret(0),
         .intrNo(0),
         .cause(0),
-        .exceptionPC(debug0_wb_pc),
+        .exceptionPC({32'd0,debug0_wb_pc}),
         .exceptionInst(debug0_wb_inst)
     );
 

@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module predict_unit #(
     parameter ADDR_WIDTH = 32,
               HASH_DEPTH = 5,
@@ -84,15 +84,15 @@ module predict_unit #(
     reg [(1 << GUESS_DEPTH) - 1:0] inGuess2;
 
     initial begin
-        inGuess1 <= 32'b0;
-        inGuess2 <= 32'b0;
+        inGuess1 = 32'b0;
+        inGuess2 = 32'b0;
     end
 
     // new values for inGuess
     wire inGuess1_new, inGuess2_new;
 
     // this "always" deals with inGuess
-    always @(posedge clk or negedge rstn) begin
+    always @(posedge clk) begin
         if (!rstn) begin
             inGuess1 <= 32'b0;
             inGuess2 <= 32'b0;
@@ -111,7 +111,7 @@ module predict_unit #(
     // end of guess log part
 
     wire [HASH_WIDTH - 1:0] key = pc_now[
-        HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];
+        HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~predict_unit.v:113:29: Signal is not used: 'key'
 
     // Whether a branch is needed decided by guess state or log
     reg branch_past1, branch_past2;
@@ -191,7 +191,6 @@ module predict_unit #(
         info2[ADDR_WIDTH - 1:2] : info1[ADDR_WIDTH - 1:2];
 
     assign pc_new = branch ?
-        {pc_choose, 2'b00} :
-        {pc_now[ADDR_WIDTH - 1:3] + 1, 3'b000};
+        {pc_choose, 2'b00} :{pc_now[ADDR_WIDTH -1:3],3'b0}+8;
 
 endmodule

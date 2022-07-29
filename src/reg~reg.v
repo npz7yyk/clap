@@ -1,5 +1,6 @@
 //FIXME: handle stall signal
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module register_file(
     input [0:0]clk,
     input [0:0]rstn,
@@ -51,7 +52,6 @@ module register_file(
     output reg [31:0]eu0_imm_out,
     output reg [31:0]eu0_badv_out,
     output reg eu0_unknown_out,
-
     output reg [0:0]eu1_en_out,
     output reg [`WIDTH_UOP-1:0]eu1_uop_out,
     output reg  [4:0]eu1_rd_out,
@@ -64,11 +64,36 @@ module register_file(
     output reg [31:0]read_data11,
     output reg [31:0]eu1_imm_out,
     output reg [31:0]eu1_badv_out,
-    output reg eu1_unknown_out
+    output reg eu1_unknown_out,
+    //向前输出
+    output [0:0] stall_by_conflict
 );
 
 reg[31:0]register_file[31:0];
+reg[0:0]stall_by_conflict_old;
 
+
+assign stall_by_conflict = eu0_en_out
+                        &&(eu0_en_in
+                        &&eu0_rd_out!=0
+                        &&(eu0_rj_in==eu0_rd_out
+                        ||eu0_rk_in==eu0_rd_out)
+                        ||eu1_en_in
+                        &&eu0_rd_out!=0
+                        &&(eu1_rj_in==eu0_rd_out
+                        ||eu1_rk_in==eu0_rd_out))
+                        &&(eu0_uop_out[`ITYPE_IDX_MUL]
+                        ||eu0_uop_out[`ITYPE_IDX_BR]
+                        ||eu0_uop_out[`ITYPE_IDX_CSR]
+                        ||eu0_uop_out[`ITYPE_IDX_DIV]
+                        ||eu0_uop_out[`ITYPE_IDX_MEM]);
+
+always @(posedge clk) begin
+    if (!stall) begin
+        stall_by_conflict_old<=stall_by_conflict;
+end
+    end
+    
 always @(posedge clk) begin
     if (write_en_0&&(write_addr_0!=write_addr_1||write_en_1==0)) begin
         register_file[write_addr_0]<=write_addr_0==0?0:write_data_0;
@@ -104,7 +129,7 @@ always @(posedge clk) begin
         read_data11,
         eu1_imm_out}<=0;
     end else if(!stall)begin
-        eu0_en_out<=eu0_en_in;
+        eu0_en_out<=eu0_en_in&&(!stall_by_conflict||stall_by_conflict_old);
         eu0_uop_out<=eu0_uop_in;
         eu0_rd_out<=eu0_rd_in;
         eu0_rj_out<=eu0_rj_in;
@@ -120,10 +145,10 @@ always @(posedge clk) begin
                 `CTRL_SRC1_RF:begin
                     if(eu0_rj_in==0)begin
                         read_data00<=0;
-                    end else if (eu0_rj_in==write_addr_0&&write_en_0) begin
-                        read_data00<=write_data_0;
                     end else if (eu0_rj_in==write_addr_1&&write_en_1) begin
                         read_data00<=write_data_1;
+                    end else if (eu0_rj_in==write_addr_0&&write_en_0) begin
+                        read_data00<=write_data_0;
                     end else begin
                         read_data00<=register_file[eu0_rj_in];
                     end 
@@ -141,11 +166,11 @@ always @(posedge clk) begin
         end else begin
             if(eu0_rj_in==0)begin
                 read_data00<=0;
-            end else if (eu0_rj_in==write_addr_0&&write_en_0) begin
-                read_data00<=write_data_0;
             end else if (eu0_rj_in==write_addr_1&&write_en_1) begin
                 read_data00<=write_data_1;
-            end else begin
+            end else if (eu0_rj_in==write_addr_0&&write_en_0) begin
+                read_data00<=write_data_0;
+            end  else begin
                 read_data00<=register_file[eu0_rj_in];
             end 
         end
@@ -154,11 +179,11 @@ always @(posedge clk) begin
                 `CTRL_SRC2_RF:begin
                     if(eu0_rk_in==0)begin
                         read_data01<=0;
-                    end else if (eu0_rk_in==write_addr_0&&write_en_0) begin
-                        read_data01<=write_data_0;
                     end else if (eu0_rk_in==write_addr_1&&write_en_1) begin
                         read_data01<=write_data_1;
-                    end else begin
+                    end else if (eu0_rk_in==write_addr_0&&write_en_0) begin
+                        read_data01<=write_data_0;
+                    end  else begin
                         read_data01<=register_file[eu0_rk_in];
                     end 
                 end
@@ -175,15 +200,15 @@ always @(posedge clk) begin
         end else begin
                 if(eu0_rk_in==0)begin
                     read_data01<=0;
-                end else if (eu0_rk_in==write_addr_0&&write_en_0) begin
-                    read_data01<=write_data_0;
                 end else if (eu0_rk_in==write_addr_1&&write_en_1) begin
                     read_data01<=write_data_1;
-                end else begin
+                end else if (eu0_rk_in==write_addr_0&&write_en_0) begin
+                    read_data01<=write_data_0;
+                end  else begin
                     read_data01<=register_file[eu0_rk_in];
                 end 
         end
-        eu1_en_out<=eu1_en_in;
+        eu1_en_out<=eu1_en_in&&(!stall_by_conflict||stall_by_conflict_old);
         eu1_uop_out<=eu1_uop_in;
         eu1_rd_out<=eu1_rd_in;
         eu1_rj_out<=eu1_rj_in;
@@ -198,11 +223,11 @@ always @(posedge clk) begin
             `CTRL_SRC1_RF:begin
                 if(eu1_rj_in==0)begin
                         read_data10<=0;
-                end else if (eu1_rj_in==write_addr_0&&write_en_0) begin
-                    read_data10<=write_data_0;
                 end else if (eu1_rj_in==write_addr_1&&write_en_1) begin
                     read_data10<=write_data_1;
-                end else begin
+                end else if (eu1_rj_in==write_addr_0&&write_en_0) begin
+                    read_data10<=write_data_0;
+                end  else begin
                     read_data10<=register_file[eu1_rj_in];
                 end 
             end
@@ -220,11 +245,11 @@ always @(posedge clk) begin
             `CTRL_SRC2_RF:begin
                 if(eu1_rk_in==0)begin
                     read_data11<=0;
-                end else if (eu1_rk_in==write_addr_0&&write_en_0) begin
-                    read_data11<=write_data_0;
                 end else if (eu1_rk_in==write_addr_1&&write_en_1) begin
                     read_data11<=write_data_1;
-                end else begin
+                end else if (eu1_rk_in==write_addr_0&&write_en_0) begin
+                    read_data11<=write_data_0;
+                end  else begin
                     read_data11<=register_file[eu1_rk_in];
                 end 
             end
@@ -238,6 +263,6 @@ always @(posedge clk) begin
                 read_data11<=stable_counter[63:32];
             end
         endcase
-    end
+    end 
 end
 endmodule

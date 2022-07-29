@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module data #(
     parameter ADDR_WIDTH = 32,                      // processor address width
               HASH_DEPTH = 5,                       // hash address width
@@ -55,6 +55,8 @@ module data #(
     output wire [ADDR_WIDTH - 1:0] ifDataLower,     // result data
     output wire [ADDR_WIDTH - 1:0] ifDataUpper      // result data
 );
+    wire [0:0] idUsefulLower;
+    wire [0:0] idUsefulUpper;
     assign idUsefulLower = ^idTypeLower;
     assign idUsefulUpper = ^idTypeUpper;
 
@@ -81,8 +83,8 @@ module data #(
 
     reg [(1 << HASH_DEPTH) - 1:0] vldLower, vldUpper;
     initial begin
-        vldLower <= 32'b0;
-        vldUpper <= 32'b0;
+        vldLower = 32'b0;
+        vldUpper = 32'b0;
     end
 
     assign idIsPair = vldLower[idWaddr] & vldUpper[idWaddr] & idTagLower == idTagUpper;
@@ -227,7 +229,12 @@ module fact #(
     wire [ADDR_WIDTH - 1:0] ifDataLower1, ifDataLower2,
         ifDataLower3, ifDataLower4, ifDataUpper1, 
         ifDataUpper2, ifDataUpper3, ifDataUpper4;
-
+    wire [0:0] idIsPair1;
+    wire [0:0] idExist1;
+    wire [0:0] idInsert1;
+    wire [0:0] exExist1;
+    wire [0:0] ifExistLower1;
+    wire [0:0] ifExistUpper1;
     data #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -256,7 +263,12 @@ module fact #(
         .ifDataLower    (ifDataLower1),
         .ifDataUpper    (ifDataUpper1)
     );
-
+    wire [0:0] idIsPair2;
+    wire [0:0] idExist2;
+    wire [0:0] idInsert2;
+    wire [0:0] exExist2;
+    wire [0:0] ifExistLower2;
+    wire [0:0] ifExistUpper2;
     data #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -285,7 +297,12 @@ module fact #(
         .ifDataLower    (ifDataLower2),
         .ifDataUpper    (ifDataUpper2)
     );
-
+    wire [0:0] idIsPair3;
+    wire [0:0] idExist3;
+    wire [0:0] idInsert3;
+    wire [0:0] exExist3;
+    wire [0:0] ifExistLower3;
+    wire [0:0] ifExistUpper3;
     data #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -314,7 +331,12 @@ module fact #(
         .ifDataLower    (ifDataLower3),
         .ifDataUpper    (ifDataUpper3)
     );
-
+    wire [0:0] idIsPair4;
+    wire [0:0] idExist4;
+    wire [0:0] idInsert4;
+    wire [0:0] exExist4;
+    wire [0:0] ifExistLower4;
+    wire [0:0] ifExistUpper4;
     data #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -359,6 +381,7 @@ module fact #(
     );
 
     // this "always" deals with idEn1 ~ 4
+    wire [0:0] dataExist;
     assign dataExist = idExist1 | idExist2 | idExist3 | idExist4;
     always @(*) begin
         if (!idEn | dataExist) erSel = 4'b0000;
@@ -527,7 +550,7 @@ module para #(
     wire [HASH_DEPTH - 1:0] bdAddr = bdPC[HASH_DEPTH + 1:2];
 
     reg [(1 << HASH_DEPTH) - 1:0] vld;
-    initial vld <= 64'b0;
+    initial vld = 64'b0;
     always @(posedge clk) begin
         if (!rstn) vld <= 64'b0;
         else if (erEn) begin
@@ -635,7 +658,8 @@ module past #(
     wire [PARA_WIDTH - 1:0] ifParaLower1, ifParaLower2,
         ifParaLower3, ifParaLower4, ifParaUpper1,
         ifParaUpper2, ifParaUpper3, ifParaUpper4;
-    
+    wire [0:0] ifVldLower1;
+    wire [0:0] ifVldUpper1;
     para #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -662,7 +686,8 @@ module past #(
         .ifParaLower    (ifParaLower1),
         .ifParaUpper    (ifParaUpper1)
     );
-
+    wire [0:0] ifVldLower2;
+    wire [0:0] ifVldUpper2;
     para #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -689,7 +714,8 @@ module past #(
         .ifParaLower    (ifParaLower2),
         .ifParaUpper    (ifParaUpper2)
     );
-
+    wire [0:0] ifVldLower3;
+    wire [0:0] ifVldUpper3;
     para #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -716,7 +742,8 @@ module past #(
         .ifParaLower    (ifParaLower3),
         .ifParaUpper    (ifParaUpper3)
     );
-
+    wire [0:0] ifVldLower4;
+    wire [0:0] ifVldUpper4;
     para #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .HASH_DEPTH (HASH_DEPTH),
@@ -743,6 +770,7 @@ module past #(
         .ifParaLower    (ifParaLower4),
         .ifParaUpper    (ifParaUpper4)
     );
+    
 
     always @(*) begin
         case (ifSel)

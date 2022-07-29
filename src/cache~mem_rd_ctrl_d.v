@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module mem_rd_ctrl_d(
     input [31:0] addr_rbuf,
     input [31:0] w_data_CPU,
@@ -10,7 +11,10 @@ module mem_rd_ctrl_d(
     input signed_ext,
     input [3:0] miss_way_sel,
     input cacop_en_rbuf,
-    input [4:0]cacop_code_rbuf,
+    input [1:0]cacop_code_rbuf,
+    input llbit_rbuf,
+    input is_atom_rbuf,
+    input op_rbuf,
     output reg [511:0] miss_sel_data,
     output reg [31:0] r_data
     );
@@ -95,28 +99,31 @@ module mem_rd_ctrl_d(
     end
 
     always @(*) begin
-        case(read_type_rbuf)
-        BYTE: begin
-            case(addr_rbuf[1:0])
-            2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
-            2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
-            2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
-            2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
-            endcase
-        end
-        HALF: begin
-            case(addr_rbuf[1:0])
-            2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
-            2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
+        if(is_atom_rbuf && op_rbuf == 1'b1) r_data = {31'b0, llbit_rbuf};
+        else begin
+            case(read_type_rbuf)
+            BYTE: begin
+                case(addr_rbuf[1:0])
+                2'd0: r_data = {{24{r_data_CPU[7]&signed_ext}}, r_data_CPU[7:0]};
+                2'd1: r_data = {{24{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:8]};
+                2'd2: r_data = {{24{r_data_CPU[23]&signed_ext}}, r_data_CPU[23:16]};
+                2'd3: r_data = {{24{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:24]};
+                endcase
+            end
+            HALF: begin
+                case(addr_rbuf[1:0])
+                2'd0: r_data = {{16{r_data_CPU[15]&signed_ext}}, r_data_CPU[15:0]};
+                2'd2: r_data = {{16{r_data_CPU[31]&signed_ext}}, r_data_CPU[31:16]};
+                default: r_data = 0;
+                endcase
+            end
+            WORD: r_data = r_data_CPU;
             default: r_data = 0;
-            endcase
-        end
-        WORD: r_data = r_data_CPU;
-        default: r_data = 0;
         endcase
+        end
     end
     always @(*) begin
-        if(cacop_en_rbuf && cacop_code_rbuf == 5'b01001) begin
+        if(cacop_en_rbuf && cacop_code_rbuf == 2'b01) begin
             case(addr_rbuf[1:0])
             2'd0: miss_sel_data = mem_dout[511:0];
             2'd1: miss_sel_data = mem_dout[1023:512];
@@ -124,7 +131,7 @@ module mem_rd_ctrl_d(
             2'd3: miss_sel_data = mem_dout[2047:1536];
             endcase
         end
-        else if(cacop_en_rbuf && cacop_code_rbuf == 5'b10001) begin
+        else if(cacop_en_rbuf && cacop_code_rbuf == 2'b10) begin
             miss_sel_data = way_data;
         end
         else if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};

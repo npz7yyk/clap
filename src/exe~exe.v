@@ -1,4 +1,5 @@
 `include "uop.vh"
+/* verilator lint_off DECLFILENAME */
 module exe(
     input [0:0]             clk,   
     input [0:0]             rstn,
@@ -40,7 +41,8 @@ module exe(
     output reg [31:0]       eu1_pc_out,
     output reg [31:0]       eu1_inst,
     //向issue段输出
-    output [0:0]            stall,
+    output [0:0]            stall3,
+    output [0:0]            stall4,
     output [0:0]            flush,
     // output empty,
     //向分支预测输出
@@ -58,11 +60,16 @@ module exe(
     output [0:0]            signed_ext,
     output [ 3:0 ]          write_type,           //    byte write enable
     output [ 31:0 ]         w_data_CPU,           //    write data
+     output [0:0]           is_atom_out,
     //从cache输入
     input [0:0]             data_valid,           //    read: data has returned; write: data has been written in
     input [ 31:0 ]          r_data_CPU,           //    read data to CPU
-    input [ 31:0 ]          cache_badv,
-    input [ 6:0 ]           cache_exception,
+    input [ 31:0 ]          dcache_badv,
+    input [ 31:0 ]          icache_badv,
+    input [ 6:0 ]           dcache_exception,
+    input [ 6:0 ]           icache_exception,
+    input                   dcache_ready,
+    input                   icache_ready,
 
     //CSR
     output [0:0]            csr_software_query_en,
@@ -70,12 +77,16 @@ module exe(
     input [31:0]            csr_rdata,//read first
     output  [31:0]          csr_wen,      //bit write enable
     output  [31:0]          csr_wdata,
+
     input [31:0]            era,
     output [0:0]            restore_state,
+    output                  llbit_clear_by_eret,
 
     //cache
     output [1:0] cacop_code,// code[4:3]
-    output l1i_en,l1d_en,l2_en,
+    output [0:0]l1i_en,
+    output [0:0]l1d_en,
+    output [0:0]l2_en,
     input l1i_ready,l1d_ready,l2_ready,
     input l1i_complete,l1d_complete,l2_complete,
     output [31:0] cacop_rj_plus_imm,
@@ -90,20 +101,25 @@ module exe(
     output [0:0]            tlb_other_we,
     output [31:0]           clear_vaddr,
     output [9:0]            clear_asid,
-    output [2:0]            clear_mem
+    output [2:0]            clear_mem,
+
+    //IDLE
+    output clear_clock_gate_require,//请求清除clock gate
+    output clear_clock_gate        //真正清除clock gate
 );
 
-wire [0:0] stall2;
-wire [0:0] stall4;
-wire[31:0] cache_badv_out;
 
-wire eu0_alu_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_ALU];
-wire eu0_mul_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MUL];
-wire eu0_div_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_DIV];
-wire eu0_br_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_BR];
-wire eu0_mem_en=eu0_en_in&eu0_uop_in[`ITYPE_IDX_MEM];
-wire eu0_priv_en=eu0_en_in&&eu0_uop_in[`UOP_PRIVILEDGED];
-wire eu1_alu_en=eu1_en_in&eu1_uop_in[`ITYPE_IDX_ALU];
+wire [31:0] cache_badv_out;
+wire [31:0] priv_badv_out;
+
+
+wire eu0_alu_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_ALU];
+wire eu0_mul_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_MUL];
+wire eu0_div_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_DIV];
+wire eu0_br_en   = eu0_en_in && eu0_uop_in[`ITYPE_IDX_BR];
+wire eu0_mem_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_MEM];
+wire eu0_priv_en = eu0_en_in && eu0_uop_in[`UOP_PRIVILEDGED];
+wire eu1_alu_en  = eu1_en_in && eu1_uop_in[`ITYPE_IDX_ALU];
 
 wire [31:0] eu0_sr0;
 wire [31:0] eu0_sr1;
@@ -126,12 +142,10 @@ wire [31:0] mul_rs3_mid;
 wire [6:0]  mem_exp_mid;
 wire [4:0]  mem_rd_mid;
 wire [0:0]  mem_en_mid;
-wire [1:0]  mem_width_mid;
 wire [0:0]  eu1_alu_en_mid;
 wire [4:0]  eu1_alu_rd_mid;
 wire [31:0] eu1_alu_result_mid;
 wire [31:0] mul_ad_mid;
-wire [31:0] branch_pc_mid;
 wire [31:0] branch_addr_calculated_mid;
 wire [0:0]  branch_status_mid;
 wire [0:0]  branch_valid_mid;
@@ -151,7 +165,6 @@ reg  [31:0]  eu1_pc_exe1;
 reg  [6:0]   mem_exp_exe1;
 reg  [4:0]   mem_rd_exe1;
 reg  [0:0]   mem_en_exe1;
-reg  [1:0]   mem_width_exe1;
 reg  [0:0]   mul_sel_exe1;
 reg  [31:0]  mul_sr0_exe1;
 reg  [31:0]  mul_sr1_exe1;
@@ -161,16 +174,16 @@ reg  [31:0]  mul_ajustice_exe1;
 reg  [4:0]   mul_rd_exe1;
 reg  [6:0]   exp_exe1;
 reg  [31:0]  badv_exe1;
-reg          unknown_exe1;
+reg  [0:0]   unknown_exe1;
 reg  [31:0]  eu0_pc_exe1;
 assign branch_unknown = unknown_exe1;
 //exe1组合输出
 wire [4:0]  mul_rd_out;
 wire [0:0]  mul_en_out;
 wire [31:0] mul_result;
-wire [0:0]  stall_because_cache;
-wire [0:0]  stall_because_div;
-wire [0:0]  stall_because_priv;
+wire [0:0]  stall_by_cache;
+wire [0:0]  stall_by_div;
+wire [0:0]  stall_by_priv;
 wire [6:0]  mem_exp_out;
 wire [4:0]  mem_rd_out;
 wire [31:0] mem_data_out;
@@ -198,7 +211,7 @@ assign flush = flush_because_br||flush_because_priv;
 //中段寄存器更新
 always @(posedge clk) begin
     //eu0
-    if(!rstn||flush_by_writeback||stall2||flush||stall_because_div)begin
+    if(!rstn||flush_by_writeback||flush||stall_by_div)begin
         {eu0_en_0,
         eu0_mul_en_0,
         eu0_rd_0,
@@ -206,7 +219,6 @@ always @(posedge clk) begin
         mem_exp_exe1,
         mem_rd_exe1,
         mem_en_exe1,
-        mem_width_exe1,
         mul_sel_exe1,
         mul_sr0_exe1,
         mul_sr1_exe1,
@@ -224,7 +236,7 @@ always @(posedge clk) begin
         flush_because_br,
         unknown_exe1,
         mul_ajustice_exe1}     <= 0;
-    end else if(!stall)begin
+    end else if(!stall3&&!stall4)begin
         //在存在异常时，将eu0_en_0置位，否则异常会被丢弃
         eu0_en_0               <= br_en_mid||alu_en_mid||eu0_en_in&&eu0_exp_in!=0;
         eu0_mul_en_0           <= mul_en_mid;
@@ -233,7 +245,6 @@ always @(posedge clk) begin
         mem_exp_exe1           <= mem_exp_mid;
         mem_rd_exe1            <= mem_rd_mid;
         mem_en_exe1            <= mem_en_mid;
-        mem_width_exe1         <= mem_width_mid;
         mul_sel_exe1           <= mul_sel_mid;
         mul_sr0_exe1           <= mul_rs0_mid;
         mul_sr1_exe1           <= mul_rs1_mid;
@@ -254,13 +265,13 @@ always @(posedge clk) begin
         mul_ajustice_exe1      <= mul_ad_mid;
     end
     //eu1
-    if(!rstn||flush_by_writeback||stall2||flush||stall_because_div)begin
+    if(!rstn||flush_by_writeback||flush)begin
         {eu1_en_0,
         eu1_rd_0,
         data_mid10,
         inst1_mid}<=0;
-    end else if(!flush&&!stall)begin
-        eu1_en_0    <= eu1_alu_en_mid&&!stall_because_div;
+    end else if(!flush&&!stall3&&!stall4)begin
+        eu1_en_0    <= eu1_alu_en_mid&&!stall_by_div;
         eu1_rd_0    <= eu1_alu_rd_mid;
         data_mid10  <= eu1_alu_result_mid;
         eu1_pc_exe1 <= eu1_pc_in;
@@ -280,13 +291,13 @@ always @(posedge clk) begin
         exp_out,
         eu0_pc_out,
         eu0_inst}         <= 0;
-    end else if(!stall_because_cache)begin
+    end else if(!stall3)begin
         eu0_en_1_internal <= eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         en_out0           <= eu0_en_0|mul_en_out|div_en_out|mem_en_out|priv_en_out;
         data_out0         <= data_mid00|mul_result|div_result|mem_data_out|priv_data_out;
         addr_out0         <= eu0_rd_0|mul_rd_out|div_addr_out|mem_rd_out|priv_addr_out;
         exp_out           <= exp_exe1|mem_exp_out|priv_exp_out;
-        badv_out          <= badv_exe1|cache_badv_out;
+        badv_out          <= badv_exe1|cache_badv_out|priv_badv_out;
         eu0_pc_out        <= eu0_pc_exe1|div_pc_out;
         eu0_inst          <= inst0_mid|div_inst_out;
     end 
@@ -301,9 +312,9 @@ always @(posedge clk) begin
         addr_out1,
         eu1_pc_out,
         eu1_inst}         <=0;
-    end else if(!stall_because_cache&&!flush)begin
+    end else if(!stall3&&!flush)begin
         eu1_en_1_internal <= eu1_en_0;
-        en_out1           <= eu1_en_0&&!stall_because_priv;
+        en_out1           <= eu1_en_0&&!stall_by_priv;
         data_out1         <= data_mid10;
         addr_out1         <= eu1_rd_0;
         eu1_pc_out        <= eu1_pc_exe1;
@@ -314,27 +325,8 @@ always @(posedge clk) begin
     end
 end
 
-hazard  u_hazard (
-    .eu0_en_in                ( eu0_en_in              ),
-    .eu1_en_in                ( eu1_en_in              ),
-    .eu0_rj                   ( eu0_rj_in              ),
-    .eu0_rk                   ( eu0_rk_in              ),
-    .eu1_rj                   ( eu1_rj_in              ),
-    .eu1_rk                   ( eu1_rk_in              ),
-    .eu0_mul_en_0             ( eu0_mul_en_0           ),
-    .eu0_mem_en_0             ( mem_en_exe1            ),
-
-    .eu0_exp_out              (exp_out                 ),
-    .eu0_exp_exe1             (exp_exe1                ),
-    .eu0_rd                   ( mul_rd_exe1|mem_rd_exe1),
-    .stall_because_cache      ( stall_because_cache    ),
-    .stall_because_div        ( stall_because_div      ),
-    .stall_because_priv       ( stall_because_priv     ),
- 
-    .stall                    ( stall                  ),
-    .stall2                   ( stall2                 ),
-    .stall4                   ( stall4                 )
-);
+assign stall4           = exp_out!=0||exp_exe1!=0;
+assign stall3           = stall_by_div||stall_by_cache||stall_by_priv;
 
 forward  u_forward (
     .eu0_rj                  ( eu0_rj_in                    ),
@@ -351,11 +343,11 @@ forward  u_forward (
     .eu1_rd_0                ( eu1_rd_0                     ),
     .data_forward00          ( data_mid00                   ),
     .data_forward10          ( data_mid10                   ),
-    .eu0_en_1                ( eu0_en_1_internal|div_en_out ),
+    .eu0_en_1                ( eu0_en_1_internal ),
     .eu1_en_1                ( eu1_en_1_internal            ),
-    .eu0_rd_1                ( addr_out0|div_addr_out       ),
+    .eu0_rd_1                ( addr_out0       ),
     .eu1_rd_1                ( addr_out1                    ),
-    .data_forward01          ( data_out0|div_result         ),
+    .data_forward01          ( data_out0         ),
     .data_forward11          ( data_out1                    ),
 
     .eu0_sr0                 ( eu0_sr0                      ),
@@ -448,62 +440,62 @@ mul_1  u_mul_1 (
 mem0  u_mem0 (
     .mem_rd_in               ( eu0_rd_in                 ),
     .mem_data_in             ( eu0_sr1                   ),
-    .mem_en_in               ( eu0_mem_en&&!stall&&!flush),
+    .mem_en_in               ( eu0_mem_en&&!stall3&&!stall4&&!flush),
     .mem_sr                  ( eu0_sr0                   ),
     .mem_imm                 ( eu0_imm_in                ),
     .mem_write               ( eu0_uop_in[`UOP_MEM_WRITE]),
     .mem_width_in            ( eu0_uop_in[`UOP_MEM_WIDTH]),
     .mem_exp_in              (eu0_exp_in                 ),
     .mem_sign                ( eu0_uop_in[`UOP_SIGN]     ),
+    .is_atom_in              ( eu0_uop_in[`UOP_MEM_ATM]  ),
 
-    .valid                   ( valid                     ),
-    .op                      ( op                        ),
-    .addr(addr),
-    .signed_ext(signed_ext),
+    .valid                   ( valid           ),
+    .op                      ( op              ),
+    .addr                    ( addr            ),
+    .signed_ext              ( signed_ext      ),
     .write_type              ( write_type      ),
     .w_data_CPU              ( w_data_CPU      ),
     .mem_exp_out             ( mem_exp_mid     ),
     .mem_rd_out              ( mem_rd_mid      ),
     .mem_en_out              ( mem_en_mid      ),
-    .mem_width_out           ( mem_width_mid   )
+    .is_atom_out             ( is_atom_out     )
 );
 
 mem1  u_mem1 (
     .mem_exp_in              ( mem_exp_exe1          ),
     .mem_rd_in               ( mem_rd_exe1           ),
     .mem_en_in               ( mem_en_exe1           ),
-    .mem_width_in            ( mem_width_exe1        ),
     .data_valid              ( data_valid            ),
     .r_data_CPU              ( r_data_CPU            ),
-    .cache_badv_in           ( cache_badv            ),
-    .cache_exception         ( cache_exception       ),
+    .cache_badv_in           ( dcache_badv           ),
+    .cache_exception         ( dcache_exception      ),
 
     .mem_exp_out             ( mem_exp_out           ),
     .mem_rd_out              ( mem_rd_out            ),
     .mem_data_out            ( mem_data_out          ),
     .mem_en_out              ( mem_en_out            ),
     .cache_badv_out          ( cache_badv_out        ),
-    .stall_because_cache     ( stall_because_cache   )
+    .stall_by_cache          ( stall_by_cache   )
 );
 
 div  u_div (
-    .clk                     ( clk                                                                                                               ),
-    .rstn                    ( rstn&&!flush_by_writeback                                                                                         ),
-    .div_en_in               ( eu0_div_en&&!stall_because_cache&&!stall_because_mem&&!stall_because_priv&&!stall_because_mul&&!flush&&!div_en_out),
-    .div_op                  ( eu0_uop_in[`UOP_MD_SEL]                                                                                           ),
-    .div_sign                ( eu0_uop_in[`UOP_SIGN]                                                                                             ),
-    .div_sr0                 ( eu0_sr0                                                                                                           ),
-    .div_sr1                 ( eu0_sr1                                                                                                           ),
-    .div_addr_in             ( eu0_rd_in                                                                                                         ),
-    .div_pc_in               ( eu0_pc_in                                                                                                         ),
-    .div_inst_in             ( eu0_uop_in[`UOP_ORIGINAL_INST]                                                                                    ),
+    .clk                     ( clk                      ),
+    .rstn                    ( rstn&&!flush_by_writeback),
+    .div_en_in               ( eu0_div_en&&!stall_by_cache&&!stall_by_priv&&!flush&&!div_en_out),
+    .div_op                  ( eu0_uop_in[`UOP_MD_SEL]  ),
+    .div_sign                ( eu0_uop_in[`UOP_SIGN]    ),
+    .div_sr0                 ( eu0_sr0                  ),
+    .div_sr1                 ( eu0_sr1                  ),
+    .div_addr_in             ( eu0_rd_in                ),
+    .div_pc_in               ( eu0_pc_in                ),
+    .div_inst_in             ( eu0_uop_in[`UOP_ORIGINAL_INST]),
 
-    .div_en_out              ( div_en_out                                                                                                        ),
-    .stall_because_div       ( stall_because_div                                                                                                 ),
-    .div_result              ( div_result                                                                                                        ),
-    .div_addr_out            ( div_addr_out                                                                                                      ),
-    .div_pc_out              ( div_pc_out                                                                                                        ),
-    .div_inst_out            (div_inst_out                                                                                                       )
+    .div_en_out              ( div_en_out               ),
+    .stall_by_div            ( stall_by_div        ),
+    .div_result              ( div_result               ),
+    .div_addr_out            ( div_addr_out             ),
+    .div_pc_out              ( div_pc_out               ),
+    .div_inst_out            (div_inst_out              )
 );
 
 //特权指令
@@ -511,7 +503,7 @@ exe_privliedged exe_privliedged
 (
     .clk(clk),.rstn(rstn&&!flush_by_writeback),
     
-    .en_in(eu0_priv_en&&!stall&&!flush),
+    .en_in(eu0_priv_en&&!stall3&&!stall4&&!flush),
     .pc_next(eu0_pc_next_in),
     .addr_in(eu0_rd_in),
     .imm(eu0_imm_in),
@@ -524,11 +516,12 @@ exe_privliedged exe_privliedged
     .sr0(eu0_sr0),
     .sr1(eu0_sr1),
     .exp_out(priv_exp_out),
+    .badv_out(priv_badv_out),
 
     .en_out (priv_en_out),
     .pc_target(priv_pc),
     .flush(flush_because_priv),
-    .stall_because_priv(stall_because_priv),
+    .stall_by_priv(stall_by_priv),
     .result(priv_data_out),
     .addr_out(priv_addr_out),
 
@@ -545,10 +538,15 @@ exe_privliedged exe_privliedged
     .cacop_rj_plus_imm(cacop_rj_plus_imm),
     .use_tlb_s0(use_tlb_s0),
     .use_tlb_s1(use_tlb_s1),
-    .cacop_exp_in(cache_exception),
+    .cacop_dexp_in(dcache_exception),
+    .cacop_iexp_in(icache_exception),
+    .cacop_dbadv_in(dcache_badv),
+    .cacop_ibadv_in(icache_badv),
 
     .era(era),
     .restore_state(restore_state),
+    .llbit_clear_by_eret(llbit_clear_by_eret),
+
     .fill_mode(fill_mode),
     .check_mode(check_mode),
     .tlb_we(tlb_we),
@@ -557,7 +555,12 @@ exe_privliedged exe_privliedged
     .tlb_other_we(tlb_other_we),
     .clear_vaddr(clear_vaddr),
     .clear_asid(clear_asid),
-    .clear_mem(clear_mem)
+    .clear_mem(clear_mem),
+
+    .clear_clock_gate_require(clear_clock_gate_require),
+    .clear_clock_gate(clear_clock_gate),
+    .icache_idle(icache_ready),
+    .dcache_idle(dcache_ready)
 );
 
 wire[31:0]eu1_alu_sr1;

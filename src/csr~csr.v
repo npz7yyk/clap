@@ -1,15 +1,15 @@
 // -*- Verilog -*-
+/* verilator lint_off DECLFILENAME */
 `include "csr.vh"
 
 module csr
 #(
     COREID = 0,
     ASIDBITS = 10,
-    TLBIDX_WIDTH = 4,
-    TIMER_WIDTH = 32
+    TLBIDX_WIDTH = 4
 )
 (
-    input clk,
+    input clk, stable_clk,
     input rstn,
     //software query port (exe stage)
     input software_query_en,
@@ -36,11 +36,13 @@ module csr
     input [31:0] badv_in,
     input badv_wen,
     output [31:0] eentry,tlbrentry,
-    input [31:0] pgd_in,
-    input pgd_wen,
+    input [`PGD_BASE] pgd_base_in,
+    input pgd_base_wen,
+    output [`PGD_BASE] pgdl_base_out,pgdh_base_out,
 
     //interrupt
-    output has_interrupt,
+    output has_interrupt_cpu,
+    output has_interrupt_idle,
     input [7:0] hardware_int,
 
     //MMU
@@ -69,7 +71,6 @@ module csr
     output tlb_global_0_out,            tlb_global_1_out,
     output [23:0] tlb_ppn_0_out,        tlb_ppn_1_out,
     output [9:0] asid_out,
-    output [31:0] pgdl_out,pgdh_out,
     
     //TLB (write port)
     input [TLBIDX_WIDTH-1:0] tlb_index_in,
@@ -102,10 +103,7 @@ module csr
     input llbit_clear_by_other,
 
     //timer
-    output [31:0] tid,
-
-    //cache tag
-    output [31:0] cache_tag
+    output [31:0] tid
 );
     reg timer_int;      //定时器中断
     ///////////////////////////////////////
@@ -149,9 +147,13 @@ module csr
     wire [31:0] csr_estat;
     assign csr_estat[`ESTAT_IS_0] = estat_is_0;
     //龙芯架构32位精简版参考手册 v1.0 p.59 只提到“1个核间中断（IPI），
-    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”但没有提到每个中断放在哪一位
-    //从样例CPU看，TI放在IS[12]
-    assign csr_estat[`ESTAT_IS_1] = {timer_int,1'b0,hardware_int};
+    //1个定时器中断（TI）,8个硬中断（HWI0~HWI7）”
+    //询问该公司的技术人员后，我们得知
+    //is[9:2] = hw[7:0] 
+    //is[10] 是 la64的特有中断，在la32r中恒为0
+    //is[11] = TI
+    //is[12] = IPI
+    assign csr_estat[`ESTAT_IS_1] = {1'b0,timer_int,1'b0,hardware_int};
     assign csr_estat[`ESTAT_ZERO_0] = 0;
     assign csr_estat[`ESTAT_ECODE]  = estat_ecode;
     assign csr_estat[`ESTAT_ESUBCODE] = estat_subecode;
@@ -337,7 +339,7 @@ module csr
             estat_is_0 <= 0;
         end else if(expcode_wen) begin
             estat_ecode <= expcode_in[5:0];
-            estat_subecode <= expcode_in[5:0]==0 ? 0:expcode_in[6];
+            estat_subecode <= expcode_in[5:0]==0 ? 0:{8'b0,expcode_in[6]};
         end else if(software_query_en&&addr==`CSR_ESTAT) begin
             if(wen[0]) estat_is_0[0]<=wdata[0];
             if(wen[1]) estat_is_0[1]<=wdata[1];
@@ -688,7 +690,7 @@ module csr
             if(wen[29]) tlbidx_ps[29]<=wdata[29];
             if(wen[31]) tlbidx_ne[31]<=wdata[31];
         end else begin
-            if(tlb_index_we) tlbidx_index <= tlb_index_in;
+            if(tlb_index_we) tlbidx_index <= {11'b0,tlb_index_in};
             if(tlb_ps_we) tlbidx_ps <= tlb_ps_in;
             if(tlb_ne_we) tlbidx_ne <= tlb_ne_in;
         end
@@ -889,8 +891,8 @@ module csr
     always @(posedge clk)
         if(~rstn)
             csr_pgd <= 0;
-        else if(pgd_wen)
-            csr_pgd[`PGD_BASE] <= pgd_in[`PGD_BASE];
+        else if(pgd_base_wen)
+            csr_pgd[`PGD_BASE] <= pgd_base_in[`PGD_BASE];
     
     //DMW0~1
     always @(posedge clk)
@@ -1005,13 +1007,13 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL])
+        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL]!=0)
             just_set_timer<=1;
         else just_set_timer<=0;
     
     //TVAL
     reg time_out;
-    always @(posedge clk)
+    always @(posedge stable_clk)
         if(~rstn) begin
             csr_tval <= 0;
             time_out <= 0;
@@ -1027,7 +1029,7 @@ module csr
         end
     
     //TICLR
-    always @(posedge clk)
+    always @(posedge stable_clk)
         if(~rstn||software_query_en&&addr==`CSR_TICLR&&wen[`TICLR_CLR]&&wdata[`TICLR_CLR])
             timer_int <= 0;
         else if(time_out)
@@ -1075,51 +1077,51 @@ module csr
     ///////////////////////////////////////
     //CSR read
     always @* begin
-        rdata = 0;
-        if(software_query_en)
-            case(addr)
-            `CSR_CRMD     : rdata = csr_crmd     ;
-            `CSR_PRMD     : rdata = csr_prmd     ;
-            `CSR_EUEN     : rdata = csr_euen     ;
-            `CSR_ECFG     : rdata = csr_ecfg     ;
-            `CSR_ESTAT    : rdata = csr_estat    ;
-            `CSR_ERA      : rdata = csr_era      ;
-            `CSR_BADV     : rdata = csr_badv     ;
-            `CSR_EENTRY   : rdata = csr_eentry   ;
-            `CSR_TLBIDX   : rdata = csr_tlbidx   ;
-            `CSR_TLBEHI   : rdata = csr_tlbehi   ;
-            `CSR_TLBELO0  : rdata = csr_tlbelo0  ;
-            `CSR_TLBELO1  : rdata = csr_tlbelo1  ;
-            `CSR_ASID     : rdata = csr_asid     ;
-            `CSR_PGDL     : rdata = csr_pgdl     ;
-            `CSR_PGDH     : rdata = csr_pgdh     ;
-            `CSR_PGD      : rdata = csr_pgd      ;
-            `CSR_CPUID    : rdata = csr_cpuid    ;
-            `CSR_SAVE0    : rdata = csr_save0    ;
-            `CSR_SAVE1    : rdata = csr_save1    ;
-            `CSR_SAVE2    : rdata = csr_save2    ;
-            `CSR_SAVE3    : rdata = csr_save3    ;
-            `CSR_TID      : rdata = csr_tid      ;
-            `CSR_TCFG     : rdata = csr_tcfg     ;
-            `CSR_TVAL     : rdata = csr_tval     ;
-            `CSR_TICLR    : rdata = csr_ticlr    ;
-            `CSR_LLBCTL   : rdata = csr_llbctl   ;
-            `CSR_TLBRENTRY: rdata = csr_tlbrentry;
-            `CSR_CTAG     : rdata = csr_ctag     ;
-            `CSR_DMW0     : rdata = csr_dmw0     ;
-            `CSR_DMW1     : rdata = csr_dmw1     ;
-            endcase
+        case(addr)
+        `CSR_CRMD     : rdata = csr_crmd     ;
+        `CSR_PRMD     : rdata = csr_prmd     ;
+        `CSR_EUEN     : rdata = csr_euen     ;
+        `CSR_ECFG     : rdata = csr_ecfg     ;
+        `CSR_ESTAT    : rdata = csr_estat    ;
+        `CSR_ERA      : rdata = csr_era      ;
+        `CSR_BADV     : rdata = csr_badv     ;
+        `CSR_EENTRY   : rdata = csr_eentry   ;
+        `CSR_TLBIDX   : rdata = csr_tlbidx   ;
+        `CSR_TLBEHI   : rdata = csr_tlbehi   ;
+        `CSR_TLBELO0  : rdata = csr_tlbelo0  ;
+        `CSR_TLBELO1  : rdata = csr_tlbelo1  ;
+        `CSR_ASID     : rdata = csr_asid     ;
+        `CSR_PGDL     : rdata = csr_pgdl     ;
+        `CSR_PGDH     : rdata = csr_pgdh     ;
+        `CSR_PGD      : rdata = csr_pgd      ;
+        `CSR_CPUID    : rdata = csr_cpuid    ;
+        `CSR_SAVE0    : rdata = csr_save0    ;
+        `CSR_SAVE1    : rdata = csr_save1    ;
+        `CSR_SAVE2    : rdata = csr_save2    ;
+        `CSR_SAVE3    : rdata = csr_save3    ;
+        `CSR_TID      : rdata = csr_tid      ;
+        `CSR_TCFG     : rdata = csr_tcfg     ;
+        `CSR_TVAL     : rdata = csr_tval     ;
+        `CSR_TICLR    : rdata = csr_ticlr    ;
+        `CSR_LLBCTL   : rdata = csr_llbctl   ;
+        `CSR_TLBRENTRY: rdata = csr_tlbrentry;
+        `CSR_CTAG     : rdata = csr_ctag     ;
+        `CSR_DMW0     : rdata = csr_dmw0     ;
+        `CSR_DMW1     : rdata = csr_dmw1     ;
+        default       : rdata = 0            ;
+        endcase
     end
     
     assign privilege = crmd_plv;
     assign era_out = csr_era;
     assign eentry = csr_eentry;
     assign tlbrentry = csr_tlbrentry;
-    assign has_interrupt = crmd_ie&&(ecfg_lie&{csr_estat[`ESTAT_IS]})!=0;
+    assign has_interrupt_cpu  = crmd_ie&&(ecfg_lie&csr_estat[`ESTAT_IS])!=0;
+    assign has_interrupt_idle = csr_estat[`ESTAT_IS]!=0;
     assign translate_mode = {crmd_pg,crmd_da};
-    assign direct_i_mat = crmd_datf;
-    assign direct_d_mat = crmd_datm;
-    assign tlb_index_out = tlbidx_index;
+    assign direct_i_mat = crmd_datf != 0;
+    assign direct_d_mat = crmd_datm != 0;
+    assign tlb_index_out = tlbidx_index[4:0];
     assign tlb_ps_out = tlbidx_ps;
     assign tlb_ne_out = tlbidx_ne;
     assign tlb_vppn_out = tlbehi_vppn;
@@ -1136,11 +1138,11 @@ module csr
     assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
     assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
     assign asid_out = asid_asid;
-    assign pgdl_out = csr_pgdl;
-    assign pgdh_out = csr_pgdh;
-    assign llbit = llbctl_rollb;
+    assign pgdl_base_out = pgdl_base;
+    assign pgdh_base_out = pgdh_base;
+    //llbit对CPU写优先
+    assign llbit = llbctl_rollb|llbit_set;
     assign tid = csr_tid;
-    assign cache_tag = csr_ctag;
     assign ecode = estat_ecode;
     //end CSR read
     ///////////////////////////////////////

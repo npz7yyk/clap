@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module single_port_memory #(
     parameter ADDR_WIDTH = 5,
               DATA_WIDTH = 32

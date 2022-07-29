@@ -1,10 +1,4 @@
-//  Xilinx True Dual Port RAM, Write First with Single Clock
-//  This code implements a parameterizable true dual port memory (both ports can read and write).
-//  This implements write-first mode where the data being written to the RAM also resides on
-//  the output port.  If the output data is not needed during writes or the last read value is
-//  desired to be retained, it is suggested to use no change as it is more power efficient.
-//  If a reset or enable is not necessary, it may be tied off or removed from the code.
-
+/* verilator lint_off DECLFILENAME */
 module TagV #(
   parameter RAM_WIDTH = 21,                       // Specify RAM data width
   parameter RAM_DEPTH = 64,                      // Specify RAM depth (number of entries)
@@ -18,6 +12,7 @@ module TagV #(
   output [RAM_WIDTH-1:0] doutb         // RAM output data
 );
 
+  (* ram_style = "distributed" *)
   reg [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
   reg [RAM_WIDTH-1:0] ram_data_b = {RAM_WIDTH{1'b0}};
 

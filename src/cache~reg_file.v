@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module reg_file(
     input clk, 
     input [3:0] we,
@@ -25,6 +26,7 @@ module reg_file(
         WAY1: regs[w_addr][1] <= w_data;
         WAY2: regs[w_addr][2] <= w_data;
         WAY3: regs[w_addr][3] <= w_data;
+        default:;
         endcase
     end
     //read

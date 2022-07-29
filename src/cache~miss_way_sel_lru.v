@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module miss_way_sel_lru(
     input clk,
     input [31:0] addr_rbuf,
@@ -56,6 +57,7 @@ module miss_way_sel_lru(
                 rank[index][5:4] <= rank[index][3:2];
                 rank[index][7:6] <= rank[index][5:4];
             end
+            default:;
             endcase
         end
     end

@@ -20,9 +20,10 @@
 
 //纯组合逻辑，译码器
 //【注意】load、br指令的原本位于rd段的源数据被放到了rk，而rd=0，这样可以保证读取寄存器堆时只需要读rk和rj
+/* verilator lint_off DECLFILENAME */
 module decoder
 (
-    input [135:0] nempty_unknown_badv_exception_pcnext_pc_inst,
+    input [136:0] nempty_unknown_badv_exception_pcnext_pc_inst,
     output [31:0] pc,pc_next, //从pcnext_pc_inst拆解出的pc和pc_next
     output [6:0] exception,
     output [31:0] badv,
@@ -30,13 +31,14 @@ module decoder
     output invalid_instruction,
     output is_syscall,
     output is_break,
+    output is_priviledged,
     output [`WIDTH_UOP-1:0] uop,
     output [31:0] imm,
     output [4:0] rd,
     output [4:0] rj,
     output [4:0] rk
 );
-    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[135];
+    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[136];
     wire [31:0] inst = nempty_unknown_badv_exception_pcnext_pc_inst[31:0];
     assign pc=nempty_unknown_badv_exception_pcnext_pc_inst[63:32];
     assign pc_next=nempty_unknown_badv_exception_pcnext_pc_inst[95:64];
@@ -98,7 +100,6 @@ module decoder
     
     reg [`UOP_ALUOP] alu_op;
     reg alu_op_invalid;
-    wire is_unsigned_imm = inst[30:23]=='b00000110;
     always @* begin
         alu_op_invalid=0;
         alu_op=`CTRL_ALU_ADD;
@@ -133,6 +134,8 @@ module decoder
     end
 
     assign uop[`UOP_PRIVILEDGED] = type_[`ITYPE_IDX_CACHE] | type_[`ITYPE_IDX_TLB] | type_[`ITYPE_IDX_CSR] | type_[`ITYPE_IDX_ERET] | type_[`ITYPE_IDX_IDLE];
+    //Hit类的CACOP指令可以在用户态下执行
+    assign is_priviledged = uop[`UOP_PRIVILEDGED]&&!(type_[`ITYPE_IDX_CACHE]&&inst[4:3]==2);
     
     reg [3:0] cond;
     reg br_invalid;
@@ -188,7 +191,9 @@ module decoder
 
     wire invtlb_invalid = is_invalid_tlb && inst[4:0]>5'h6; //INVTLB指令的op无效
     
-    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid;
+    assign invalid_instruction=alu_op_invalid||type_invalid||br_invalid||inst[31]||invtlb_invalid
+    //当IF段出现异常时，认为指令错误
+        ||exception!=0;
     //////////////////////////////////////
     
     /////////////////////////////////////
@@ -228,23 +233,25 @@ module decoder
         type_[`ITYPE_IDX_MEM]&inst[27] |
         is_alu_sfti;
     wire is_u12 = is_alu_imm&inst[24];//andi、ori、xori的inst[24]都等于1
-    wire is_i14 = type_[`ITYPE_IDX_MEM]&~inst[27] |
-        type_[`ITYPE_IDX_CSR];
+    wire is_i14 = type_[`ITYPE_IDX_CSR];
+    wire is_i14_sll2 = type_[`ITYPE_IDX_MEM]&~inst[27];
     wire is_i16 = type_[`ITYPE_IDX_BR]&~is_b_or_bl;
     wire is_i26 = is_b_or_bl;
     wire is_i20 = is_pcadd|is_lui;
     
-    wire [31:0] i12_result = $signed(inst[21:10]);
-    wire [31:0] u12_result = inst[21:10];
-    wire [31:0] i14_result = $signed(inst[23:10]);
-    wire [31:0] i16_result = $signed(inst[25:10]);
-    wire [31:0] i26_result = $signed({inst[9:0],inst[25:10]});
-    wire [31:0] i20_result = $signed({inst[24:5],12'b0});
+    wire [31:0] i12_result = {{20{inst[21]}},inst[21:10]};
+    wire [31:0] u12_result = {20'b0,inst[21:10]};
+    wire [31:0] i14_result = {{18{inst[23]}},inst[23:10]};
+    wire [31:0] i16_result = {{16{inst[25]}},inst[25:10]};
+    wire [31:0] i26_result = {{6{inst[9]}},{inst[9:0],inst[25:10]}};
+    wire [31:0] i20_result = {inst[24:5],12'b0};
+    wire [31:0] i14_sll2_result = {{10{inst[23]}},inst[23:10],2'b0};
     
     assign imm = 
         i12_result&{32{is_i12}} |
         u12_result&{32{is_u12}} |
         i14_result&{32{is_i14}} |
+        i14_sll2_result&{32{is_i14_sll2}} |
         i16_result&{32{is_i16}} |
         i26_result&{32{is_i26}} |
         i20_result&{32{is_i20}};

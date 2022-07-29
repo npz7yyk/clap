@@ -1,8 +1,8 @@
+/* verilator lint_off DECLFILENAME */
 module wrt_buffer_AXI(
     input clk,
     input rstn,
     input w_buf_we,
-    input wready,
     input bvalid,
     input awvalid,
     input awready,
@@ -77,6 +77,7 @@ module wrt_buffer_AXI(
         FINISH: begin
             wrt_AXI_finish = 1;
         end
+        default:;
         endcase
     end
     always @(posedge clk)begin

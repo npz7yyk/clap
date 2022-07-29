@@ -30,6 +30,7 @@ THE SOFTWARE.
 /*
  * Arbiter module
  */
+ /* verilator lint_off DECLFILENAME */
 module arbiter #
 (
     parameter PORTS = 4,
@@ -100,12 +101,12 @@ always @* begin
     grant_encoded_next = 0;
     mask_next = mask_reg;
 
-    if (ARB_BLOCK && !ARB_BLOCK_ACK && grant_reg & request) begin
+    if (ARB_BLOCK && !ARB_BLOCK_ACK && (grant_reg & request)!=0) begin
         // granted request still asserted; hold it
         grant_valid_next = grant_valid_reg;
         grant_next = grant_reg;
         grant_encoded_next = grant_encoded_reg;
-    end else if (ARB_BLOCK && ARB_BLOCK_ACK && grant_valid && !(grant_reg & acknowledge)) begin
+    end else if (ARB_BLOCK && ARB_BLOCK_ACK && grant_valid && (grant_reg & acknowledge)==0) begin
         // granted request not yet acknowledged; hold it
         grant_valid_next = grant_valid_reg;
         grant_next = grant_reg;

@@ -2,7 +2,7 @@
 //  This code implements a parameterizable true dual port memory (both ports can read and write).
 //  The behavior of this RAM is when data is written, the new memory contents at the write
 //  address are presented on the output port.
-
+/* verilator lint_off DECLFILENAME */
 module cache_memory #(
   parameter NB_COL    = 64,                         // Specify number of columns (number of bytes)
   parameter COL_WIDTH = 8,                          // Specify column width (byte width, typically 8 or 9)

@@ -1,40 +1,41 @@
 `include "exception.vh"
+/* verilator lint_off DECLFILENAME */
 module dcache(
     input clk, rstn,
     /* for CPU */
-    input                   valid,            
-    input                   op,                   
+    input                   valid,
+    input                   op,
     input                   uncache,
     input            [31:0] addr,
     input            [31:0] p_addr,
-    input             [3:0] write_type,     
-    input            [31:0] w_data_CPU,  
-    input                   signed_ext,       
-    output                  data_valid,          
+    input             [3:0] write_type,
+    input            [31:0] w_data_CPU,
+    input                   signed_ext,
+    output                  data_valid,
     output                  cache_ready,
-    output           [31:0] r_data_CPU,  
+    output           [31:0] r_data_CPU,
     /* for AXI */
     // read
-    output                  r_req,              
+    output                  r_req,
     output                  r_data_ready,
-    output            [2:0] r_size,     
+    output            [2:0] r_size,
     output            [7:0] r_length,
-    output           [31:0] r_addr,      
-    input                   r_rdy,                
-    input                   ret_valid,         
-    input                   ret_last,   
-    input            [31:0] r_data_AXI,    
+    output           [31:0] r_addr,
+    input                   r_rdy,
+    input                   ret_valid,
+    input                   ret_last,
+    input            [31:0] r_data_AXI,
     // write
-    output                  w_req,               
+    output                  w_req,
     output                  w_data_req,
     output                  w_last,
-    output            [2:0] w_size,      
+    output            [2:0] w_size,
     output            [7:0] w_length,
-    output           [31:0] w_addr,       
-    output            [3:0] w_strb,       
-    output           [31:0] w_data_AXI, 
-    input                   w_rdy,                 
-    input                   w_data_ready,
+    output           [31:0] w_addr,
+    output            [3:0] w_strb,
+    output           [31:0] w_data_AXI,
+    input                   w_rdy,
+    input                   w_data_ready, //%Warning-UNUSED
     //back
     output                  b_ready,
     input                   b_valid,
@@ -46,19 +47,25 @@ module dcache(
     input [            1:0] cacop_code,
     input                   cacop_en,
     output                  cacop_complete,
-    output                  cacop_ready
+    output                  cacop_ready,
+    //atom load
+    input                   is_atom,
+    output                  llbit_set,
+    //atom store
+    input                   llbit,
+    output                  llbit_clear
     );
-    wire op_rbuf, hit_write, r_data_sel, wrt_data_sel, cache_hit;
+    wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
-    wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit, hit_mbuf;
+    wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_temp;
     wire [19:0] replace_tag;
     wire [31:0] addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
-    wire [511:0] w_line_AXI, miss_sel_data, w_line_to_AXI, mem_din;
+    wire [511:0] w_line_AXI, miss_sel_data, mem_din;
     wire [2047:0] mem_dout;
     wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
 
@@ -77,12 +84,14 @@ module dcache(
 
     /* request buffer*/
     // addr, w_data_CPU, op, write_type
-    register#(74) req_buf(
+    register#(76) req_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (rbuf_we),
-        .din        ({signed_ext, addr, w_data_CPU, op, write_type, uncache, cacop_code, cacop_en}),
-        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, write_type_rbuf, uncache_rbuf, cacop_code_rbuf, cacop_en_rbuf})
+        .din        ({signed_ext, addr, w_data_CPU, op, 
+                      write_type, uncache, cacop_code, cacop_en, is_atom, llbit}),
+        .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, 
+                      write_type_rbuf, uncache_rbuf, cacop_code_rbuf, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf})
     );
     /* physical addr buffer */
     register#(32) phy_buf(
@@ -98,7 +107,6 @@ module dcache(
         .clk                (clk),
         .rstn               (rstn),
         .w_buf_we           (wbuf_AXI_we),
-        .wready             (w_data_ready),
         .bvalid             (b_valid),
         .awvalid            (w_req),
         .awready            (w_rdy),
@@ -154,6 +162,7 @@ module dcache(
         .tagv_clear     (tagv_clear),
         .r_addr         (addr),
         .w_addr         (addr_pbuf),
+        .addr_rbuf      (addr_rbuf),
         .tag            (p_addr[31:12]),
         .we             (tagv_we),
         .way_sel        (way_replace),
@@ -175,7 +184,7 @@ module dcache(
     );
 
     /* miss way sel */
-    miss_way_sel_lru way_sel(
+    miss_way_sel_lru u_way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf),
         .visit          (way_visit),
@@ -212,6 +221,9 @@ module dcache(
         .cacop_code_rbuf    (cacop_code_rbuf),
         .miss_way_sel       (way_replace),
         .miss_sel_data      (miss_sel_data),
+        .llbit_rbuf         (llbit_rbuf),
+        .is_atom_rbuf       (is_atom_rbuf),
+        .op_rbuf            (op_rbuf),
         .r_data             (r_data_CPU)
     );
 
@@ -237,6 +249,8 @@ module dcache(
         .visit_type         (write_type_rbuf),
         .addr_rbuf          (addr_rbuf),
         .exception          (exception),
+        .is_atom_rbuf       (is_atom_rbuf),
+        .llbit_rbuf         (llbit_rbuf),
 
         .way_visit          (way_visit),
         .mbuf_we            (mbuf_we),
@@ -267,7 +281,9 @@ module dcache(
         .cacop_en           (cacop_en),
         .tagv_clear         (tagv_clear),
         .cacop_complete     (cacop_complete),
-        .cacop_ready        (cacop_ready)
+        .cacop_ready        (cacop_ready),
+        .llbit_set          (llbit_set),
+        .llbit_clear        (llbit_clear)
 
         //.tlb_exception      (tlb_exception)
     );

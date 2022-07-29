@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module div(
     input [0:0]         clk,
     input [0:0]         rstn,
@@ -12,7 +13,7 @@ module div(
     input [31:0]        div_inst_in,
 
     output reg [0:0]    div_en_out,
-    output [0:0]        stall_because_div,
+    output reg [0:0]        stall_by_div,
     output reg [ 31:0 ] div_result,
     output reg [ 4:0 ]  div_addr_out,
     output [31:0]       div_pc_out,
@@ -36,18 +37,14 @@ reg [4:0]   addr;
 reg [31:0]  qoucient;
 reg [5:0]   m;
 reg [5:0]   n;
-reg [0:0]   stall_because_div_real;
 reg [31:0]  div_pc;
 reg [31:0]  div_inst;
  
-wire [31:0] dividend_one_hot;
-wire [31:0] divisor_one_hot;
 wire [5:0]  m_pre;
 wire [5:0]  n_pre;
 wire [31:0] a;
 wire [31:0] b;
 
-assign stall_because_div = stall_because_div_real||div_en_in;
 assign a                 = div_sign?div_sr0[31]==1?~div_sr0+1:div_sr0:div_sr0;
 assign b                 = div_sign?div_sr1[31]==1?~div_sr1+1:div_sr1:div_sr1;
 assign div_pc_out        = {32{div_en_out}}& div_pc;
@@ -98,7 +95,7 @@ always @(posedge clk) begin
         IDLE: begin
             if(div_en_in)begin
                 div_en_out             <= 0;
-                stall_because_div_real <= 1;
+                stall_by_div <= 1;
                 div_result             <= 0;
                 div_addr_out           <= 0;
                 i                      <= 0;
@@ -115,7 +112,7 @@ always @(posedge clk) begin
                 div_inst               <= div_inst_in;
             end else begin
                 {div_en_out,
-                stall_because_div_real,
+                stall_by_div,
                 div_result,
                 div_addr_out,
                 i,
@@ -135,7 +132,7 @@ always @(posedge clk) begin
         PREPARE:begin
             if(m<n||n==0)begin
                 div_en_out             <= 0;
-                stall_because_div_real <= 1;
+                stall_by_div <= 1;
                 div_result             <= op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
                 div_addr_out           <= addr;
                 i                      <= 0;
@@ -152,7 +149,7 @@ always @(posedge clk) begin
                 div_inst               <= div_inst;
             end else begin
                 div_en_out             <= 0;
-                stall_because_div_real <= 1;
+                stall_by_div <= 1;
                 div_result             <= 0;
                 div_addr_out           <= 0;
                 i                      <= i+1;
@@ -172,7 +169,7 @@ always @(posedge clk) begin
         CALCULATE:begin
             if(i==m-n+2)begin
                 div_en_out             <= 0;
-                stall_because_div_real <= 1;
+                stall_by_div <= 1;
                 div_result             <= op?(dividend_sign?~dividend+1:dividend):(divisor_sign==dividend_sign?qoucient:~qoucient+1);
                 div_addr_out           <= addr;
                 i                      <= 0;
@@ -189,7 +186,7 @@ always @(posedge clk) begin
                 div_inst               <= div_inst;
             end else begin
                 div_en_out             <= 0;
-                stall_because_div_real <= 1;
+                stall_by_div <= 1;
                 div_result             <= 0;
                 div_addr_out           <= 0;
                 i                      <= i+1;
@@ -208,7 +205,7 @@ always @(posedge clk) begin
         end 
         FINISH:begin
             div_en_out                 <= 1;
-            stall_because_div_real     <= 0;
+            stall_by_div     <= 0;
             div_pc                     <= div_pc;
             div_inst                   <= div_inst;
             // div_result<=0;

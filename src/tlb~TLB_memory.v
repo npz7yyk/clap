@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module TLB_memory#(
     parameter TLBNUM = 32
     )(
@@ -156,6 +157,7 @@ module TLB_memory#(
                         tlb_e[j] <= 0;
                 end
             end
+            default: ;
             endcase
         end 
         else if(we) begin

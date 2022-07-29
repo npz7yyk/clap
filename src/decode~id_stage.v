@@ -29,6 +29,7 @@
 // 输出: uop x2
 // 传递: PC, PC-next
 // 异常: 非法指令, 指令特权等级错误, 系统调用, 断点, FIFO满
+/* verilator lint_off DECLFILENAME */
 module id_stage
 (
     input clk,rstn, //时钟, 复位
@@ -56,6 +57,9 @@ module id_stage
     input [31:0] pc_next_in,    //下一条指令的PC
     output [31:0] pc0_out,pc1_out,
     output [31:0] pc_next0_out,pc_next1_out,
+    //预测器对指令的记录信息
+    //[31:2] pc的高30位，[1:0] 指令类型
+    input [31:0] pred_record0,pred_record1,
     input unknown0_in, unknown1_in,   //来自预测器，指令未知
     output unknown0_out,unknown1_out,
     ////反馈信号////
@@ -76,29 +80,43 @@ module id_stage
     pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0));
     pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
     assign pc_for_predict = pc_in;
-    assign jmpdist0 = pc_in + pc_offset0;
-    assign jmpdist1 = (pc_in[2]?pc_in:pc_in+4) + pc_offset1;
+    wire [31:0] pc_inst0_sGec6sQ = pc_in;
+    wire [31:0] pc_inst1_sGec6sQ = pc_in[2]?pc_in:pc_in+4;
+    assign jmpdist0 = pc_inst0_sGec6sQ + pc_offset0;
+    assign jmpdist1 = pc_inst1_sGec6sQ + pc_offset1;
+    //正确的记录信息
+    wire [31:0] correct_record0 = {jmpdist0[31:2],category0};
+    wire [31:0] correct_record1 = {jmpdist1[31:2],category1};
     assign feedback_valid = input_valid;
     wire should_jmp0 = category0=='b10 || category0=='b01&&pc_offset0[31];
     wire should_jmp1 = category1=='b10 || category1=='b01&&pc_offset1[31];
+    wire actually_unknown0 = unknown0_in || correct_record0!=pred_record0;
+    wire actually_unknown1 = unknown1_in || correct_record1!=pred_record1;
+    //下一条指令的PC的静态预测结果
+    wire [31:0] inst0_probably_right_pc_next = should_jmp0? jmpdist0:pc_inst0_sGec6sQ+4;
+    wire [31:0] inst1_probably_right_pc_next = should_jmp1? jmpdist1:pc_inst1_sGec6sQ+4;
+    //分支预测器给出的下一条PC的预测结果
+    wire [31:0] inst0_predicted_pc_next = first_inst_jmp? pc_next_in:pc_in+4;
+    wire [31:0] inst1_predicted_pc_next = pc_next_in;
     reg set_pc_due_to_inst0,set_pc_due_to_inst1;
-    assign set_pc = set_pc_due_to_inst0|set_pc_due_to_inst1;
+    assign set_pc = set_pc_due_to_inst0||set_pc_due_to_inst1;
     always @* begin
         set_pc_due_to_inst0 = 0;
         set_pc_due_to_inst1 = 0;
         probably_right_destination = jmpdist0;
         if(valid0_before_predecode) begin
-            if(unknown0_in&&should_jmp0) begin
-                probably_right_destination = jmpdist0;
+            //在分支预测器不知道一条指令且分支预测器的预测与静态预测不符时，更新PC
+            if(actually_unknown0&&inst0_predicted_pc_next!=inst0_probably_right_pc_next) begin
+                probably_right_destination = inst0_probably_right_pc_next;
                 set_pc_due_to_inst0 = 1;
             end
-            else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
-                probably_right_destination = jmpdist1;
+            else if(valid1_before_predecode&&actually_unknown1&&inst1_predicted_pc_next!=inst1_probably_right_pc_next) begin
+                probably_right_destination = inst1_probably_right_pc_next;
                 set_pc_due_to_inst1 = 1;
             end
         end
-        else if(valid1_before_predecode&&unknown1_in&&should_jmp1) begin
-            probably_right_destination = jmpdist1;
+        else if(valid1_before_predecode&&actually_unknown1&&inst1_predicted_pc_next!=inst1_probably_right_pc_next) begin
+            probably_right_destination = inst1_probably_right_pc_next;
             set_pc_due_to_inst1 = 1;
         end
     end
@@ -107,7 +125,9 @@ module id_stage
     wire valid1 = valid1_before_predecode & ~set_pc_due_to_inst0;
     wire [31:0] pc_next_after_predecode = set_pc?probably_right_destination:pc_next_in;
 
+    // verilator lint_off UNUSED
     wire empty;            //FIFO空
+    // verilator lint_on UNUSED
     
     //用交叠法实现伪双端口循环队列，浪费12.5%的空间，以简化push/pop逻辑
     //[31:0] 指令; [63:32] pc；[95:64] pc_next; [102:96] exception; [134:103] badv; [135] unknown
@@ -128,6 +148,7 @@ module id_stage
     wire full0 = tail0_plus_1==head0;
     wire full1 = tail1_plus_1==head1;
     assign empty = empty0&&empty1;
+    wire [0:0] really_full;
     assign really_full = full0||full1;
     //在还剩2 words容量时发出full，因为i-cache不支持stall
     assign full  = really_full || tail0_plus_2==head0 || tail1_plus_2==head1 || tail0_plus_3==head0 || tail1_plus_3==head1;
@@ -184,6 +205,7 @@ module id_stage
     wire [6:0] exception0_ICQlsmuv,exception1_ICQlsmuv;
     wire is_syscall0,is_syscall1;
     wire is_break0,is_break1;
+    wire is_priviledged0,is_priviledged1;
     decoder decoder0
     (
         .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==0?
@@ -196,13 +218,14 @@ module id_stage
         .unknown(unknown0_out),
         .invalid_instruction(invalid0),
         .is_syscall(is_syscall0),
-        .is_break(is_break0)
+        .is_break(is_break0),
+        .is_priviledged(is_priviledged0)
     );
     assign exception0_out = exception0_ICQlsmuv != 0 ? exception0_ICQlsmuv:
         ({7{invalid0}}&`EXP_INE |
          {7{is_syscall0}}&`EXP_SYS |
          {7{is_break0}}&`EXP_BRK |
-         {7{plv!=0&&uop0[`UOP_PRIVILEDGED]}}&`EXP_IPE);
+         {7{plv!=0&&is_priviledged0}}&`EXP_IPE);
     decoder decoder1
     (
         .nempty_unknown_badv_exception_pcnext_pc_inst(pop_sel==1?
@@ -215,11 +238,12 @@ module id_stage
         .unknown(unknown1_out),
         .invalid_instruction(invalid1),
         .is_syscall(is_syscall1),
-        .is_break(is_break1)
+        .is_break(is_break1),
+        .is_priviledged(is_priviledged1)
     );
     assign exception1_out = exception1_ICQlsmuv != 0 ? exception1_ICQlsmuv:
         ({7{invalid1}}&`EXP_INE |
          {7{is_syscall1}}&`EXP_SYS |
          {7{is_break1}}&`EXP_BRK |
-         {7{plv!=0&&uop1[`UOP_PRIVILEDGED]}}&`EXP_IPE);
+         {7{plv!=0&&is_priviledged1}}&`EXP_IPE);
 endmodule

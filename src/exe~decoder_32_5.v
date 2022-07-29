@@ -1,3 +1,4 @@
+/* verilator lint_off DECLFILENAME */
 module exe_log2_plus_one
 (
     input [31:0] in,
@@ -8,9 +9,9 @@ module exe_log2_plus_one
     always @* begin
         b = in;
         a = 0;
-        if(b>=65536)begin a = a+16; b = b[31:16];end
-        if(b>=256)  begin a = a+ 8; b = b[15:8]; end
-        if(b>=16)   begin a = a+ 4; b = b[7:4];  end
+        if(b>=65536)begin a = a+16; b = {16'b0,b[31:16]};end
+        if(b>=256)  begin a = a+ 8; b = {24'b0,b[15:8]}; end
+        if(b>=16)   begin a = a+ 4; b = {28'b0,b[7:4]};  end
         case(b[3:0])
             4'h0: a = a+0;
             4'h1: a = a+1;

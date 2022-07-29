@@ -37,6 +37,7 @@
 `define UOP_NEMPTY 22:22
 `define UOP_ORIGINAL_INST 54:23
 `define WIDTH_UOP 55
+`define UOP_EXCEPT_TYPE 54:11
 
 `define ITYPE_IDX_ALU   0
 `define ITYPE_IDX_MUL   1

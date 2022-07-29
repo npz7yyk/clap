@@ -18,14 +18,16 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
+/* verilator lint_off DECLFILENAME */
 module way_select #(
     parameter HASH_DEPTH = 5 
 )(
     input                         clk,
     input                         en,
     input wire [HASH_DEPTH - 1:0] waddr,
+    /* verilator lint_off UNUSED */ //(visit[0] is used because it's guaranteed to be one-hot, FIXME: really???)
     input wire              [3:0] visit,
+    // verilator lint_on UNUSED
     input wire [HASH_DEPTH - 1:0] raddr,
 
     output wire             [3:0] select
@@ -35,7 +37,7 @@ module way_select #(
     integer i;
     initial 
         for (i = 0; i < (1 << HASH_DEPTH); i = i + 1)
-            queue[i] <= 8'b00_01_10_11;
+            queue[i] = 8'b00_01_10_11;
 
     wire [1:0] way = {visit[3] | visit[2], visit[3] | visit[1]};
     wire [7:0] queueOld = queue[waddr];

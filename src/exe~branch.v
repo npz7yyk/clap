@@ -1,4 +1,4 @@
-
+/* verilator lint_off DECLFILENAME */
 module branch(
     input  [0:0]     br_en_in,
     input  [ 31:0]   pc,
@@ -51,10 +51,10 @@ assign branch_valid           = br_en_in;
 
 always @(*) begin
     case (branch_op)
-        JIRL:    category_out = 11;
-        B:       category_out = 10;
-        BL:      category_out = 10;
-        default: category_out = 01;
+        JIRL:    category_out = 2'b11;
+        B:       category_out = 2'b10;
+        BL:      category_out = 2'b10;
+        default: category_out = 2'b01;
     endcase
 end
 endmodule
