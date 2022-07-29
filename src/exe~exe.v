@@ -287,7 +287,7 @@ always @(posedge clk) begin
         inst1_mid   <= eu1_uop_in[`UOP_ORIGINAL_INST];
     end
     `ifdef VERILATOR
-        if(!stall) stable_counter_diff_exe1 <= stable_counter_diff_in;
+        if(!stall3&&!stall4) stable_counter_diff_exe1 <= stable_counter_diff_in;
     `endif
 end
 wire[31:0]div_pc_out;
@@ -337,7 +337,7 @@ always @(posedge clk) begin
     end
 
     `ifdef VERILATOR
-        if(!stall_because_cache) stable_counter_diff_out <= stable_counter_diff_exe1;
+        if(!stall3) stable_counter_diff_out <= stable_counter_diff_exe1;
     `endif
 end
 
