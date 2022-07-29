@@ -62,10 +62,13 @@ module mem1 (
     output [0:0]   mem_en_out,
     output [31:0]  cache_badv_out,
     //向全局输出
-    output [0:0]   stall_because_cache
+    output [0:0]   stall_by_cache
 );
-    assign stall_because_cache = mem_en_in&!(data_valid | (|cache_exception));
-    assign mem_exp_out         = {7{mem_en_in}}&(mem_exp_in|cache_exception);
+
+
+    assign stall_by_cache = mem_en_in&!(data_valid | (|cache_exception));
+    assign mem_exp_out         = mem_exp_in|cache_exception;
+
     assign mem_data_out        = {32{mem_en_out}}&{32{data_valid}}&r_data_CPU;
     assign mem_rd_out          = {5{mem_en_out}}&mem_rd_in;
     assign mem_en_out          = mem_en_in;

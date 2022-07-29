@@ -18,7 +18,7 @@ module exe_privliedged(
     output reg en_out,
     output reg [31:0] pc_target,
     output reg flush,
-    output reg stall_because_priv,
+    output reg stall_by_priv,
     output reg [31:0] result,
     output reg [4:0] addr_out,
     output reg [6:0] exp_out,
@@ -110,6 +110,7 @@ module exe_privliedged(
     reg [0:0] inst_16;
     reg [1:0] inst_11_10;
     reg [4:0] inst_4_0;
+    reg [31:0] sr0_save,imm_save;
 
     always @(posedge clk)
         if(~rstn) state <= S_INIT;
@@ -172,7 +173,7 @@ module exe_privliedged(
             en_out<=0;
             pc_target<=0;
             flush<=0;
-            stall_because_priv<=0;
+            stall_by_priv<=0;
             result<=0;
             addr_out<=0;
             csr_software_query_en<=0;
@@ -189,7 +190,8 @@ module exe_privliedged(
             tlb_other_we <= 0;
             cacop_code <= 0;
             {l1i_en,l1d_en,l2_en} <= 0;
-            cacop_rj_plus_imm <= 0;
+            sr0_save <= 0;
+            imm_save <= 0;
             {use_tlb_s0,use_tlb_s1}<= 0;
             exp_out<=0;
             badv_out<=0;
@@ -207,7 +209,7 @@ module exe_privliedged(
             end
             S_CSR: begin
                 pc_target<=pc_next;
-                stall_because_priv<=1;
+                stall_by_priv<=1;
                 addr_out<=addr_in;
                 csr_software_query_en<=1;
                 csr_addr<=imm[13:0];
@@ -217,12 +219,12 @@ module exe_privliedged(
             S_DONE_CSR: begin
                 en_out<=1;
                 flush<=1;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 result<=csr_rdata;
                 csr_software_query_en<=0;
             end
             S_TLB: begin
-                stall_because_priv<=1;
+                stall_by_priv<=1;
                 pc_target<=pc_next;
                 inst_16 <= inst[16];
                 inst_11_10 <= inst[11:10];
@@ -254,7 +256,7 @@ module exe_privliedged(
             S_ERTN: begin
                 pc_target <= era;
                 restore_state <= 1;
-                stall_because_priv<=1;
+                stall_by_priv<=1;
                 llbit_clear_by_eret<=1;
             end
             S_DONE_ERTN: begin
@@ -262,7 +264,7 @@ module exe_privliedged(
                 en_out<=1;
                 flush<=1;
                 llbit_clear_by_eret<=0;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
             end
             S_DONE_TLB: begin
                 tlb_we <= 0;
@@ -270,28 +272,30 @@ module exe_privliedged(
                 tlb_index_we <= 0;
                 tlb_other_we <= 0;
                 en_out<=1;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 flush <= 1;
                 clear_mem <= 0;
                 fill_index <= fill_index_next;
             end
             S_CACOP: begin
                 which_cache <= inst[1:0];
-                stall_because_priv<=1;
+                stall_by_priv<=1;
                 pc_target<=pc_next;
                 cacop_code <= inst[4:3];
-                cacop_rj_plus_imm <= sr0+imm;
+                sr0_save <= sr0;
+                imm_save <= imm;
             end
             S_L1I_REQ: begin
                 l1i_en <= 1;
                 use_tlb_s0 <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L1I_WAIT: begin
                 l1i_en <= 0;
             end
             S_DONE_L1I: begin
                 l1i_en <= 0;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 flush <= 1;
                 use_tlb_s0 <= 0;
                 en_out<=1;
@@ -301,13 +305,14 @@ module exe_privliedged(
             S_L1D_REQ: begin
                 l1d_en <= 1;
                 use_tlb_s1 <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L1D_WAIT: begin
                 l1d_en <= 0;
             end
             S_DONE_L1D: begin
                 l1d_en <= 0;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 flush <= 1;
                 use_tlb_s1 <= 0;
                 en_out<=1;
@@ -316,18 +321,19 @@ module exe_privliedged(
             end
             S_L2_REQ: begin
                 l2_en <= 1;
+                cacop_rj_plus_imm <= sr0_save+imm_save;
             end
             S_L2_WAIT: begin
                 l2_en <= 0;
             end
             S_DONE_L2: begin
                 l2_en <= 0;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 flush <= 1;
                 en_out<=1;
             end
             S_IDLE: begin
-                stall_because_priv<=1;
+                stall_by_priv<=1;
                 pc_target<=pc_next;
                 clear_clock_gate_require <= 1;
             end
@@ -348,7 +354,7 @@ module exe_privliedged(
             S_DONE_IDLE: begin
                 clear_clock_gate_require <= 0;
                 clear_clock_gate <= 0;
-                stall_because_priv<=0;
+                stall_by_priv<=0;
                 flush <= 1;
                 en_out<=1;
             end

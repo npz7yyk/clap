@@ -19,6 +19,7 @@ module main_FSM_d(
     input [63:0] mem_we_normal,
     input [3:0] visit_type,
     input [31:0] addr_rbuf,
+    input [6:0] exception_temp,
     input [6:0] exception,
     input is_atom_rbuf,
     input llbit_rbuf,
@@ -109,12 +110,13 @@ module main_FSM_d(
     always @(*) begin
         case(crt)
         IDLE: begin
-            if(cacop_en) nxt = CACOP_COPE;
+            if(exception != 0) nxt = IDLE;
+            else if(cacop_en) nxt = CACOP_COPE;
             else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
         end
         CACOP_COPE: begin
-            if(exception != 0) nxt = IDLE;
+            if(exception_temp != 0) nxt = IDLE;
             else begin
                 case(cacop_code)
                 STORE_TAG: nxt = EXTRA_READY;
@@ -132,7 +134,7 @@ module main_FSM_d(
         end
         LOOKUP: begin
             // check instruction
-            if(exception != 0) nxt = IDLE;
+            if(exception_temp != 0) nxt = IDLE;
             // check uncache
             else if(uncache) begin
                 if(op == READ) nxt = REPLACE;
@@ -208,12 +210,12 @@ module main_FSM_d(
         llbit_clear = 0;
         case(crt)
         IDLE: begin
-            rbuf_we     = 1;
+            if(valid || cacop_en) rbuf_we     = 1;
             cache_ready = 1;
             cacop_ready = 1;
         end
         LOOKUP: begin
-            if(exception == 0) begin
+            if(exception_temp == 0) begin
                 rdata_sel       = 1;
                 wrt_data_sel    = 1;
                 pbuf_we         = 1;
@@ -229,7 +231,7 @@ module main_FSM_d(
                 end
                 else begin
                     data_valid  = 1;
-                    rbuf_we     = 1;
+                    if(valid ||cacop_en) rbuf_we     = 1;
                     way_visit   = hit;
                     way_sel_en  = 1;
                     cache_ready = 1;
@@ -271,7 +273,7 @@ module main_FSM_d(
             end
         end
         CACOP_COPE: begin
-            if(exception != 0) cacop_complete = 1;
+            if(exception_temp != 0) cacop_complete = 1;
             else if(cacop_code == STORE_TAG || cacop_code == INDEX_INVALIDATE) begin
                 tagv_clear          = 1;
                 tagv_we             = tagv_we_inst;
@@ -289,7 +291,7 @@ module main_FSM_d(
             data_valid      = 1;
             cacop_complete  = 1;
             cacop_ready     = 1;
-            rbuf_we         = 1;
+            if(valid || cacop_en) rbuf_we         = 1;
             wbuf_AXI_reset  = 1;
             cache_ready     = 1;
         end
