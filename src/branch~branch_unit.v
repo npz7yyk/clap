@@ -178,7 +178,7 @@ module branch_unit #(
 
     assign pdKnown1 = ifPastVld1;
     assign pdKnown2 = ifPastVld2;
-    assign pdAddrType1 = {22'b0,ifPastPara1};
-    assign pdAddrType2 = {22'b0,ifPastPara2};
+    assign pdAddrType1 = ifFactData1;
+    assign pdAddrType2 = ifFactData2;
 
 endmodule

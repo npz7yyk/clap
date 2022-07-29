@@ -15,7 +15,7 @@ module clock_gate
         if(~resetn) pause<=0;
         else if(clear_ps) pause <= 1;
         else if(set_clock_gate) pause <= 0;
-    reg l_pause;
+    reg l_pause=0;
     always @(aclk)
         if(~aclk) l_pause = pause;
     

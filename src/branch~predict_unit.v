@@ -97,15 +97,13 @@ module predict_unit #(
             inGuess1 <= 32'b0;
             inGuess2 <= 32'b0;
         end
-        else if (en) begin
-            if (ex_vld && ex_wrong) begin
-                inGuess1 <= 32'b0;
-                inGuess2 <= 32'b0;
-            end else begin
-                // always in guess until something is wrong
-                inGuess1[guess_waddr] <= inGuess1[guess_waddr] | inGuess1_new;
-                inGuess2[guess_waddr] <= inGuess1[guess_waddr] | inGuess2_new;
-            end
+        else if (ex_vld && ex_wrong) begin
+            inGuess1 <= 32'b0;
+            inGuess2 <= 32'b0;
+        end else if (en) begin
+            // always in guess until something is wrong
+            inGuess1[guess_waddr] <= inGuess1[guess_waddr] | inGuess1_new;
+            inGuess2[guess_waddr] <= inGuess1[guess_waddr] | inGuess2_new;
         end
     end
     // end of guess log part
@@ -191,6 +189,6 @@ module predict_unit #(
         info2[ADDR_WIDTH - 1:2] : info1[ADDR_WIDTH - 1:2];
 
     assign pc_new = branch ?
-        {pc_choose, 2'b00} :{pc_now[ADDR_WIDTH -1:3],3'b0}+8;
+        {pc_choose, 2'b00} : {pc_now[ADDR_WIDTH - 1:3], 3'b0} + 8;
 
 endmodule
