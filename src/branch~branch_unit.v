@@ -176,8 +176,8 @@ module branch_unit #(
     );
     // end of prediction part
 
-    assign pdKnown1 = ifPastVld1;
-    assign pdKnown2 = ifPastVld2;
+    assign pdKnown1 = ifFactExist1;
+    assign pdKnown2 = ifFactExist2;
     assign pdAddrType1 = ifFactData1;
     assign pdAddrType2 = ifFactData2;
 
