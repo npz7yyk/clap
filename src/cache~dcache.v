@@ -55,7 +55,7 @@ module dcache(
     input                   llbit,
     output                  llbit_clear
     );
-    wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp;
+    wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
     wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
@@ -275,7 +275,7 @@ module dcache(
         .w_size             (w_size),
         .r_data_ready       (r_data_ready),
         .data_valid         (data_valid_temp),
-        .cache_ready        (cache_ready),
+        .cache_ready        (cache_ready_temp),
 
         .cacop_code         (cacop_code_rbuf),
         .cacop_en_rbuf      (cacop_en_rbuf),
@@ -288,12 +288,13 @@ module dcache(
 
         //.tlb_exception      (tlb_exception)
     );
-    register #(40) output_buffer(
+    
+    register #(41) output_buffer(
         .clk        (clk),
         .rstn       (rstn),
         .we         (1'b1),
-        .din        ({r_data_CPU_temp, data_valid_temp, exception_temp}),
-        .dout       ({r_data_CPU, data_valid, exception_obuf})
+        .din        ({r_data_CPU_temp, data_valid_temp, exception_temp, cache_ready_temp}),
+        .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
     );
     reg [6:0] exception_old;
     wire [6:0] exception_new;
