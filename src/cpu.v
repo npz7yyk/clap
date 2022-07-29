@@ -685,7 +685,9 @@ module core_top(
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)
     );
-    wire  ex_stall;
+    wire [0:0] ex_stall;
+    wire [0:0] ex_stall3;
+    wire [0:0] ex_stall4;
     wire is_eu0_en_3qW1U3J0hMn,is_eu1_en_3qW1U3J0hMn;
     wire [`WIDTH_UOP-1:0] is_eu0_uop_3qW1U3J0hMn,is_eu1_uop_3qW1U3J0hMn;
     wire [4:0] is_eu0_rd_3qW1U3J0hMn,is_eu0_rj_3qW1U3J0hMn,is_eu0_rk_3qW1U3J0hMn;
@@ -696,6 +698,9 @@ module core_top(
     wire [6:0] is_eu0_exception_3qW1U3J0hMn,is_eu1_exception_3qW1U3J0hMn;
     wire [31:0] is_eu0_badv_3qW1U3J0hMn,is_eu1_badv_3qW1U3J0hMn;
     wire is_eu0_unknown_3qW1U3J0hMn,is_eu1_unknown_3qW1U3J0hMn;
+    wire [0:0]stall_by_conflict;
+ 
+    assign ex_stall = ex_stall3||ex_stall4;
     is_stage the_issue (
         .clk(clk),.rstn(aresetn),
         .num_read(id_read_en),
@@ -712,7 +717,7 @@ module core_top(
         .has_interrupt(has_interrupt_cpu),
         
         .eu0_en(is_eu0_en_3qW1U3J0hMn),
-        .eu0_ready(~ex_stall),
+        .eu0_ready(~(ex_stall||stall_by_conflict)),
         .eu0_uop(is_eu0_uop_3qW1U3J0hMn),
         .eu0_rd(is_eu0_rd_3qW1U3J0hMn),
         .eu0_rj(is_eu0_rj_3qW1U3J0hMn),
@@ -751,7 +756,7 @@ module core_top(
 
     execute_unit_input_reg euir0
     (
-        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall||stall_by_conflict),
         
         .en_in(is_eu0_en_3qW1U3J0hMn),.en_out(is_eu0_en),
         .uop_in(is_eu0_uop_3qW1U3J0hMn),.uop_out(is_eu0_uop),
@@ -768,7 +773,7 @@ module core_top(
 
     execute_unit_input_reg euir1
     (
-        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall),
+        .clk(clk),.rstn(aresetn),.flush(set_pc_by_executer||set_pc_by_writeback),.stall(ex_stall||stall_by_conflict),
         
         .en_in(is_eu1_en_3qW1U3J0hMn),.en_out(is_eu1_en),
         .uop_in(is_eu1_uop_3qW1U3J0hMn),.uop_out(is_eu1_uop),
@@ -821,6 +826,7 @@ module core_top(
         .rstn                    ( aresetn           ),
         .stall                   ( ex_stall          ),
         .flush                   ( set_pc_by_executer||set_pc_by_writeback ),
+        .stall_by_conflict       ( stall_by_conflict ),
         
         .stable_counter(stable_counter),
         .counter_id(tid),
@@ -879,8 +885,8 @@ module core_top(
     wire fill_mode, check_mode, tlb_we, tlb_other_we;
     wire [9:0] clear_asid;
     wire [31:0] clear_vaddr;
-    wire[2:0] clear_mem;
-    wire[0:0]ex_is_atom;
+    wire [2:0] clear_mem;
+    wire [0:0]ex_is_atom;
 
     exe  the_exe (
         .clk           (clk           ),
@@ -909,7 +915,8 @@ module core_top(
         .eu0_pc_out(ex_eu0_pc),  .eu1_pc_out(ex_eu1_pc),
         .eu0_inst(ex_eu0_inst),  .eu1_inst(ex_eu1_inst),
 
-        .stall                   ( ex_stall              ),
+        .stall3                  ( ex_stall3              ),
+        .stall4                  ( ex_stall4              ),
         .flush                   ( set_pc_by_executer    ),
         .branch_status           ( ex_did_jump ),
         .branch_valid            ( ex_feedback_valid ),
