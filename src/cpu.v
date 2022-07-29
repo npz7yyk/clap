@@ -319,6 +319,37 @@ module core_top(
     wire [31:0] csr_wdata;
     wire [5:0] csr_ecode;
 
+`ifdef VERILATOR
+    wire [31:0] csr_crmd_diff     ;
+    wire [31:0] csr_prmd_diff     ;
+    wire [31:0] csr_ectl_diff     ;
+    wire [31:0] csr_estat_diff    ;
+    wire [31:0] csr_era_diff      ;
+    wire [31:0] csr_badv_diff     ;
+    wire [31:0] csr_eentry_diff   ;
+    wire [31:0] csr_tlbidx_diff   ;
+    wire [31:0] csr_tlbehi_diff   ;
+    wire [31:0] csr_tlbelo0_diff  ;
+    wire [31:0] csr_tlbelo1_diff  ;
+    wire [31:0] csr_asid_diff     ;
+    wire [31:0] csr_pgdl_diff     ;
+    wire [31:0] csr_pgdh_diff     ;
+    wire [31:0] csr_save0_diff    ;
+    wire [31:0] csr_save1_diff    ;
+    wire [31:0] csr_save2_diff    ;
+    wire [31:0] csr_save3_diff    ;
+    wire [31:0] csr_tid_diff      ;
+    wire [31:0] csr_tcfg_diff     ;
+    wire [31:0] csr_tval_diff     ;
+    wire [31:0] csr_ticlr_diff    ;
+    wire [31:0] csr_llbctl_diff   ;
+    wire [31:0] csr_tlbrentry_diff;
+    wire [31:0] csr_dmw0_diff     ;
+    wire [31:0] csr_dmw1_diff     ;
+    wire [63:0] rf_stable_counter ;
+    wire [63:0] ex_stable_counter ;
+`endif
+
     csr  #(
         .TLBIDX_WIDTH(TLBIDX_WIDTH)
     )
@@ -440,6 +471,36 @@ module core_top(
         
         //timer
         .tid                     ( tid                    )
+
+        `ifdef VERILATOR
+        ,
+        .crmd_diff      (csr_crmd_diff     ),
+        .prmd_diff      (csr_prmd_diff     ),
+        .ectl_diff      (csr_ectl_diff     ),
+        .estat_diff     (csr_estat_diff    ),
+        .era_diff       (csr_era_diff      ),
+        .badv_diff      (csr_badv_diff     ),
+        .eentry_diff    (csr_eentry_diff   ),
+        .tlbidx_diff    (csr_tlbidx_diff   ),
+        .tlbehi_diff    (csr_tlbehi_diff   ),
+        .tlbelo0_diff   (csr_tlbelo0_diff  ),
+        .tlbelo1_diff   (csr_tlbelo1_diff  ),
+        .asid_diff      (csr_asid_diff     ),
+        .pgdl_diff      (csr_pgdl_diff     ),
+        .pgdh_diff      (csr_pgdh_diff     ),
+        .save0_diff     (csr_save0_diff    ),
+        .save1_diff     (csr_save1_diff    ),
+        .save2_diff     (csr_save2_diff    ),
+        .save3_diff     (csr_save3_diff    ),
+        .tid_diff       (csr_tid_diff      ),
+        .tcfg_diff      (csr_tcfg_diff     ),
+        .tval_diff      (csr_tval_diff     ),
+        .ticlr_diff     (csr_ticlr_diff    ),
+        .llbctl_diff    (csr_llbctl_diff   ),
+        .tlbrentry_diff (csr_tlbrentry_diff),
+        .dmw0_diff      (csr_dmw0_diff     ),
+        .dmw1_diff      (csr_dmw1_diff     )
+        `endif
     );
 
     wire if_buf_full;
@@ -816,6 +877,10 @@ module core_top(
     wire [31:0]rf_wdata0;
     wire [31:0]rf_wdata1;
 
+    `ifdef VERILATOR
+    wire [31:0] reg_diff[31:0];
+    `endif
+
     register_file  the_register (
         .clk                     ( clk               ),
         .rstn                    ( aresetn           ),
@@ -856,6 +921,11 @@ module core_top(
         .write_addr_1 (rf_waddr1),
         .write_data_0 (rf_wdata0),
         .write_data_1 (rf_wdata1)
+
+        `ifdef VERILATOR
+        , .reg_diff(reg_diff),
+        . stable_counter_diff(rf_stable_counter)
+        `endif
     );
 
     wire  ex_eu0_en, ex_eu1_en;
@@ -881,8 +951,9 @@ module core_top(
     wire [31:0] clear_vaddr;
     wire[2:0] clear_mem;
     wire[0:0]ex_is_atom;
+    wire[31:0] tlb_fill_index;
 
-    exe  the_exe (
+    exe the_exe(
         .clk           (clk           ),
         .rstn          (aresetn       ),
         .flush_by_writeback(set_pc_by_writeback),
@@ -899,8 +970,12 @@ module core_top(
         .eu0_unknown_in(rf_eu0_unknown), //.eu1_unknown_in( rf_eu1_unknown),
         .data00        (rf_eu0_read_dataj), .data10(rf_eu1_read_dataj),
         .data01        (rf_eu0_read_datak), .data11(rf_eu1_read_datak),
-        
 
+        `ifdef VERILATOR
+        .stable_counter_diff_in(rf_stable_counter),
+        .stable_counter_diff_out(ex_stable_counter),
+        `endif
+        
         .en_out0  (ex_eu0_en  ), .en_out1  (ex_eu1_en  ),
         .data_out0(ex_eu0_data), .data_out1(ex_eu1_data),
         .addr_out0(ex_eu0_rd  ), .addr_out1(ex_eu1_rd  ),
@@ -968,6 +1043,7 @@ module core_top(
         .clear_vaddr            (clear_vaddr),
         .clear_asid             (clear_asid),
         .clear_mem              (clear_mem),
+        .fill_index             (tlb_fill_index),
 
         .clear_clock_gate_require(clear_clock_gate_require),
         .clear_clock_gate(clear_clock_gate)
@@ -1113,7 +1189,7 @@ module core_top(
         .w_asid         (asid_out),  
 
         
-        .f_index        (stable_counter[TLBIDX_WIDTH-1:0]),
+        .f_index        (tlb_fill_index[TLBIDX_WIDTH-1:0]),
         .s_vpn2         (tlb_vppn_out),
         .s_index        (tlb_index_in),
         .s_asid         (asid_out),
@@ -1209,22 +1285,74 @@ module core_top(
     assign ex_mem_l2_complete = 1;
 
 `ifdef VERILATOR
+    reg cmt_valid0,cmt_valid1;
+    reg [31:0] cmt_pc0,cmt_pc1;
+    reg [31:0] cmt_inst0,cmt_inst1;
+    reg [31:0] cmt_wen0,cmt_wen1;
+    reg [4:0] cmt_wdest0,cmt_wdest1;
+    reg [31:0] cmt_wdata0,cmt_wdata1;
+    reg cmt_excp_valid;
+    reg [5:0] cmt_ecode;
+    reg [63:0] cmt_stable_counter;
+    reg [TLBIDX_WIDTH-1:0] fill_index_diff;
+
+    always @(posedge clk)
+        if(fill_mode&&tlb_we)
+            fill_index_diff<=tlb_fill_index;
+
+    always @(posedge aclk)
+        if(~aresetn) begin
+            {cmt_valid0,cmt_valid1,cmt_pc0,cmt_pc1,cmt_inst0,cmt_inst1,cmt_wen0,cmt_wen1,cmt_wdest0,
+            cmt_wdest1,cmt_wdata0,cmt_wdata1,cmt_excp_valid,cmt_ecode}<=0;
+        end else begin
+            //防止出现eu0不提交但eu1提交
+            cmt_stable_counter <= ex_stable_counter;
+            if(ex_eu0_en==0&&ex_eu1_en!=0) begin
+                cmt_valid0  <= ex_eu1_en;
+                cmt_pc0     <= debug1_wb_pc;
+                cmt_inst0   <= debug1_wb_inst;
+                cmt_wen0    <= debug1_wb_rf_wen!=0;
+                cmt_wdest0  <= debug1_wb_rf_wnum;
+                cmt_wdata0  <= debug1_wb_rf_wdata;
+                cmt_excp_valid<=0;
+                cmt_ecode   <= 0;
+                cmt_valid1  <= 0;
+            end else begin
+                //有异常时不置valid
+                cmt_valid0  <= ex_eu0_en&&!set_pc_by_writeback;
+                cmt_pc0     <= debug0_wb_pc;
+                cmt_inst0   <= debug0_wb_inst;
+                cmt_wen0    <= debug0_wb_rf_wen!=0;
+                cmt_wdest0  <= debug0_wb_rf_wnum;
+                cmt_wdata0  <= debug0_wb_rf_wdata;
+                cmt_excp_valid<=set_pc_by_writeback;
+                cmt_ecode   <= csr_expcode_in[5:0];
+
+                cmt_valid1  <= ex_eu1_en&&!set_pc_by_writeback;
+                cmt_pc1     <= debug1_wb_pc;
+                cmt_inst1   <= debug1_wb_inst;
+                cmt_wen1    <= debug1_wb_rf_wen!=0;
+                cmt_wdest1  <= debug1_wb_rf_wnum;
+                cmt_wdata1  <= debug1_wb_rf_wdata;
+            end
+        end
+
     DifftestInstrCommit DifftestInstrCommit0
     (
         .clock(aclk),
         .coreid(0),
         .index(0),
-        .valid(debug0_wb_inst!=0),
-        .pc({32'd0,debug0_wb_pc}),
-        .instr(debug0_wb_inst),
+        .valid(cmt_valid0),
+        .pc({32'd0,cmt_pc0}),
+        .instr(cmt_inst0),
         .skip(0),
-        .is_TLBFILL(0),
-        .TLBFILL_index(0),
-        .is_CNTinst(0),
-        .timer_64_value(stable_counter),
-        .wen(debug0_wb_rf_wen!=0),
-        .wdest({3'd0,debug0_wb_rf_wnum}),
-        .wdata({32'd0,debug0_wb_rf_wdata}),
+        .is_TLBFILL(cmt_inst0[31:10]=='b0000011001001000001101),
+        .TLBFILL_index(fill_index_diff),
+        .is_CNTinst(cmt_inst0[31:11]=='b000000000000000001100),
+        .timer_64_value(cmt_stable_counter),
+        .wen(cmt_wen0),
+        .wdest({3'd0,cmt_wdest0}),
+        .wdata({32'd0,cmt_wdata0}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1234,17 +1362,17 @@ module core_top(
         .clock(aclk),
         .coreid(0),
         .index(1),
-        .valid(debug1_wb_inst!=0),
-        .pc({32'd0,debug1_wb_pc}),
-        .instr(debug1_wb_inst),
+        .valid(cmt_valid1),
+        .pc({32'd0,cmt_pc1}),
+        .instr(cmt_inst1),
         .skip(0),
         .is_TLBFILL(0),
         .TLBFILL_index(0),
-        .is_CNTinst(0),
-        .timer_64_value(stable_counter),
-        .wen(debug1_wb_rf_wen!=0),
-        .wdest({3'd0,debug1_wb_rf_wnum}),
-        .wdata({32'd0,debug1_wb_rf_wdata}),
+        .is_CNTinst(cmt_inst1[31:11]=='b000000000000000001100),
+        .timer_64_value(cmt_stable_counter),
+        .wen(cmt_wen1),
+        .wdest({3'd0,cmt_wdest1}),
+        .wdata({32'd0,cmt_wdata1}),
         .csr_rstat(0),
         .csr_data(0)
     );
@@ -1253,12 +1381,12 @@ module core_top(
     (
         .clock(aclk),
         .coreid(0),
-        .excp_valid(0),
-        .eret(0),
-        .intrNo(0),
-        .cause(0),
-        .exceptionPC({32'd0,debug0_wb_pc}),
-        .exceptionInst(debug0_wb_inst)
+        .excp_valid(cmt_excp_valid),
+        .eret(cmt_inst0=='b00000110010010000011100000000000),
+        .intrNo(csr_estat_diff[12:2]),
+        .cause(cmt_ecode),
+        .exceptionPC({32'd0,cmt_pc0}),
+        .exceptionInst(cmt_inst0)
     );
 
     DifftestTrapEvent DifftestTrapEvent
@@ -1270,6 +1398,96 @@ module core_top(
         .pc(0),
         .cycleCnt(0),
         .instrCnt(0)
+    );
+    
+    DifftestStoreEvent DifftestStoreEvent
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(0),
+        .valid(0),
+        .storePAddr(0),
+        .storeVAddr(0),
+        .storeData(0)
+    );
+
+    DifftestLoadEvent DifftestLoadEvent
+    (
+        .clock(aclk),
+        .coreid(0),
+        .index(0),
+        .valid(0),
+        .paddr(0),
+        .vaddr(0)
+    );
+
+    DifftestGRegState DifftestGRegState(
+        .clock              (aclk       ),
+        .coreid             (0          ),
+        .gpr_0              (0          ),
+        .gpr_1              (reg_diff[1]    ),
+        .gpr_2              (reg_diff[2]    ),
+        .gpr_3              (reg_diff[3]    ),
+        .gpr_4              (reg_diff[4]    ),
+        .gpr_5              (reg_diff[5]    ),
+        .gpr_6              (reg_diff[6]    ),
+        .gpr_7              (reg_diff[7]    ),
+        .gpr_8              (reg_diff[8]    ),
+        .gpr_9              (reg_diff[9]    ),
+        .gpr_10             (reg_diff[10]   ),
+        .gpr_11             (reg_diff[11]   ),
+        .gpr_12             (reg_diff[12]   ),
+        .gpr_13             (reg_diff[13]   ),
+        .gpr_14             (reg_diff[14]   ),
+        .gpr_15             (reg_diff[15]   ),
+        .gpr_16             (reg_diff[16]   ),
+        .gpr_17             (reg_diff[17]   ),
+        .gpr_18             (reg_diff[18]   ),
+        .gpr_19             (reg_diff[19]   ),
+        .gpr_20             (reg_diff[20]   ),
+        .gpr_21             (reg_diff[21]   ),
+        .gpr_22             (reg_diff[22]   ),
+        .gpr_23             (reg_diff[23]   ),
+        .gpr_24             (reg_diff[24]   ),
+        .gpr_25             (reg_diff[25]   ),
+        .gpr_26             (reg_diff[26]   ),
+        .gpr_27             (reg_diff[27]   ),
+        .gpr_28             (reg_diff[28]   ),
+        .gpr_29             (reg_diff[29]   ),
+        .gpr_30             (reg_diff[30]   ),
+        .gpr_31             (reg_diff[31]   )
+    );
+
+    DifftestCSRRegState DifftestCSRRegState(
+        .clock              (aclk             ),
+        .coreid             (0                ),
+        .crmd               (csr_crmd_diff    ),
+        .prmd               (csr_prmd_diff    ),
+        .euen               (0                ),
+        .ecfg               (csr_ectl_diff    ),
+        .estat              (csr_estat_diff   ),
+        .era                (csr_era_diff     ),
+        .badv               (csr_badv_diff    ),
+        .eentry             (csr_eentry_diff  ),
+        .tlbidx             (csr_tlbidx_diff  ),
+        .tlbehi             (csr_tlbehi_diff  ),
+        .tlbelo0            (csr_tlbelo0_diff ),
+        .tlbelo1            (csr_tlbelo1_diff ),
+        .asid               (csr_asid_diff    ),
+        .pgdl               (csr_pgdl_diff    ),
+        .pgdh               (csr_pgdh_diff    ),
+        .save0              (csr_save0_diff   ),
+        .save1              (csr_save1_diff   ),
+        .save2              (csr_save2_diff   ),
+        .save3              (csr_save3_diff   ),
+        .tid                (csr_tid_diff     ),
+        .tcfg               (csr_tcfg_diff    ),
+        .tval               (csr_tval_diff    ),
+        .ticlr              (csr_ticlr_diff   ),
+        .llbctl             (csr_llbctl_diff  ),
+        .tlbrentry          (csr_tlbrentry_diff),
+        .dmw0               (csr_dmw0_diff    ),
+        .dmw1               (csr_dmw1_diff    )
     );
 `endif
 endmodule 

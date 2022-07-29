@@ -104,6 +104,36 @@ module csr
 
     //timer
     output [31:0] tid
+
+`ifdef VERILATOR
+    ,
+    output [31:0] crmd_diff,
+    output [31:0] prmd_diff,
+    output [31:0] ectl_diff,
+    output [31:0] estat_diff,
+    output [31:0] era_diff,
+    output [31:0] badv_diff,
+    output [31:0] eentry_diff,
+    output [31:0] tlbidx_diff,
+    output [31:0] tlbehi_diff,
+    output [31:0] tlbelo0_diff,
+    output [31:0] tlbelo1_diff,
+    output [31:0] asid_diff,
+    output [31:0] pgdl_diff,
+    output [31:0] pgdh_diff,
+    output [31:0] save0_diff,
+    output [31:0] save1_diff,
+    output [31:0] save2_diff,
+    output [31:0] save3_diff,
+    output [31:0] tid_diff,
+    output [31:0] tcfg_diff,
+    output [31:0] tval_diff,
+    output [31:0] ticlr_diff,
+    output [31:0] llbctl_diff,
+    output [31:0] tlbrentry_diff,
+    output [31:0] dmw0_diff,
+    output [31:0] dmw1_diff
+`endif
 );
     reg timer_int;      //定时器中断
     ///////////////////////////////////////
@@ -255,7 +285,7 @@ module csr
     ///////////////////////////////////////
 
     ///////////////////////////////////////
-    //CSR update (updated by software has higher priority)
+    //CSR update
     //CRMD
     always @(posedge clk)
         if(~rstn) begin
@@ -1128,13 +1158,13 @@ module csr
     assign tlb_valid_0_out = csr_tlbelo0[`TLBELO_V];
     assign tlb_dirty_0_out = csr_tlbelo0[`TLBELO_D];
     assign tlb_priviledge_0_out = csr_tlbelo0[`TLBELO_PLV];
-    assign tlb_mat_0_out = csr_tlbelo0[`TLBELO_V];
+    assign tlb_mat_0_out = csr_tlbelo0[`TLBELO_MAT]!=0;
     assign tlb_global_0_out = csr_tlbelo0[`TLBELO_G];
     assign tlb_ppn_0_out = csr_tlbelo0[`TLBELO_PPN];
     assign tlb_valid_1_out = csr_tlbelo1[`TLBELO_V];
     assign tlb_dirty_1_out = csr_tlbelo1[`TLBELO_D];
     assign tlb_priviledge_1_out = csr_tlbelo1[`TLBELO_PLV];
-    assign tlb_mat_1_out = csr_tlbelo1[`TLBELO_V];
+    assign tlb_mat_1_out = csr_tlbelo1[`TLBELO_MAT]!=0;
     assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
     assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
     assign asid_out = asid_asid;
@@ -1146,4 +1176,15 @@ module csr
     assign ecode = estat_ecode;
     //end CSR read
     ///////////////////////////////////////
+    `ifdef VERILATOR
+    wire [32*26-1:0] csr_diff = {csr_crmd,csr_prmd,csr_ecfg,csr_estat,csr_era,csr_badv,csr_eentry,csr_tlbidx,csr_tlbehi,csr_tlbelo0,csr_tlbelo1,csr_asid,csr_pgdl,csr_pgdh,csr_save0,csr_save1,csr_save2,csr_save3,csr_tid,csr_tcfg,csr_tval,csr_ticlr,csr_llbctl,csr_tlbrentry,csr_dmw0,csr_dmw1};
+
+    reg [32*26-1:0] csr_diff_delay0;
+
+    always @(posedge clk) begin
+        csr_diff_delay0 <= csr_diff;
+    end
+
+    assign {crmd_diff,prmd_diff,ectl_diff,estat_diff,era_diff,badv_diff,eentry_diff,tlbidx_diff,tlbehi_diff,tlbelo0_diff,tlbelo1_diff,asid_diff,pgdl_diff,pgdh_diff,save0_diff,save1_diff,save2_diff,save3_diff,tid_diff,tcfg_diff,tval_diff,ticlr_diff,llbctl_diff,tlbrentry_diff,dmw0_diff,dmw1_diff}=csr_diff_delay0;
+    `endif
 endmodule

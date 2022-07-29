@@ -70,8 +70,8 @@ module is_stage
     wire [`WIDTH_UOP-1:0] uop0_5nCt64uroR = {uop0[`UOP_EXCEPT_TYPE],exception0_Ustut79un?zero_TB2wQt8mmI:uop0[`UOP_TYPE]};
     wire [`WIDTH_UOP-1:0] uop1_5nCt64uroR = {uop1[`UOP_EXCEPT_TYPE],exception1_Ustut79un?zero_TB2wQt8mmI:uop1[`UOP_TYPE]};
 
-    wire first_nop = uop0[`UOP_TYPE] == 0 && exception0_Ustut79un==0;
-    wire second_nop = uop1[`UOP_TYPE] == 0 && exception1_Ustut79un==0;
+    wire first_nop = !uop0[`UOP_NEMPTY] && exception0_Ustut79un==0;
+    wire second_nop = !uop1[`UOP_NEMPTY] && exception1_Ustut79un==0;
     
     wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {unknown0,pc_next0,pc0,badv0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0_5nCt64uroR};
     wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {unknown1,pc_next1,pc1,badv1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1_5nCt64uroR};

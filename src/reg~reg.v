@@ -66,9 +66,21 @@ module register_file(
     output reg [31:0]eu1_imm_out,
     output reg [31:0]eu1_badv_out,
     output reg eu1_unknown_out
+
+    `ifdef VERILATOR
+    ,output [31:0] reg_diff [31:0],
+    output [63:0] stable_counter_diff
+    `endif
 );
 
 reg[31:0]register_file[31:0];
+
+`ifdef VERILATOR
+assign reg_diff = register_file;
+always @(posedge clk) begin
+    if(!stall) stable_counter_diff<=stable_counter;
+end
+`endif
 
 always @(posedge clk) begin
     if (write_en_0&&(write_addr_0!=write_addr_1||write_en_1==0)) begin

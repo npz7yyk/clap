@@ -164,8 +164,7 @@ module decoder
         end
     end
     
-    //为NOP指令分配专门的UOP_TYPE，方便后续处理
-    assign uop[`UOP_TYPE]=(inst==`INST_NOP||invalid_instruction)?0:type_;
+    assign uop[`UOP_TYPE]=(!uop[`UOP_NEMPTY]||invalid_instruction)?0:type_;
     assign uop[`UOP_SRC1]=src1;
     assign uop[`UOP_SRC2]=src2;
     assign uop[`UOP_MEM_ATM]= ~inst[27];

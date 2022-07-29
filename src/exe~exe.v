@@ -70,6 +70,11 @@ module exe(
     input                   dcache_ready,
     input                   icache_ready,
 
+    `ifdef VERILATOR
+    input [63:0] stable_counter_diff_in,
+    output reg [63:0] stable_counter_diff_out,
+    `endif
+
     //CSR
     output [0:0]            csr_software_query_en,
     output [13:0]           csr_addr,
@@ -99,6 +104,7 @@ module exe(
     output [31:0]           clear_vaddr,
     output [9:0]            clear_asid,
     output [2:0]            clear_mem,
+    output [31:0]           fill_index,
 
     //IDLE
     output clear_clock_gate_require,//请求清除clock gate
@@ -171,6 +177,9 @@ reg  [6:0]   exp_exe1;
 reg  [31:0]  badv_exe1;
 reg          unknown_exe1;
 reg  [31:0]  eu0_pc_exe1;
+`ifdef VERILATOR
+reg [63:0] stable_counter_diff_exe1;
+`endif
 assign branch_unknown = unknown_exe1;
 //exe1组合输出
 wire [4:0]  mul_rd_out;
@@ -272,6 +281,9 @@ always @(posedge clk) begin
         eu1_pc_exe1 <= eu1_pc_in;
         inst1_mid   <= eu1_uop_in[`UOP_ORIGINAL_INST];
     end
+    `ifdef VERILATOR
+        if(!stall) stable_counter_diff_exe1 <= stable_counter_diff_in;
+    `endif
 end
 wire[31:0]div_pc_out;
 wire[31:0]div_inst_out;
@@ -318,6 +330,10 @@ always @(posedge clk) begin
     else begin
         en_out1           <= 0;
     end
+
+    `ifdef VERILATOR
+        if(!stall_because_cache) stable_counter_diff_out <= stable_counter_diff_exe1;
+    `endif
 end
 
 hazard  u_hazard (
@@ -570,6 +586,7 @@ exe_privliedged exe_privliedged
     .clear_vaddr(clear_vaddr),
     .clear_asid(clear_asid),
     .clear_mem(clear_mem),
+    .fill_index(fill_index),
 
     .clear_clock_gate_require(clear_clock_gate_require),
     .clear_clock_gate(clear_clock_gate),

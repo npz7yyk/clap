@@ -58,6 +58,7 @@ module exe_privliedged(
     output reg [31:0] clear_vaddr,
     output reg [9:0] clear_asid,
     output reg [2:0] clear_mem,
+    output reg [31:0] fill_index,
 
     //IDLE
     //进入
@@ -65,6 +66,14 @@ module exe_privliedged(
     output reg clear_clock_gate,        //真正清除clock gate
     input icache_idle,dcache_idle
 ); 
+    reg [31:0] fill_index_next;
+    // Xorshift random number generator
+    always @* begin
+        fill_index_next = fill_index;
+        fill_index_next = fill_index_next^(fill_index_next<<13);
+        fill_index_next = fill_index_next^(fill_index_next>>17);
+        fill_index_next = fill_index_next^(fill_index_next<<5);
+    end
     localparam
         S_INIT      = 29'b00000000000000000000000000001,
         S_CSR       = 29'b00000000000000000000000000010,
@@ -159,6 +168,7 @@ module exe_privliedged(
 
     always @(posedge clk)
         if(~rstn) begin
+            fill_index<=19260817;
             en_out<=0;
             pc_target<=0;
             flush<=0;
@@ -263,6 +273,7 @@ module exe_privliedged(
                 stall_because_priv<=0;
                 flush <= 1;
                 clear_mem <= 0;
+                fill_index <= fill_index_next;
             end
             S_CACOP: begin
                 which_cache <= inst[1:0];

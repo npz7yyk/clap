@@ -20,6 +20,7 @@
 // 2022-05-28: decoder: immediate number generator, signals used by branch prediction unit
 // 2022-07-10: use predecoder module to generate feedback signals for branch prediction unit
 // 2022-07-13: do not push NOP into fetch buffer
+// 2022-07-29: treat NOP normally
 
 `include "uop.vh"
 `include "exception.vh"
@@ -72,8 +73,8 @@ module id_stage
     output reg [31:0] probably_right_destination,
     output wire set_pc
 );
-    wire valid0_before_predecode = input_valid && ~pc_in[2] && (inst0!=`INST_NOP||exception_in!=0);      //输入的指令0有效
-    wire valid1_before_predecode = input_valid && ~first_inst_jmp && (inst1!=`INST_NOP||exception_in!=0);  //输入的指令1有效
+    wire valid0_before_predecode = input_valid && ~pc_in[2];      //输入的指令0有效
+    wire valid1_before_predecode = input_valid && ~first_inst_jmp;  //输入的指令1有效
 
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
