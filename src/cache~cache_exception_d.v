@@ -1,4 +1,6 @@
+`include "clap_config.vh"
 `include "exception.vh"
+
 /* verilator lint_off DECLFILENAME */
 module cache_exception_d(
     input [31:0] addr_rbuf,

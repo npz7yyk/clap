@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module TLB_out(
     input [1:0] ad_mode,

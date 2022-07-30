@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module miss_way_sel_lru(
     input clk,

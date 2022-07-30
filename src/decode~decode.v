@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "clap_config.vh"
 `include "uop.vh"
 `include "exception.vh"
 

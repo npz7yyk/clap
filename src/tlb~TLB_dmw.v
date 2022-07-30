@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module TLB_dmw(
     input                       dmw0_plv0,

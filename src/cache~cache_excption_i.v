@@ -1,3 +1,4 @@
+`include "clap_config.vh"
 `include "exception.vh"
 /* verilator lint_off DECLFILENAME */
 module cache_excption_i(

@@ -1,3 +1,4 @@
+`include "clap_config.vh"
 `include "uop.vh"
 
 //执行特权指令

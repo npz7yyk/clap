@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module ret_buf_i(
     input clk,

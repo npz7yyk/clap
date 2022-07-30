@@ -1,4 +1,6 @@
+`include "clap_config.vh"
 `include "uop.vh"
+
 /* verilator lint_off DECLFILENAME */
 module execute_unit_input_reg
 (

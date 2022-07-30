@@ -1,5 +1,6 @@
-//FIXME: handle stall signal
+`include "clap_config.vh"
 `include "uop.vh"
+
 /* verilator lint_off DECLFILENAME */
 module register_file(
     input [0:0]clk,
@@ -68,7 +69,7 @@ module register_file(
     //向前输出
     output [0:0] stall_by_conflict
 
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
     ,output [31:0] reg_diff [31:0],
     output [63:0] stable_counter_diff
     `endif
@@ -77,7 +78,7 @@ module register_file(
 reg[31:0]register_file[31:0];
 reg[0:0]stall_by_conflict_old;
 
-`ifdef VERILATOR
+`ifdef CLAP_CONFIG_DIFFTEST
 assign reg_diff = register_file;
 always @(posedge clk) begin
     if(!stall) stable_counter_diff<=stable_counter;

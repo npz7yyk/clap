@@ -1,3 +1,4 @@
+`include "clap_config.vh"
 `include "uop.vh"
 
 /*

@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module mem_rd_ctrl_i(
     input [31:0] addr_rbuf,

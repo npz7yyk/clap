@@ -1,3 +1,4 @@
+`include "clap_config.vh"
 `include "uop.vh"
 
 module decode_unit_input_reg

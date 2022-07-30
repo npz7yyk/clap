@@ -71,7 +71,7 @@ module exe(
     input                   dcache_ready,
     input                   icache_ready,
 
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
     input [63:0] stable_counter_diff_in,
     output reg [63:0] stable_counter_diff_out,
     `endif
@@ -182,7 +182,7 @@ reg  [6:0]   exp_exe1;
 reg  [31:0]  badv_exe1;
 reg  [0:0]   unknown_exe1;
 reg  [31:0]  eu0_pc_exe1;
-`ifdef VERILATOR
+`ifdef CLAP_CONFIG_DIFFTEST
 reg [63:0] stable_counter_diff_exe1;
 `endif
 assign branch_unknown = unknown_exe1;
@@ -286,7 +286,7 @@ always @(posedge clk) begin
         eu1_pc_exe1 <= eu1_pc_in;
         inst1_mid   <= eu1_uop_in[`UOP_ORIGINAL_INST];
     end
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
         if(!stall3&&!stall4) stable_counter_diff_exe1 <= stable_counter_diff_in;
     `endif
 end
@@ -336,7 +336,7 @@ always @(posedge clk) begin
         en_out1           <= 0;
     end
 
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
         if(!stall3) stable_counter_diff_out <= stable_counter_diff_exe1;
     `endif
 end

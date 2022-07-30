@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* for each way, there are 16 banks, whose width is 4bytes */
 /* verilator lint_off DECLFILENAME */
 module inst_memory(

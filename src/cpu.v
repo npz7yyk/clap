@@ -1,3 +1,4 @@
+`include "clap_config.vh"
 `include "uop.vh"
 `include "exception.vh"
 `include "csr.vh"
@@ -319,7 +320,7 @@ module core_top(
     wire [31:0] csr_wdata;
     wire [5:0] csr_ecode;
 
-`ifdef VERILATOR
+`ifdef CLAP_CONFIG_DIFFTEST
     wire [31:0] csr_crmd_diff     ;
     wire [31:0] csr_prmd_diff     ;
     wire [31:0] csr_ectl_diff     ;
@@ -472,7 +473,7 @@ module core_top(
         //timer
         .tid                     ( tid                    )
 
-        `ifdef VERILATOR
+        `ifdef CLAP_CONFIG_DIFFTEST
         ,
         .crmd_diff      (csr_crmd_diff     ),
         .prmd_diff      (csr_prmd_diff     ),
@@ -882,7 +883,7 @@ module core_top(
     wire [31:0]rf_wdata0;
     wire [31:0]rf_wdata1;
 
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
     wire [31:0] reg_diff[31:0];
     `endif
 
@@ -928,7 +929,7 @@ module core_top(
         .write_data_0 (rf_wdata0),
         .write_data_1 (rf_wdata1)
 
-        `ifdef VERILATOR
+        `ifdef CLAP_CONFIG_DIFFTEST
         , .reg_diff(reg_diff),
         . stable_counter_diff(rf_stable_counter)
         `endif
@@ -977,7 +978,7 @@ module core_top(
         .data00        (rf_eu0_read_dataj), .data10(rf_eu1_read_dataj),
         .data01        (rf_eu0_read_datak), .data11(rf_eu1_read_datak),
 
-        `ifdef VERILATOR
+        `ifdef CLAP_CONFIG_DIFFTEST
         .stable_counter_diff_in(rf_stable_counter),
         .stable_counter_diff_out(ex_stable_counter),
         `endif
@@ -1291,7 +1292,7 @@ module core_top(
     assign ex_mem_l2_ready = 1;
     assign ex_mem_l2_complete = 1;
 
-`ifdef VERILATOR
+`ifdef CLAP_CONFIG_DIFFTEST
     reg cmt_valid0,cmt_valid1;
     reg [31:0] cmt_pc0,cmt_pc1;
     reg [31:0] cmt_inst0,cmt_inst1;
@@ -1495,6 +1496,32 @@ module core_top(
         .tlbrentry          (csr_tlbrentry_diff),
         .dmw0               (csr_dmw0_diff    ),
         .dmw1               (csr_dmw1_diff    )
+    );
+`endif //CLAP_CONFIG_DIFFTEST
+
+`ifdef CLAP_CONFIG_INST_PROFILE
+    profile_inst_statisic profile_inst_statisic
+    (
+        .clk(clk),
+        .cmt_valid0(ex_eu0_en),
+        .cmt_inst0(debug0_wb_inst),
+        .cmt_excp0(ex_eu0_exp),
+        .cmt_valid1(ex_eu1_en),
+        .cmt_inst1(debug1_wb_inst),
+        .cmt_excp1(0)
+    );
+`endif
+
+`ifdef CLAP_CONFIG_BR_PROFILE
+    profile_branch profile_branch
+    (
+        .clk(clk),
+        .id_valid(id_feedback_valid&&(id_category0!=0||id_category1!=0)),
+        .id_wrong(set_pc_by_decoder),
+        .id_pc(id_pc_for_predict),
+        .ex_valid(ex_feedback_valid),
+        .ex_wrong(set_pc_by_executer),
+        .ex_pc(ex_branch_pc)
     );
 `endif
 endmodule 

@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 /* verilator lint_off DECLFILENAME */
 module TagV #(
   parameter RAM_WIDTH = 21,                       // Specify RAM data width

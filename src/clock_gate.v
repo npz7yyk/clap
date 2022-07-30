@@ -1,3 +1,5 @@
+`include "clap_config.vh"
+
 module clock_gate
 (
     input aclk,resetn,

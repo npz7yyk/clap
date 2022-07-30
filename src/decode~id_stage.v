@@ -22,6 +22,7 @@
 // 2022-07-13: do not push NOP into fetch buffer
 // 2022-07-29: treat NOP normally
 
+`include "clap_config.vh"
 `include "uop.vh"
 `include "exception.vh"
 

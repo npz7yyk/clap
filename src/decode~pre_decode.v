@@ -14,6 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+`include "clap_config.vh"
+
 //combine logic
 //pre-decoder the instruction before pushing it to the FIFO, 
 //to get feedback signals
