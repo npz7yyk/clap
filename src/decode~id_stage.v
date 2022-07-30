@@ -81,8 +81,8 @@ module id_stage
     pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0));
     pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
     assign pc_for_predict = pc_in;
-    wire [31:0] pc_inst0_sGec6sQ = pc_in;
-    wire [31:0] pc_inst1_sGec6sQ = pc_in[2]?pc_in:pc_in+4;
+    wire [31:0] pc_inst0_sGec6sQ = {pc_in[31:3],3'd0};
+    wire [31:0] pc_inst1_sGec6sQ = {pc_in[31:3],3'd4};
     assign jmpdist0 = pc_inst0_sGec6sQ + pc_offset0;
     assign jmpdist1 = pc_inst1_sGec6sQ + pc_offset1;
     //正确的记录信息
