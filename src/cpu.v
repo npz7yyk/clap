@@ -764,9 +764,9 @@ module core_top(
  
     assign ex_stall = ex_stall3||ex_stall4;
     is_stage the_issue (
-        .clk(clk),.rstn(aresetn),
+        // .clk(clk),.rstn(aresetn),
         .num_read(id_read_en),
-        .flush(set_pc_by_executer||set_pc_by_writeback),
+        // .flush(set_pc_by_executer||set_pc_by_writeback),
         
         .uop0(id_uop0),.uop1(id_uop1),
         .rd0(id_rd0),.rd1(id_rd1),.rk0(id_rk0),.rk1(id_rk1),.rj0(id_rj0),.rj1(id_rj1),

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// issue.v: 发射指令（不支持乱序）
+// issue.v: 发射指令（不支持乱序，组合）
 
 // Authors: 张子辰 <zichen350@gmail.com>
 
@@ -22,10 +22,8 @@
 /* verilator lint_off DECLFILENAME */
 module is_stage
 (
-    input clk,rstn, //时钟, 复位
     ////控制信号////
-    output reg [1:0] num_read,  //实际读取的指令条数 00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
-    input flush,
+    output [1:0] num_read,  //实际读取的指令条数 00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
     ////输入信号////
     input [`WIDTH_UOP-1:0] uop0, uop1,
     input [4:0] rd0,rj0,rk0,rd1,rj1,rk1,
@@ -38,7 +36,7 @@ module is_stage
     input has_interrupt,
     ////输出信号////
     //execute unit #0
-    output eu0_en,
+    output reg eu0_en,
     input eu0_ready,
     output [`WIDTH_UOP-1:0] eu0_uop,
     output [4:0] eu0_rd,eu0_rj,eu0_rk,
@@ -48,7 +46,7 @@ module is_stage
     output [31:0] eu0_badv,
     output eu0_unknown,
     //execute unit #1 //ALU only
-    output eu1_en,
+    output reg eu1_en,
     input eu1_ready,
     output [`WIDTH_UOP-1:0] eu1_uop,
     output [4:0] eu1_rd,eu1_rj,eu1_rk,
@@ -58,7 +56,6 @@ module is_stage
     output [31:0] eu1_badv,
     output eu1_unknown
 );
-    localparam RST_VAL = {1'd0,32'd4,32'd0,32'd0,7'd0,32'd0,15'd0,{`WIDTH_UOP{1'b0}}};
     //pc_next,pc,badv,exception,imm,rd,rk,rj,uop
     reg [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
     reg [1:0] fifo_size;
@@ -75,86 +72,23 @@ module is_stage
     wire first_nop = !uop0[`UOP_NEMPTY] && exception0_Ustut79un==0;
     wire second_nop = !uop1[`UOP_NEMPTY] && exception1_Ustut79un==0;
     
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0_xqAzNDOaRK = {unknown0,pc_next0,pc0,badv0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0_5nCt64uroR};
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1_xqAzNDOaRK = {unknown1,pc_next1,pc1,badv1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1_5nCt64uroR};
-
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = first_nop?input1_xqAzNDOaRK:input0_xqAzNDOaRK;
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = input1_xqAzNDOaRK;
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = {unknown0,pc_next0,pc0,badv0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0_5nCt64uroR};
+    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = {unknown1,pc_next1,pc1,badv1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1_5nCt64uroR};
     
-    reg [1:0] size_after_out;
-    reg eu1_en_0Ucym1r,eu0_en_0Ucym1r;
-    always @ *
-        case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
-        2'b10,2'b01: begin
-            size_after_out = fifo_size<=1?0:fifo_size-1;
-        end
-        2'b11: begin
-            size_after_out = fifo_size<=2?0:fifo_size-2;
-        end
-        2'b00: begin
-            size_after_out = fifo_size;
-        end
-        endcase
-    always @*
-        if(size_after_out==2)
-            num_read = 2'b00;
-        else if(size_after_out==1)
-            num_read = 2'b01;
-        else num_read = 2'b11;
-
-    always @(posedge clk)
-        if(~rstn || flush)
-            fifo0 <= RST_VAL;
-        else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
-            2'b10,2'b01: //一输出
-                fifo0 <= fifo_size<=1?input0:fifo1;
-            2'b11://两输出
-                fifo0 <= input0;
-            2'b00:
-                if(fifo_size==0)fifo0 <= input0;
-        endcase
-    
-    always @(posedge clk)
-        if(~rstn || flush)
-            fifo1 <= RST_VAL;
-        else case({eu1_en_0Ucym1r,eu0_en_0Ucym1r})
-            2'b10,2'b01: begin//一输出
-                fifo1 <= fifo_size<=1?input1:input0;
-            end
-            2'b11://两输出
-                fifo1 <= input1;
-            2'b00:
-                if(fifo_size==1)
-                    fifo1 <= input0;
-                else if(fifo_size==0)
-                    fifo1 <= input1;
-        endcase
-
-    always @(posedge clk)
-        if(~rstn || flush)
-            fifo_size <= 0;
-        else case({first_nop,second_nop})
-            2'b00: fifo_size <= 2;
-            2'b10,2'b01:
-                fifo_size <= size_after_out==0?1:2;
-            2'b11:
-                fifo_size <= size_after_out;
-       endcase
-    
-    assign {eu0_unknown,eu0_pc_next,eu0_pc,eu0_badv,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = fifo0;
-    assign {eu1_unknown,eu1_pc_next,eu1_pc,eu1_badv,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = fifo1;
-    assign eu1_en = eu1_en_0Ucym1r;
-    assign eu0_en = eu0_en_0Ucym1r && (eu0_uop[`UOP_TYPE]!=0 || eu0_exception!=0);
+    assign {eu0_unknown,eu0_pc_next,eu0_pc,eu0_badv,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = input0;
+    assign {eu1_unknown,eu1_pc_next,eu1_pc,eu1_badv,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = input1;
     
     always @* begin
-        eu1_en_0Ucym1r = 0;
-        eu0_en_0Ucym1r = 0;
-        if(eu0_ready) begin
-            eu0_en_0Ucym1r = 1;
+        eu0_en = 0;
+        eu1_en = 0;
+        if(eu0_ready&&!first_nop) begin
+            eu0_en = 1;
 
-            if(eu1_ready&&fifo1[`ITYPE_IDX_ALU]&&(eu0_rd==0||eu1_rj!=eu0_rd&&eu1_rk!=eu0_rd)) begin
-                eu1_en_0Ucym1r = 1;
+            if(eu1_ready&&input1[`ITYPE_IDX_ALU]&&(eu0_rd==0||eu1_rj!=eu0_rd&&eu1_rk!=eu0_rd)) begin
+                eu1_en = 1;
             end
         end
     end
+
+    assign num_read = {eu1_en,eu0_en};
 endmodule
