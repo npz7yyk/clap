@@ -15,7 +15,6 @@ module profile_inst_statisic
     integer fd;
     initial begin
         fd = $fopen(FILENAME,"wb");
-        $fdisplay(fd, "%m: Simulation begin.");
     end
 
     always @(posedge clk) begin

@@ -13,7 +13,6 @@ module profile_branch
     integer fd;
     initial begin
         fd = $fopen(FILENAME,"wb");
-        $fdisplay(fd, "%m: Simulation begin.");
     end
 
     always @(posedge clk) begin

@@ -592,6 +592,8 @@ module core_top(
     wire [31:0] ex_mem_cacop_rj_plus_imm;
     wire use_tlb_s0_by_exe,use_tlb_s1_by_exe;
 
+    wire [1:0] itlb_mat,dtlb_mat;
+
     wire data_valid_qt4WxiD7aL7;
     wire [63:0] r_data_CPU;
     wire [31:0] if_pc_qt4WxiD7aL7,if_pc_next_qt4WxiD7aL7;
@@ -606,7 +608,7 @@ module core_top(
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
         .valid          (~if_buf_full&~clear_clock_gate_require),
-        .uncache        (direct_i_mat==0),
+        .uncache        (translate_mode[0]&&direct_i_mat==0 || translate_mode[1]&&itlb_mat==0),
         .pc_in          (ex_mem_l1i_en?ex_mem_cacop_rj_plus_imm:pc),
         .p_addr         (p_pc),
         .cookie_in      ({pred_record0,pred_record1,pd_branch&~pd_reason,pred_known0,pred_known1,pc_next}),
@@ -1078,7 +1080,7 @@ module core_top(
         .valid          (ex_mem_valid&~clear_clock_gate_require),
         .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
-        .uncache        (direct_d_mat==0),
+        .uncache        (translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0),
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .p_addr         (ex_mem_paddr),
         .signed_ext     (ex_signed_ext),
@@ -1144,6 +1146,7 @@ module core_top(
         .s0_mem_type    (use_tlb_s0_by_exe?0:2),
         .s0_en          (!if_buf_full&&translate_mode[1] || use_tlb_s0_by_exe),
         .s0_exception   (itlb_exp),
+        .s0_mat         (itlb_mat),
 
         .s1_vaddr       (use_tlb_s1_by_exe?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .s1_paddr       (ex_mem_paddr),
@@ -1152,6 +1155,7 @@ module core_top(
         .s1_mem_type    (use_tlb_s1_by_exe?0:{1'b0, ex_mem_op}),
         .s1_en          (ex_mem_valid&&translate_mode[1] || use_tlb_s1_by_exe),
         .s1_exception   (dtlb_exp),
+        .s1_mat         (dtlb_mat),
 
 
         //CSR.TLBINDEX
