@@ -1509,10 +1509,12 @@ module core_top(
         .clk(clk),
         .cmt_valid0(ex_eu0_en),
         .cmt_inst0(debug0_wb_inst),
+        .cmt_pc0(debug0_wb_pc),
         .cmt_excp0(ex_eu0_exp),
         .cmt_valid1(ex_eu1_en),
         .cmt_inst1(debug1_wb_inst),
-        .cmt_excp1(0)
+        .cmt_excp1(0),
+        .cmt_pc1(debug1_wb_pc)
     );
 `endif
 
