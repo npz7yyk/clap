@@ -70,8 +70,8 @@ module dcache(
     wire [2047:0] mem_dout;
     wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
 
-    assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
-    assign w_addr = uncache_rbuf ? addr_pbuf : w_addr_mbuf;
+    assign r_addr = uncache ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
+    assign w_addr = uncache ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
     assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
     
@@ -111,7 +111,7 @@ module dcache(
         .bvalid             (b_valid),
         .awvalid            (w_req),
         .awready            (w_rdy),
-        .uncache            (uncache_rbuf),
+        .uncache            (uncache),
         .wrt_reset          (wbuf_AXI_reset),
         .w_line_mem         (miss_sel_data),
         .wvalid             (w_data_req),
@@ -141,7 +141,7 @@ module dcache(
         .w_data_CPU_rbuf    (w_data_CPU_rbuf),
         .ret_valid          (ret_valid),
         .ret_last           (ret_last),
-        .uncache_rbuf       (uncache_rbuf),
+        .uncache_rbuf       (uncache),
         .fill_finish        (fill_finish),
         .w_data_AXI         (w_line_AXI)
     );
@@ -215,7 +215,7 @@ module dcache(
         .read_type_rbuf     (write_type_rbuf),
         .signed_ext         (signed_ext_rbuf),
         .mem_dout           (mem_dout),
-        .uncache_rbuf       (uncache_rbuf),
+        .uncache_rbuf       (uncache),
         .r_data_AXI         (w_line_AXI),
         .r_data_sel         (r_data_sel),
         .cacop_en_rbuf      (cacop_en_rbuf),
@@ -246,7 +246,7 @@ module dcache(
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),
         .mem_we_normal      (mem_we_normal),
-        .uncache            (uncache_rbuf),
+        .uncache            (uncache),
         .visit_type         (write_type_rbuf),
         .addr_rbuf          (addr_rbuf),
         .exception          (exception),

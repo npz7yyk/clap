@@ -49,14 +49,15 @@ module TLB_out(
                 s1_paddr = s1_dmw_paddr;
                 s1_mat = s1_dmw_mat;
             end
-            else
+            else begin
                 case(found_ps1)
                 6'd12: s1_paddr = {s1_pfn, s1_addr[11:0]};
                 6'd22: s1_paddr = {s1_pfn[9:0], s1_addr[21:0]};
                 default: s1_paddr = 0;
                 endcase
                 s1_mat = s1_tlb_mat;
-            end 
+            end
+        end
         default: begin
             s0_paddr = 0;
             s1_paddr = 0;
