@@ -243,7 +243,7 @@ module fact #(
         .clk            (clk),
         .rstn           (rstn),
 
-        .idEn           (erSel[0]),
+        .idEn           (idExist1 | erSel[0]),
         .idPC           (idPC),
         .idTypeLower    (idTypeLower),
         .idTypeUpper    (idTypeUpper),
@@ -277,7 +277,7 @@ module fact #(
         .clk            (clk),
         .rstn           (rstn),
 
-        .idEn           (erSel[1]),
+        .idEn           (idExist2 | erSel[1]),
         .idPC           (idPC),
         .idTypeLower    (idTypeLower),
         .idTypeUpper    (idTypeUpper),
@@ -311,7 +311,7 @@ module fact #(
         .clk            (clk),
         .rstn           (rstn),
 
-        .idEn           (erSel[2]),
+        .idEn           (idExist3 | erSel[2]),
         .idPC           (idPC),
         .idTypeLower    (idTypeLower),
         .idTypeUpper    (idTypeUpper),
@@ -345,7 +345,7 @@ module fact #(
         .clk            (clk),
         .rstn           (rstn),
 
-        .idEn           (erSel[3]),
+        .idEn           (idExist4 | erSel[3]),
         .idPC           (idPC),
         .idTypeLower    (idTypeLower),
         .idTypeUpper    (idTypeUpper),
