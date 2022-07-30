@@ -252,8 +252,8 @@ module core_top(
     wire  [1:0]  tlb_priviledge_1_in;
     wire  tlb_priviledge_0_wen;
     wire  tlb_priviledge_1_wen;
-    wire  tlb_mat_0_in;
-    wire  tlb_mat_1_in;
+    wire  [1:0] tlb_mat_0_in;
+    wire  [1:0] tlb_mat_1_in;
     wire  tlb_mat_0_wen;
     wire  tlb_mat_1_wen;
     wire  tlb_global_0_in;
@@ -274,16 +274,16 @@ module core_top(
     wire  has_interrupt_idle;
     assign set_clock_gate = has_interrupt_idle;
     wire  [1:0]  translate_mode;
-    wire  direct_i_mat;
-    wire  direct_d_mat;
+    wire  [1:0] direct_i_mat;
+    wire  [1:0] direct_d_mat;
     wire  dmw0_plv0;
     wire  dmw0_plv3;
-    wire  dmw0_mat;
+    wire  [1:0] dmw0_mat;
     wire  [31:29]  dmw0_vseg;
     wire  [31:29]  dmw0_pseg;
     wire  dmw1_plv0;
     wire  dmw1_plv3;
-    wire  dmw1_mat;
+    wire  [1:0] dmw1_mat;
     wire  [31:29]  dmw1_vseg;
     wire  [31:29]  dmw1_pseg;
     wire  [TLBIDX_WIDTH-1:0]  tlb_index_out;
@@ -296,8 +296,8 @@ module core_top(
     wire  tlb_dirty_1_out;
     wire  [1:0]  tlb_priviledge_0_out;
     wire  [1:0]  tlb_priviledge_1_out;
-    wire  tlb_mat_0_out;
-    wire  tlb_mat_1_out;
+    wire  [1:0] tlb_mat_0_out;
+    wire  [1:0] tlb_mat_1_out;
     wire  tlb_global_0_out;
     wire  tlb_global_1_out;
     /* verilator lint_off UNUSED */ //([23:20] is useless)
@@ -605,7 +605,7 @@ module core_top(
         .rstn           (aresetn),
         .flush          (set_pc_by_decoder|set_pc_by_executer|set_pc_by_writeback),
         .valid          (~if_buf_full&~clear_clock_gate_require),
-        .uncache        (~direct_i_mat),
+        .uncache        (direct_i_mat==0),
         .pc_in          (ex_mem_l1i_en?ex_mem_cacop_rj_plus_imm:pc),
         .p_addr         (p_pc),
         .cookie_in      ({pred_record0,pred_record1,pd_branch&~pd_reason,pred_known0,pred_known1,pc_next}),
@@ -1077,7 +1077,7 @@ module core_top(
         .valid          (ex_mem_valid&~clear_clock_gate_require),
         .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
-        .uncache        (~direct_d_mat),
+        .uncache        (direct_d_mat==0),
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .p_addr         (ex_mem_paddr),
         .signed_ext     (ex_signed_ext),
@@ -1173,7 +1173,7 @@ module core_top(
         .r_plv0         (tlb_priviledge_0_in),
         .w_plv0         (tlb_priviledge_0_out),
         .r_mat0         (tlb_mat_0_in),
-        .w_mat0         ({1'b0,tlb_mat_0_out}),
+        .w_mat0         (tlb_mat_0_out),
         .r_g            (tlb_g_in),
         .w_g            (tlb_global_0_out & tlb_global_1_out),
         .r_pfn0         (tlb_ppn_0_in[19:0]),

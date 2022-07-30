@@ -47,17 +47,17 @@ module csr
 
     //MMU
     output [1:0] translate_mode,    //01: direct, 10: paged
-    output direct_i_mat, //处于直接地址翻译模式时，存储访问类型
-    output direct_d_mat, //0: 非缓存, 1: 可缓存
+    output [1:0] direct_i_mat, //处于直接地址翻译模式时，存储访问类型
+    output [1:0] direct_d_mat, //0: 非缓存, 1: 可缓存
     //直接映射窗口0
     output reg dmw0_plv0,
     output reg dmw0_plv3,
-    output reg dmw0_mat,
+    output reg [1:0] dmw0_mat,
     output reg [31:29] dmw0_vseg,dmw0_pseg,
     //直接映射窗口1
     output reg dmw1_plv0,
     output reg dmw1_plv3,
-    output reg dmw1_mat,
+    output reg [1:0] dmw1_mat,
     output reg [31:29] dmw1_vseg,dmw1_pseg,
     //TLB (read port)
     output [TLBIDX_WIDTH-1:0] tlb_index_out,
@@ -67,7 +67,7 @@ module csr
     output tlb_valid_0_out,             tlb_valid_1_out,
     output tlb_dirty_0_out,             tlb_dirty_1_out,
     output [1:0] tlb_priviledge_0_out,  tlb_priviledge_1_out,
-    output tlb_mat_0_out,         tlb_mat_1_out,
+    output [1:0] tlb_mat_0_out,         tlb_mat_1_out,
     output tlb_global_0_out,            tlb_global_1_out,
     output [23:0] tlb_ppn_0_out,        tlb_ppn_1_out,
     output [9:0] asid_out,
@@ -87,7 +87,7 @@ module csr
     input tlb_dirty_0_wen,              tlb_dirty_1_wen,
     input [1:0] tlb_priviledge_0_in,    tlb_priviledge_1_in,
     input tlb_priviledge_0_wen,         tlb_priviledge_1_wen,
-    input tlb_mat_0_in,                 tlb_mat_1_in,
+    input [1:0] tlb_mat_0_in,           tlb_mat_1_in,
     input tlb_mat_0_wen,                tlb_mat_1_wen,
     input tlb_global_0_in,              tlb_global_1_in,
     input tlb_global_0_wen,             tlb_global_1_wen,
@@ -252,7 +252,7 @@ module csr
     assign csr_dmw0[`DMW_PLV0]      = dmw0_plv0;
     assign csr_dmw0[`DMW_ZERO_0]    = 0;
     assign csr_dmw0[`DMW_PLV3]      = dmw0_plv3;
-    assign csr_dmw0[`DMW_MAT]       = {1'd0,dmw0_mat};
+    assign csr_dmw0[`DMW_MAT]       = dmw0_mat;
     assign csr_dmw0[`DMW_ZERO_1]    = 0;
     assign csr_dmw0[`DMW_PSEG]      = dmw0_pseg;
     assign csr_dmw0[`DMW_ZERO_2]    = 0;
@@ -260,7 +260,7 @@ module csr
     assign csr_dmw1[`DMW_PLV0]      = dmw1_plv0;
     assign csr_dmw1[`DMW_ZERO_0]    = 0;
     assign csr_dmw1[`DMW_PLV3]      = dmw1_plv3;
-    assign csr_dmw1[`DMW_MAT]       = {1'd0,dmw1_mat};
+    assign csr_dmw1[`DMW_MAT]       = dmw1_mat;
     assign csr_dmw1[`DMW_ZERO_1]    = 0;
     assign csr_dmw1[`DMW_PSEG]      = dmw1_pseg;
     assign csr_dmw1[`DMW_ZERO_2]    = 0;
@@ -795,7 +795,7 @@ module csr
             if(tlb_valid_0_wen) csr_tlbelo0[`TLBELO_V] <= tlb_valid_0_in;
             if(tlb_dirty_0_wen) csr_tlbelo0[`TLBELO_D] <= tlb_dirty_0_in;
             if(tlb_priviledge_0_wen) csr_tlbelo0[`TLBELO_PLV] <= tlb_priviledge_0_in;
-            if(tlb_mat_0_wen) csr_tlbelo0[`TLBELO_MAT] <= {1'b0,tlb_mat_0_in};
+            if(tlb_mat_0_wen) csr_tlbelo0[`TLBELO_MAT] <= tlb_mat_0_in;
             if(tlb_global_0_wen) csr_tlbelo0[`TLBELO_G] <= tlb_global_0_in;
             if(tlb_ppn_0_wen) csr_tlbelo0[`TLBELO_PPN] <= tlb_ppn_0_in;
         end
@@ -840,7 +840,7 @@ module csr
             if(tlb_valid_1_wen) csr_tlbelo1[`TLBELO_V] <= tlb_valid_1_in;
             if(tlb_dirty_1_wen) csr_tlbelo1[`TLBELO_D] <= tlb_dirty_1_in;
             if(tlb_priviledge_1_wen) csr_tlbelo1[`TLBELO_PLV] <= tlb_priviledge_1_in;
-            if(tlb_mat_1_wen) csr_tlbelo1[`TLBELO_MAT] <= {1'b0,tlb_mat_1_in};
+            if(tlb_mat_1_wen) csr_tlbelo1[`TLBELO_MAT] <= tlb_mat_1_in;
             if(tlb_global_1_wen) csr_tlbelo1[`TLBELO_G] <= tlb_global_1_in;
             if(tlb_ppn_1_wen) csr_tlbelo1[`TLBELO_PPN] <= tlb_ppn_1_in;
         end
@@ -932,7 +932,8 @@ module csr
         end else if(software_query_en&&addr==`CSR_DMW0) begin
             if(wen[ 0]) dmw0_plv0<=wdata[ 0];
             if(wen[ 3]) dmw0_plv3<=wdata[ 3];
-            if(wen[ 4]) dmw0_mat<=wdata[ 4];
+            if(wen[ 4]) dmw0_mat[ 4]<=wdata[ 4];
+            if(wen[ 5]) dmw0_mat[ 5]<=wdata[ 5];
             if(wen[25]) dmw0_pseg[29]<=wdata[25];
             if(wen[26]) dmw0_pseg[30]<=wdata[26];
             if(wen[27]) dmw0_pseg[31]<=wdata[27];
@@ -948,7 +949,8 @@ module csr
         end else if(software_query_en&&addr==`CSR_DMW1) begin
             if(wen[ 0]) dmw1_plv0<=wdata[ 0];
             if(wen[ 3]) dmw1_plv3<=wdata[ 3];
-            if(wen[ 4]) dmw1_mat<=wdata[ 4];
+            if(wen[ 4]) dmw1_mat[ 4]<=wdata[ 4];
+            if(wen[ 5]) dmw1_mat[ 5]<=wdata[ 5];
             if(wen[25]) dmw1_pseg[29]<=wdata[25];
             if(wen[26]) dmw1_pseg[30]<=wdata[26];
             if(wen[27]) dmw1_pseg[31]<=wdata[27];
@@ -1149,8 +1151,8 @@ module csr
     assign has_interrupt_cpu  = crmd_ie&&(ecfg_lie&csr_estat[`ESTAT_IS])!=0;
     assign has_interrupt_idle = csr_estat[`ESTAT_IS]!=0;
     assign translate_mode = {crmd_pg,crmd_da};
-    assign direct_i_mat = crmd_datf != 0;
-    assign direct_d_mat = crmd_datm != 0;
+    assign direct_i_mat = crmd_datf;
+    assign direct_d_mat = crmd_datm;
     assign tlb_index_out = tlbidx_index[4:0];
     assign tlb_ps_out = tlbidx_ps;
     assign tlb_ne_out = tlbidx_ne;
@@ -1158,13 +1160,13 @@ module csr
     assign tlb_valid_0_out = csr_tlbelo0[`TLBELO_V];
     assign tlb_dirty_0_out = csr_tlbelo0[`TLBELO_D];
     assign tlb_priviledge_0_out = csr_tlbelo0[`TLBELO_PLV];
-    assign tlb_mat_0_out = csr_tlbelo0[`TLBELO_MAT]!=0;
+    assign tlb_mat_0_out = csr_tlbelo0[`TLBELO_MAT];
     assign tlb_global_0_out = csr_tlbelo0[`TLBELO_G];
     assign tlb_ppn_0_out = csr_tlbelo0[`TLBELO_PPN];
     assign tlb_valid_1_out = csr_tlbelo1[`TLBELO_V];
     assign tlb_dirty_1_out = csr_tlbelo1[`TLBELO_D];
     assign tlb_priviledge_1_out = csr_tlbelo1[`TLBELO_PLV];
-    assign tlb_mat_1_out = csr_tlbelo1[`TLBELO_MAT]!=0;
+    assign tlb_mat_1_out = csr_tlbelo1[`TLBELO_MAT];
     assign tlb_global_1_out = csr_tlbelo1[`TLBELO_G];
     assign tlb_ppn_1_out = csr_tlbelo1[`TLBELO_PPN];
     assign asid_out = asid_asid;
