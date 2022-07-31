@@ -16,7 +16,7 @@ module inst_cache_memory #(
   input [RAM_WIDTH-1:0] dina,          // RAM input data
   input clka,                          // Clock
   input wea,                           // Write enable
-  output [RAM_WIDTH-1:0] doutb         // RAM output data
+  output reg [RAM_WIDTH-1:0] doutb         // RAM output data
 );
 
   reg [RAM_WIDTH-1:0] BRAM [RAM_DEPTH-1:0];
@@ -37,20 +37,12 @@ module inst_cache_memory #(
      endgenerate
 
     always @(posedge clka)
-      ram_data_a <= dina;
-
-    always @(posedge clka)
         if (wea) begin
             BRAM[addra] <= dina;
         end 
 
     always @(posedge clka)
-        ram_data_b <= BRAM[addrb];
-
-    reg last_addr_eq;
-    always @(posedge clka)
-        last_addr_eq <= addra == addrb && wea;
-    assign doutb = last_addr_eq?ram_data_a:ram_data_b;
+        doutb <= BRAM[addrb];
 
 
   //  The following function calculates the address width based on specified RAM depth

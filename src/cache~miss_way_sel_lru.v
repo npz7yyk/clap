@@ -5,6 +5,9 @@ module miss_way_sel_lru(
     input clk,
     input [31:0] addr_rbuf,
     input [3:0] visit,
+    input cacop_en_rbuf,
+    input [1:0] cacop_code_rbuf,
+    input [3:0] hit,
     input en,
     output reg [3:0] way_sel 
     );
@@ -65,11 +68,24 @@ module miss_way_sel_lru(
     end
 
     always @(*) begin
-        case(rank[index][7:6])
-        2'd0: way_sel = 4'b0001;
-        2'd1: way_sel = 4'b0010;
-        2'd2: way_sel = 4'b0100;
-        2'd3: way_sel = 4'b1000;
-        endcase
+        if(cacop_en_rbuf && (cacop_code_rbuf == 2'b00 || cacop_code_rbuf == 2'b01) )begin
+            case(addr_rbuf[1:0])
+            2'd0: way_sel = 4'b0001;
+            2'd1: way_sel = 4'b0010;
+            2'd2: way_sel = 4'b0100;
+            2'd3: way_sel = 4'b1000;
+            endcase
+        end
+        else if(cacop_en_rbuf && (cacop_code_rbuf == 2'b10))begin
+            way_sel = hit;
+        end
+        else begin
+            case(rank[index][7:6])
+            2'd0: way_sel = 4'b0001;
+            2'd1: way_sel = 4'b0010;
+            2'd2: way_sel = 4'b0100;
+            2'd3: way_sel = 4'b1000;
+            endcase
+        end
     end
 endmodule

@@ -961,6 +961,12 @@ module core_top(
     wire[2:0] clear_mem;
     wire[0:0]ex_is_atom;
     wire[31:0] tlb_fill_index;
+    wire [31:0] vaddr_diff;
+    wire [31:0] paddr_diff;
+    wire [31:0] data_diff;
+    wire [31:0] ex_vaddr_diff;
+    wire [31:0] ex_paddr_diff;
+    wire [31:0] ex_data_diff;
 
     exe the_exe(
         .clk           (clk           ),
@@ -1056,7 +1062,14 @@ module core_top(
         .fill_index             (tlb_fill_index),
 
         .clear_clock_gate_require(clear_clock_gate_require),
-        .clear_clock_gate(clear_clock_gate)
+        .clear_clock_gate(clear_clock_gate),
+
+        .vaddr_diff_in(vaddr_diff),
+        .paddr_diff_in(paddr_diff),
+        .data_diff_in(data_diff),
+        .vaddr_diff_out(ex_vdata_diff),
+        .paddr_diff_out(ex_paddr_diff),
+        .data_diff_out(ex_data_diff)
     );
     assign tlb_ps_we = tlb_other_we;
     assign tlb_vppn_we = tlb_other_we;
@@ -1123,7 +1136,11 @@ module core_top(
         .is_atom        (ex_is_atom),
         .llbit          (llbit),
         .llbit_set      (llbit_set),
-        .llbit_clear    (llbit_clear_by_other)
+        .llbit_clear    (llbit_clear_by_other),
+
+        .vaddr_diff     (vaddr_diff),
+        .paddr_diff     (paddr_diff),
+        .data_diff      (data_diff)
     );
     wire tlb_e_in;
     wire tlb_g_in;
@@ -1307,6 +1324,7 @@ module core_top(
     reg [5:0] cmt_ecode;
     reg [63:0] cmt_stable_counter;
     reg [TLBIDX_WIDTH-1:0] fill_index_diff;
+    
 
     always @(posedge clk)
         if(fill_mode&&tlb_we)
@@ -1417,6 +1435,11 @@ module core_top(
         .clock(aclk),
         .coreid(0),
         .index(0),
+        // .valid({4'b0, csr_llbctl_diff && (cmt_inst0[31:24] == 8'b00100001), cmt_inst0[31:22] == 10'b0010100110, 
+        //         cmt_inst0[31:22] == 10'b0010100101, cmt_inst0[31:22] == 10'b0010100100}),
+        // .storePAddr(ex_paddr_diff),
+        // .storeVAddr(ex_vaddr_diff),
+        // .storeData(ex_data_diff)
         .valid(0),
         .storePAddr(0),
         .storeVAddr(0),
@@ -1428,6 +1451,11 @@ module core_top(
         .clock(aclk),
         .coreid(0),
         .index(0),
+        // .valid({2'b0, cmt_inst0[31:24] == 8'b00100000, cmt_inst0[31:22] == 10'b0010100010, 
+        //         cmt_inst0[31:22] == 10'b0010101001, cmt_inst0[31:22] == 10'b0010100001,
+        //         cmt_inst0[31:22] == 10'b0010101000, cmt_inst0[31:22] == 10'b0010100000}),
+        // .paddr(ex_paddr_diff),
+        // .vaddr(ex_vaddr_diff)
         .valid(0),
         .paddr(0),
         .vaddr(0)

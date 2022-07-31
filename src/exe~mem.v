@@ -57,16 +57,21 @@ module mem1 (
     input [ 31:0 ] r_data_CPU,          //    read data to CPU
     input [31:0]   cache_badv_in,
     input [6:0]    cache_exception,
+    input [31:0]vaddr_diff_in,
+    input [31:0]paddr_diff_in,
+    input [31:0]data_diff_in,
     //向exe1后输出
     output [6:0]   mem_exp_out,
     output [4:0]   mem_rd_out,
     output [31:0]  mem_data_out,
     output [0:0]   mem_en_out,
     output [31:0]  cache_badv_out,
+    output [31:0] vaddr_diff_out,
+    output [31:0] paddr_diff_out,
+    output [31:0] data_diff_out,
     //向全局输出
     output [0:0]   stall_by_cache
 );
-
 
     assign stall_by_cache = mem_en_in&!(data_valid | (|cache_exception));
     assign mem_exp_out         = mem_exp_in|cache_exception;
@@ -75,5 +80,9 @@ module mem1 (
     assign mem_rd_out          = {5{mem_en_out}}&mem_rd_in;
     assign mem_en_out          = mem_en_in;
     assign cache_badv_out      = {32{mem_en_in}}&cache_badv_in;
+
+assign vaddr_diff_out={32{data_valid}}&vaddr_diff_in;
+assign paddr_diff_out={32{data_valid}}&paddr_diff_in;
+assign data_diff_out={32{data_valid}}&data_diff_out;
 
 endmodule

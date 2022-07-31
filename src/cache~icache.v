@@ -36,7 +36,8 @@ module icache
     output cacop_ready,
     output cacop_complete,
 
-    input [6:0] tlb_exception
+    input [6:0] tlb_exception,
+    input ibar_en
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;
@@ -114,9 +115,12 @@ module icache
         .mem_we     (mem_we),
         .mem_dout   (mem_dout)
     );
+
     miss_way_sel_lru u_way_sel(
         .clk            (clk),
-        .addr_rbuf      (addr_rbuf[31:0]),
+        .addr_rbuf      (addr_rbuf),
+        .cacop_en_rbuf  (cacop_en_rbuf),
+        .cacop_code_rbuf(cacop_code_rbuf),
         .visit          (way_visit),
         .en             (way_sel_en),
         .way_sel        (way_replace)
@@ -156,6 +160,7 @@ module icache
         .cacop_ready    (cacop_ready),
         .cacop_complete (cacop_complete),
         .addr_rbuf      (addr_rbuf[31:0]),
+        .cacop_en_rbuf  (cacop_en_rbuf),
 
         .uncache        (uncache_rbuf),
         .r_length       (r_length),

@@ -328,25 +328,28 @@ module TLB#(
     );
 
     TLB_out addr_output(
-        .ad_mode        (ad_mode_buf),
-        .s0_dmw_hit     (s0_dmw_hit_obuf),
-        .s1_dmw_hit     (s1_dmw_hit_obuf),
-        .s0_addr        (s0_vaddr_obuf),
-        .s1_addr        (s1_vaddr_obuf),
-        .s0_dmw_mat     (s0_dmw_mat_obuf),
-        .s1_dmw_mat     (s1_dmw_mat_obuf),
-        .s0_tlb_mat     (s0_tlb_mat_obuf),
-        .s1_tlb_mat     (s1_tlb_mat_obuf),
-        .s0_dmw_paddr   (s0_dmw_paddr_obuf),
-        .s1_dmw_paddr   (s1_dmw_paddr_obuf),
-        .s0_pfn         (found_pfn0_obuf),
-        .s1_pfn         (found_pfn1_obuf),
-        .found_ps0      (found_ps0_obuf),
-        .found_ps1      (found_ps1_obuf),
-        .s0_paddr       (s0_paddr),
-        .s1_paddr       (s1_paddr),
-        .s0_mat         (s0_mat),
-        .s1_mat         (s1_mat)
+        .ad_mode            (ad_mode_buf),
+        .s0_dmw_hit         (s0_dmw_hit),
+        .s1_dmw_hit         (s1_dmw_hit),
+        .s0_dmw_hit_obuf    (s0_dmw_hit_obuf),
+        .s1_dmw_hit_obuf    (s1_dmw_hit_obuf),
+
+        .s0_addr            (s0_vaddr_obuf),
+        .s1_addr            (s1_vaddr_obuf),
+        .s0_dmw_mat         (s0_dmw_mat),
+        .s1_dmw_mat         (s1_dmw_mat),
+        .s0_tlb_mat         (found_mat0),
+        .s1_tlb_mat         (found_mat0),
+        .s0_dmw_paddr       (s0_dmw_paddr_obuf),
+        .s1_dmw_paddr       (s1_dmw_paddr_obuf),
+        .s0_pfn             (found_pfn0_obuf),
+        .s1_pfn             (found_pfn1_obuf),
+        .found_ps0          (found_ps0_obuf),
+        .found_ps1          (found_ps1_obuf),
+        .s0_paddr           (s0_paddr),
+        .s1_paddr           (s1_paddr),
+        .s0_mat             (s0_mat),
+        .s1_mat             (s1_mat)
     );
 
     /* exeption coping */

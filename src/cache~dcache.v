@@ -54,7 +54,13 @@ module dcache(
     output                  llbit_set,
     //atom store
     input                   llbit,
-    output                  llbit_clear
+    output                  llbit_clear,
+    // diff test
+    output            [31:0] vaddr_diff,
+    output            [31:0] paddr_diff,
+    output            [31:0] data_diff,
+
+    output                  miss_signal
     );
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -63,18 +69,27 @@ module dcache(
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_cache, exception_temp, exception_obuf;
-    wire [19:0] replace_tag;
+    wire [19:0] replace_tag, store_data;
     wire [31:0] r_data_CPU_temp, addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
     wire [511:0] w_line_AXI, miss_sel_data, mem_din;
     wire [2047:0] mem_dout;
     wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
+    `ifdef VERILATOR
+        assign paddr_diff = addr_pbuf;
+        register#(64) diff_buffer(
+            .clk        (clk),
+            .rstn       (rstn),
+            .we         (1'b1),
+            .din        ({addr_rbuf, w_data_CPU_rbuf}),
+            .dout       ({vaddr_diff, data_diff})
+        );
+    `endif
 
-    assign r_addr = uncache ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
-    assign w_addr = uncache ? addr_pbuf : w_addr_mbuf;
+    assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
+    assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
     assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
-    
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
@@ -90,7 +105,7 @@ module dcache(
         .rstn       (rstn),
         .we         (rbuf_we),
         .din        ({signed_ext, addr, w_data_CPU, op, 
-                      write_type, uncache, cacop_code, cacop_en, is_atom, llbit}),
+                      cacop_en ? 4'b1111 : write_type, uncache, cacop_code, cacop_en, is_atom, llbit}),
         .dout       ({signed_ext_rbuf, addr_rbuf, w_data_CPU_rbuf, op_rbuf, 
                       write_type_rbuf, uncache_rbuf, cacop_code_rbuf, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf})
     );
@@ -111,7 +126,7 @@ module dcache(
         .bvalid             (b_valid),
         .awvalid            (w_req),
         .awready            (w_rdy),
-        .uncache            (uncache),
+        .uncache            (uncache_rbuf),
         .wrt_reset          (wbuf_AXI_reset),
         .w_line_mem         (miss_sel_data),
         .wvalid             (w_data_req),
@@ -141,7 +156,7 @@ module dcache(
         .w_data_CPU_rbuf    (w_data_CPU_rbuf),
         .ret_valid          (ret_valid),
         .ret_last           (ret_last),
-        .uncache_rbuf       (uncache),
+        .uncache_rbuf       (uncache_rbuf),
         .fill_finish        (fill_finish),
         .w_data_AXI         (w_line_AXI)
     );
@@ -188,7 +203,10 @@ module dcache(
     miss_way_sel_lru u_way_sel(
         .clk            (clk),
         .addr_rbuf      (addr_rbuf),
+        .cacop_en_rbuf  (cacop_en_rbuf),
+        .cacop_code_rbuf(cacop_code_rbuf),
         .visit          (way_visit),
+        .hit            (hit),
         .en             (way_sel_en),
         .way_sel        (way_replace)
     );
@@ -199,6 +217,7 @@ module dcache(
         .w_data_AXI         (w_line_AXI),
         .wrt_data_sel       (wrt_data_sel),
         .mem_din            (mem_din),
+        .cacop_en_rbuf      (cacop_en_rbuf),
 
 
         .addr_rbuf          (addr_rbuf),
@@ -215,7 +234,7 @@ module dcache(
         .read_type_rbuf     (write_type_rbuf),
         .signed_ext         (signed_ext_rbuf),
         .mem_dout           (mem_dout),
-        .uncache_rbuf       (uncache),
+        .uncache_rbuf       (uncache_rbuf),
         .r_data_AXI         (w_line_AXI),
         .r_data_sel         (r_data_sel),
         .cacop_en_rbuf      (cacop_en_rbuf),
@@ -246,7 +265,7 @@ module dcache(
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),
         .mem_we_normal      (mem_we_normal),
-        .uncache            (uncache),
+        .uncache            (uncache_rbuf),
         .visit_type         (write_type_rbuf),
         .addr_rbuf          (addr_rbuf),
         .exception          (exception),

@@ -40,6 +40,9 @@ module exe(
     output reg [31:0]       eu0_inst,
     output reg [31:0]       eu1_pc_out,
     output reg [31:0]       eu1_inst,
+    output reg [31:0]       vaddr_diff_out,
+    output reg [31:0]       paddr_diff_out,
+    output reg [31:0]       data_diff_out,
     //向issue段输出
     output [0:0]            stall3,
     output [0:0]            stall4,
@@ -60,7 +63,7 @@ module exe(
     output [0:0]            signed_ext,
     output [ 3:0 ]          write_type,           //    byte write enable
     output [ 31:0 ]         w_data_CPU,           //    write data
-     output [0:0]           is_atom_out,
+    output [0:0]            is_atom_out,
     //从cache输入
     input [0:0]             data_valid,           //    read: data has returned; write: data has been written in
     input [ 31:0 ]          r_data_CPU,           //    read data to CPU
@@ -70,6 +73,9 @@ module exe(
     input [ 6:0 ]           icache_exception,
     input                   dcache_ready,
     input                   icache_ready,
+    input [31:0]            vaddr_diff_in,
+    input [31:0]            paddr_diff_in,
+    input [31:0]            data_diff_in,
 
     `ifdef CLAP_CONFIG_DIFFTEST
     input [63:0] stable_counter_diff_in,
@@ -210,6 +216,9 @@ wire [4:0]  priv_addr_out;
 reg  [31:0] branch_addr_calculated;
 wire [6:0] priv_exp_out;
 //末段寄存器
+wire [31:0]vaddr_diff_mid;
+wire [31:0]paddr_diff_mid;
+wire [31:0]data_diff_mid;
 reg  [0:0]  eu0_en_1_internal;
 reg  [0:0]  eu1_en_1_internal;
 assign correct_pc_next = flush_because_br?branch_addr_calculated:priv_pc;
@@ -312,6 +321,9 @@ always @(posedge clk) begin
         badv_out          <= badv_exe1|cache_badv_out|priv_badv_out;
         eu0_pc_out        <= eu0_pc_exe1|div_pc_out;
         eu0_inst          <= inst0_mid|div_inst_out;
+        vaddr_diff_out    <= vaddr_diff_mid;
+        paddr_diff_out    <= paddr_diff_mid;
+        data_diff_out     <= data_diff_mid;
     end 
     else begin
         en_out0           <= 0;
@@ -485,13 +497,19 @@ mem1  u_mem1 (
     .r_data_CPU              ( r_data_CPU            ),
     .cache_badv_in           ( dcache_badv           ),
     .cache_exception         ( dcache_exception      ),
+    .vaddr_diff_in           (vaddr_diff_in          ),
+    .paddr_diff_in           (paddr_diff_in          ),
+    .data_diff_in            (data_diff_in           ),
 
     .mem_exp_out             ( mem_exp_out           ),
     .mem_rd_out              ( mem_rd_out            ),
     .mem_data_out            ( mem_data_out          ),
     .mem_en_out              ( mem_en_out            ),
     .cache_badv_out          ( cache_badv_out        ),
-    .stall_by_cache          ( stall_by_cache   )
+    .stall_by_cache          ( stall_by_cache        ),
+    .vaddr_diff_out          ( vaddr_diff_mid          ),
+    .paddr_diff_out          ( paddr_diff_mid          ),
+    .data_diff_out           ( data_diff_mid           )
 );
 
 div  u_div (

@@ -7,6 +7,7 @@ module mem_wrt_ctrl_d(
     input [31:0] addr_rbuf,
     input [3:0] wrt_type,
     input wrt_data_sel,
+    input cacop_en_rbuf,
     output reg [511:0] mem_din,
     output reg [63:0] mem_we_normal,
     output reg [3:0] AXI_we
@@ -28,12 +29,15 @@ module mem_wrt_ctrl_d(
         endcase
     end
     always @(*) begin
-        case(addr_rbuf[1:0])
-        2'd0: AXI_we = wrt_type;
-        2'd1: AXI_we = {wrt_type[2:0], 1'b0};
-        2'd2: AXI_we = {wrt_type[1:0], 2'b0};
-        2'd3: AXI_we = {wrt_type[0], 3'b0};
+        if(cacop_en_rbuf) AXI_we = wrt_type;
+        else begin
+            case(addr_rbuf[1:0])
+            2'd0: AXI_we = wrt_type;
+            2'd1: AXI_we = {wrt_type[2:0], 1'b0};
+            2'd2: AXI_we = {wrt_type[1:0], 2'b0};
+            2'd3: AXI_we = {wrt_type[0], 3'b0};
         endcase
+        end
     end
     always @(*) begin
         case(addr_rbuf[5:2])
