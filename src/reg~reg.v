@@ -98,7 +98,8 @@ assign stall_by_conflict = eu0_en_out
                         ||eu0_uop_out[`ITYPE_IDX_BR]
                         ||eu0_uop_out[`ITYPE_IDX_CSR]
                         ||eu0_uop_out[`ITYPE_IDX_DIV]
-                        ||eu0_uop_out[`ITYPE_IDX_MEM]);
+                        ||eu0_uop_out[`ITYPE_IDX_MEM])
+                        ||eu0_uop_in[`ITYPE_IDX_DIV]&&eu0_uop_out[`ITYPE_IDX_DIV];
 
 always @(posedge clk) begin
     if (!stall) begin
