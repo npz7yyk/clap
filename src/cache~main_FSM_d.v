@@ -11,8 +11,8 @@ module main_FSM_d(
     input r_rdy_AXI,
     input w_rdy_AXI,
     input fill_finish,
-    input dirty_data,
-    input dirty_data_mbuf,
+    //input dirty_data,
+    //input dirty_data_mbuf,
     input wrt_AXI_finish,
     input [3:0] lru_way_sel,
     input [3:0] hit,
@@ -23,9 +23,9 @@ module main_FSM_d(
     input [6:0] exception,
     input is_atom_rbuf,
     input llbit_rbuf,
-    input ibar_en_rbuf,
-    input ibar_en,
-    input dirty_data_ibar,
+    //input ibar_en_rbuf,
+    //input ibar_en,
+    //input dirty_data_ibar,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -39,8 +39,8 @@ module main_FSM_d(
     output reg [63:0] mem_we,
     output reg [3:0] mem_en,
     output reg [3:0] tagv_we,
-    output reg w_dirty_data,
-    output reg [3:0] dirty_we,
+    //output reg w_dirty_data,
+    //output reg [3:0] dirty_we,
 
     output reg r_req,
     output reg r_data_ready,
@@ -86,9 +86,6 @@ module main_FSM_d(
     parameter INDEX_INVALIDATE  = 2'b01;
     parameter HIT_INVALIDATE    = 2'b10;
 
-
-    wire sc_invalid;
-    assign sc_invalid = is_atom_rbuf && op == WRITE && !llbit_rbuf;
     reg [2:0] un_visit_type;
     always @(*) begin
         case(visit_type)
@@ -111,19 +108,18 @@ module main_FSM_d(
     reg[8:0] crt, nxt;
     reg count_en;
 
-    // always @(posedge clk) begin
-    //     if(!rstn) crt <= IDLE;
-    //     else crt <= nxt;
+    always @(posedge clk) begin
+        if(!rstn) crt <= IDLE;
+        else crt <= nxt;
 
-    //     if(count_en) tagv_ibar_index  <= tagv_ibar_index  + 1'b1;
-    // end
+        if(count_en) tagv_ibar_index  <= tagv_ibar_index  + 1'b1;
+    end
 
     always @(*) begin
         case(crt)
         IDLE: begin
             if(exception != 0) nxt = IDLE;
-            //else if(ibar_en) nxt = IBAR_COPE;
-            //else if(cacop_en) nxt = CACOP_COPE;
+            else if(cacop_en) nxt = CACOP_COPE;
             else if(valid || cacop_en) nxt = LOOKUP;
             else nxt = IDLE;
         end
@@ -166,9 +162,13 @@ module main_FSM_d(
             if(wrt_AXI_finish) nxt = EXTRA_READY;
             else nxt = WAIT_WRITE;
         end
+        CACOP_COPE: begin
+            nxt = EXTRA_READY;
+        end
 
         EXTRA_READY: begin
-            if(valid || cacop_en) nxt = LOOKUP;
+            if(valid) nxt = LOOKUP;
+            else if(cacop_en) nxt = CACOP_COPE;
             else nxt = IDLE;
         end
 
@@ -179,8 +179,8 @@ module main_FSM_d(
     always @(*)begin
         mbuf_we = 0;    wbuf_AXI_we = 0;    mem_we = 0;     mem_en = 0;
         rdata_sel = 0;  wrt_data_sel = 0;   tagv_we = 0;
-        r_req = 0;      w_req = 0;          data_valid = 0; dirty_we = 0; 
-        w_dirty_data = 0;                   r_data_ready = 0; 
+        r_req = 0;      w_req = 0;          data_valid = 0;
+        r_data_ready = 0; 
         rbuf_we = 0;    way_sel_en = 0;     wbuf_AXI_reset = 0;
         way_visit = 0;  cache_ready = 0;    pbuf_we = 0;
         r_size = 3'b010;                    w_size = 3'b010;
@@ -188,7 +188,6 @@ module main_FSM_d(
         tagv_clear = 0;                     cacop_complete = 0;
         cacop_ready = 0;                    llbit_set = 0;
         llbit_clear = 0;                    count_en = 0;
-        r_tagv_sel = 0;
         case(crt)
         IDLE: begin
             if(valid || cacop_en) rbuf_we       = 1;
@@ -201,60 +200,54 @@ module main_FSM_d(
                 wrt_data_sel    = 1;
                 pbuf_we         = 1;
                 if(op == WRITE) begin
-                    if(uncache) begin
-                        mbuf_we         = 1;
-                        wbuf_AXI_we     = 1;
-                        if(is_atom_rbuf) llbit_set = 1;
-                        else if
-                    end
-                end 
-                if(op == READ && is_atom_rbuf) begin
-                    llbit_set = 1;
-                end
-                if(op == WRITE && is_atom_rbuf) begin
-                    llbit_clear = 1;
-                end
-                if(uncache)begin
                     mbuf_we     = 1;
                     wbuf_AXI_we = 1;
-                    if(cache_hit) begin
-                        way_visit   = hit;
-                        way_sel_en  = 1;
-                        if(op == WRITE && !(is_atom_rbuf && !llbit_rbuf))begin
+                    // sc.w, clear llbit
+                    if(is_atom_rbuf) begin
+                        llbit_clear = 1;
+                        // valid sc.w write
+                        if(llbit_rbuf) begin
+                            way_visit       = hit;
+                            way_sel_en      = 1;
                             mem_en          = hit;
                             mem_we          = mem_we_normal;
-                            dirty_we        = hit;
-                            w_dirty_data    = 1;
                         end
                     end
-                end
-                else if(!cache_hit) begin
-                    mbuf_we     = 1;
-                    wbuf_AXI_we = 1;
-                end
-                else begin
-                    data_valid  = 1;
-                    if(valid ||cacop_en) rbuf_we     = 1;
-                    way_visit   = hit;
-                    way_sel_en  = 1;
-                    cache_ready = 1;
-                    cacop_ready = 1;
-                    if(op == WRITE && !(is_atom_rbuf && !llbit_rbuf))begin
+                    else begin
+                        way_visit       = hit;
+                        way_sel_en      = 1;
                         mem_en          = hit;
                         mem_we          = mem_we_normal;
-                        dirty_we        = hit;
-                        w_dirty_data    = 1;
+                    end
+                end
+
+                else begin
+                    if(is_atom_rbuf) llbit_set = 1;
+                    if(uncache) begin
+                        mbuf_we         = 1;
+                        way_visit       = hit;
+                        way_sel_en      = 1;
+                    end
+                    else begin
+                        if(cache_hit) begin
+                            way_visit   = hit;
+                            way_sel_en  = 1;
+                            data_valid  = 1;
+                            cache_ready = 1;
+                            cacop_ready = 1;
+                        end
+                        else begin
+                            mbuf_we     = 1;
+                        end
                     end
                 end
             end
             else data_valid = 1;
         end
         MISS: begin
-            w_req   = 1;
-            if(uncache && !ibar_en_rbuf) begin
-                w_length    = 8'd0;
-                w_size      = un_visit_type;
-            end
+            w_req       = 1;
+            w_length    = 8'd0;
+            w_size      = un_visit_type;
         end
         REPLACE: begin
             r_req   = 1;
@@ -269,52 +262,26 @@ module main_FSM_d(
                 mem_we          = {64{1'b1}};
                 mem_en          = lru_way_sel;
                 tagv_we         = lru_way_sel;
-                dirty_we        = lru_way_sel;
-                w_dirty_data    = (op == READ ? 1'b0 : 1'b1);
                 way_sel_en      = 1;
                 way_visit       = lru_way_sel;
             end
         end
         CACOP_COPE: begin
-            if(exception_temp != 0) cacop_complete = 1;
-            else if(cacop_code == STORE_TAG) begin
-                tagv_clear          = 1;
+            tagv_clear              = 1;
+            if(cacop_code == INDEX_INVALIDATE || cacop_code  == STORE_TAG)
                 tagv_we             = tagv_we_inst;
-                dirty_we            = tagv_we_inst;
-                w_dirty_data        = 1'b0;
-            end
-            else if(cacop_code == INDEX_INVALIDATE) begin
-                tagv_clear          = 1;
-                tagv_we             = tagv_we_inst;
-                dirty_we            = tagv_we_inst;
-                w_dirty_data        = 1'b0;
-                if(dirty_data) begin
-                    mbuf_we = 1;
-                    wbuf_AXI_we = 1;
-                end
-            end
             else if(cacop_code == HIT_INVALIDATE) begin
-                tagv_clear          = 1;
                 tagv_we             = hit;
-                dirty_we            = hit;
-                w_dirty_data        = 1'b0;
-                if(dirty_data) begin
-                    mbuf_we = 1;
-                    wbuf_AXI_we = 1;
-                end
             end
         end
         EXTRA_READY: begin
-            data_valid      = 1;
+            data_valid              = 1;
             if(cacop_en_rbuf) cacop_complete  = 1;
-            cacop_ready     = 1;
-            if(valid || cacop_en) rbuf_we         = 1;
-            wbuf_AXI_reset  = 1;
-            cache_ready     = 1;
+            if(valid || cacop_en) rbuf_we     = 1;
+            cacop_ready             = 1;
+            wbuf_AXI_reset          = 1;
+            cache_ready             = 1;
         end
-        // IBAR_COPE: begin
-        //     count_en = 1;
-        // end
         default:;
         endcase
     end

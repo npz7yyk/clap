@@ -68,8 +68,7 @@ module wrt_buffer_AXI(
         case(crt)
         REQUEST: begin
             wvalid = 1;
-            if(count == 4'd15 && !uncache) wlast = 1;
-            else if(count == 4'd0 && uncache) wlast = 1;
+            if(count == 4'd0) wlast = 1;
         end
         WAIT_FINISH: begin
             bready = 1;

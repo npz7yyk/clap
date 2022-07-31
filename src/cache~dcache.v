@@ -63,10 +63,10 @@ module dcache(
     output                  miss_signal
     );
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
-    wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
-    wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
+    wire fill_finish, way_sel_en, mbuf_we;
+    wire rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
     wire pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
-    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
+    wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_cache, exception_temp, exception_obuf;
     wire [19:0] replace_tag, store_data;
@@ -86,8 +86,8 @@ module dcache(
         );
     `endif
 
-    assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
-    assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
+    assign r_addr = uncache_rbuf ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
+    assign w_addr = addr_pbuf;
     assign badv = addr_rbuf[31:0];
     assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
     /* exception */
@@ -137,13 +137,13 @@ module dcache(
     );
 
     /* miss buffer */
-    // addr to be write, way to be replaced, dirty_data
-    register#(37) miss_buf(
+    // addr to be write, way to be replaced
+    register#(36) miss_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data}),
-        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf})
+        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace}),
+        .dout       ({w_addr_mbuf, way_replace_mbuf})
     );
 
     /* return buffer */
@@ -151,7 +151,6 @@ module dcache(
         .clk                (clk),
         .addr_rbuf          (addr_rbuf),
         .wrt_type           (write_type_rbuf),
-        .op_rbuf            (op_rbuf),
         .r_data_AXI         (r_data_AXI),
         .w_data_CPU_rbuf    (w_data_CPU_rbuf),
         .ret_valid          (ret_valid),
@@ -187,16 +186,6 @@ module dcache(
         .replace_tag    (replace_tag)
     );
 
-    /* dirty table */
-    reg_file dirty_table(
-        .clk        (clk),
-        .we         (dirty_we),
-        .re         (way_replace),
-        .r_addr     (addr_rbuf[11:6]),
-        .w_addr     (addr_rbuf[11:6]),
-        .w_data     (w_dirty_data),
-        .r_data     (dirty_data)
-    );
 
     /* miss way sel */
     miss_way_sel_lru u_way_sel(
@@ -256,8 +245,6 @@ module dcache(
         .r_rdy_AXI          (r_rdy),
         .w_rdy_AXI          (w_rdy),
         .fill_finish        (fill_finish),
-        .dirty_data         (dirty_data),
-        .dirty_data_mbuf    (dirty_data_mbuf),
         .wrt_AXI_finish     (wrt_AXI_finish),
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),
@@ -276,14 +263,12 @@ module dcache(
         .rbuf_we            (rbuf_we),
         .wbuf_AXI_we        (wbuf_AXI_we),
         .wbuf_AXI_reset     (wbuf_AXI_reset),
-        .dirty_we           (dirty_we),
         .way_sel_en         (way_sel_en),
         .rdata_sel          (r_data_sel),
         .wrt_data_sel       (wrt_data_sel),
         .mem_we             (mem_we),
         .mem_en             (mem_en),
         .tagv_we            (tagv_we),
-        .w_dirty_data       (w_dirty_data),
         .r_req              (r_req),
         .w_req              (w_req),
         .r_length           (r_length),
@@ -302,8 +287,6 @@ module dcache(
         .cacop_ready        (cacop_ready),
         .llbit_set          (llbit_set),
         .llbit_clear        (llbit_clear)
-
-        //.tlb_exception      (tlb_exception)
     );
     
     register #(41) output_buffer(

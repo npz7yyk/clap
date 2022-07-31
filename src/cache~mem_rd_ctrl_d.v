@@ -17,7 +17,7 @@ module mem_rd_ctrl_d(
     input llbit_rbuf,
     input is_atom_rbuf,
     input op_rbuf,
-    output reg [511:0] miss_sel_data,
+    output [511:0] miss_sel_data,
     output reg [31:0] r_data
     );
     
@@ -124,27 +124,5 @@ module mem_rd_ctrl_d(
         endcase
         end
     end
-    always @(*) begin
-        if(cacop_en_rbuf && cacop_code_rbuf == 2'b01) begin
-            case(addr_rbuf[1:0])
-            2'd0: miss_sel_data = mem_dout[511:0];
-            2'd1: miss_sel_data = mem_dout[1023:512];
-            2'd2: miss_sel_data = mem_dout[1535:1024];
-            2'd3: miss_sel_data = mem_dout[2047:1536];
-            endcase
-        end
-        else if(cacop_en_rbuf && cacop_code_rbuf == 2'b10) begin
-            miss_sel_data = way_data;
-        end
-        else if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};
-        else begin
-            case(miss_way_sel)
-            M_SEL0: miss_sel_data = mem_dout[511:0];
-            M_SEL1: miss_sel_data = mem_dout[1023:512];
-            M_SEL2: miss_sel_data = mem_dout[1535:1024];
-            M_SEL3: miss_sel_data = mem_dout[2047:1536]; 
-            default: miss_sel_data = 0;
-            endcase
-        end
-    end
+    assign miss_sel_data = {480'b0, w_data_CPU};
 endmodule
