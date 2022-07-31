@@ -65,7 +65,7 @@ module dcache(
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
-    wire vld, vld_mbuf, pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
+    wire pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
     wire [6:0] exception_cache, exception_temp, exception_obuf;
@@ -137,13 +137,13 @@ module dcache(
     );
 
     /* miss buffer */
-    // addr to be write, way to be replaced, dirty_data, vld
-    register#(38) miss_buf(
+    // addr to be write, way to be replaced, dirty_data
+    register#(37) miss_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data, vld}),
-        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf, vld_mbuf})
+        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data}),
+        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf})
     );
 
     /* return buffer */
@@ -184,8 +184,7 @@ module dcache(
         .way_sel        (way_replace),
         .hit            (hit),
         .cache_hit      (cache_hit),
-        .replace_tag    (replace_tag),
-        .replace_vld    (vld)
+        .replace_tag    (replace_tag)
     );
 
     /* dirty table */
@@ -259,8 +258,6 @@ module dcache(
         .fill_finish        (fill_finish),
         .dirty_data         (dirty_data),
         .dirty_data_mbuf    (dirty_data_mbuf),
-        .vld                (vld),
-        .vld_mbuf           (vld_mbuf),
         .wrt_AXI_finish     (wrt_AXI_finish),
         .lru_way_sel        (way_replace_mbuf),
         .hit                (hit),

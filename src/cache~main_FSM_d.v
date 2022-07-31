@@ -13,8 +13,6 @@ module main_FSM_d(
     input fill_finish,
     input dirty_data,
     input dirty_data_mbuf,
-    input vld,
-    input vld_mbuf,
     input wrt_AXI_finish,
     input [3:0] lru_way_sel,
     input [3:0] hit,
@@ -165,7 +163,7 @@ module main_FSM_d(
 
             // all not
             else begin
-                if(dirty_data && vld) nxt = MISS;
+                if(dirty_data) nxt = MISS;
                 else nxt = REPLACE;
             end
         end
@@ -195,7 +193,7 @@ module main_FSM_d(
                 else nxt = WAIT_WRITE;
             end
             else if(uncache && (wrt_AXI_finish || op == READ) || 
-              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf || !vld_mbuf)) begin
+              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf)) begin
                 nxt = EXTRA_READY;
             end
             else nxt = WAIT_WRITE;
