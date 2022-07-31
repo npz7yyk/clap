@@ -87,7 +87,8 @@ module main_FSM_d(
     parameter HIT_INVALIDATE    = 2'b10;
 
 
-
+    wire sc_invalid;
+    assign sc_invalid = is_atom_rbuf && op == WRITE && !llbit_rbuf;
     reg [2:0] un_visit_type;
     always @(*) begin
         case(visit_type)
@@ -110,106 +111,67 @@ module main_FSM_d(
     reg[8:0] crt, nxt;
     reg count_en;
 
-    always @(posedge clk) begin
-        if(!rstn) crt <= IDLE;
-        else crt <= nxt;
+    // always @(posedge clk) begin
+    //     if(!rstn) crt <= IDLE;
+    //     else crt <= nxt;
 
-        if(count_en) tagv_ibar_index  <= tagv_ibar_index  + 1'b1;
-    end
+    //     if(count_en) tagv_ibar_index  <= tagv_ibar_index  + 1'b1;
+    // end
 
     always @(*) begin
         case(crt)
         IDLE: begin
             if(exception != 0) nxt = IDLE;
-            else if(ibar_en) nxt = IBAR_COPE;
-            else if(cacop_en) nxt = CACOP_COPE;
-            else if(valid) nxt = LOOKUP;
+            //else if(ibar_en) nxt = IBAR_COPE;
+            //else if(cacop_en) nxt = CACOP_COPE;
+            else if(valid || cacop_en) nxt = LOOKUP;
             else nxt = IDLE;
         end
-        CACOP_COPE: begin
-            if(exception_temp != 0) nxt = IDLE;
-            else begin
-                case(cacop_code)
-                STORE_TAG: nxt = EXTRA_READY;
-                INDEX_INVALIDATE: begin
-                    if(dirty_data) nxt = MISS;
-                    else nxt = EXTRA_READY;
-                end
-                HIT_INVALIDATE: begin
-                    if(cache_hit && dirty_data) nxt = MISS;
-                    else nxt = EXTRA_READY;
-                end
-                default: nxt = EXTRA_READY;
-                endcase
-            end
-        end
         LOOKUP: begin
-            // check instruction
             if(exception_temp != 0) nxt = IDLE;
-            // check uncache
-            else if(uncache) begin
-                if(op == READ) nxt = REPLACE;
-                else if(is_atom_rbuf && op == WRITE && !llbit_rbuf) nxt = EXTRA_READY;
-                else nxt = MISS;
-            end
-            else if(is_atom_rbuf && op == WRITE && !llbit_rbuf) begin
-                nxt = EXTRA_READY;
-            end
-            // check cache_hit
-            else if(cache_hit) begin 
-                if(valid) nxt = LOOKUP;
-                else nxt = IDLE;
-            end
 
-            // all not
+            else if(op == WRITE) begin
+                if(uncache) begin
+                    if(is_atom_rbuf && !llbit_rbuf) nxt = EXTRA_READY; 
+                    else nxt = MISS;
+                end
+                else begin
+                    if(cache_hit) nxt = IDLE;
+                    else nxt = MISS;
+                end
+            end
             else begin
-                if(dirty_data) nxt = MISS;
-                else nxt = REPLACE;
+                if(uncache) nxt = REPLACE;
+                else begin
+                    if(cache_hit) nxt = IDLE;
+                    else nxt = REPLACE;
+                end
             end
         end
         MISS: begin
-            if(w_rdy_AXI) begin
-                if(ibar_en_rbuf || uncache || 
-                  (cacop_en_rbuf && (cacop_code == INDEX_INVALIDATE || cacop_code == HIT_INVALIDATE))) nxt = WAIT_WRITE;
-                else nxt = REPLACE;
-            end
+            if(w_rdy_AXI) nxt = WAIT_WRITE;
             else nxt = MISS;
         end
+
         REPLACE: begin
             if(r_rdy_AXI) nxt = REFILL;
             else nxt = REPLACE;
         end
+
         REFILL: begin
-            if(fill_finish) begin
-                nxt = WAIT_WRITE;
-            end
+            if(fill_finish) nxt = EXTRA_READY;
             else nxt = REFILL;
         end
         WAIT_WRITE: begin
-            if(cacop_en_rbuf) begin
-                if(wrt_AXI_finish) begin
-                    nxt = EXTRA_READY;
-                end
-                else nxt = WAIT_WRITE;
-            end
-            else if(uncache && (wrt_AXI_finish || op == READ) || 
-              !uncache && (wrt_AXI_finish || op == READ || !dirty_data_mbuf)) begin
-                nxt = EXTRA_READY;
-            end
+            if(wrt_AXI_finish) nxt = EXTRA_READY;
             else nxt = WAIT_WRITE;
         end
+
         EXTRA_READY: begin
-            if(cacop_en) nxt = CACOP_COPE;
-            else if(valid) nxt = LOOKUP;
+            if(valid || cacop_en) nxt = LOOKUP;
             else nxt = IDLE;
         end
-        IBAR_COPE: begin
-            if(tagv_ibar_index == 6'd63) nxt = EXTRA_READY;
-            else begin
-                if(!dirty_data_ibar) nxt = IBAR_COPE;
-                else nxt = MISS;
-            end
-        end
+
         default: nxt = IDLE;
         endcase
     end
@@ -229,15 +191,23 @@ module main_FSM_d(
         r_tagv_sel = 0;
         case(crt)
         IDLE: begin
-            if(valid || cacop_en) rbuf_we     = 1;
-            cache_ready = 1;
-            cacop_ready = 1;
+            if(valid || cacop_en) rbuf_we       = 1;
+            cache_ready                         = 1;
+            cacop_ready                         = 1;
         end
         LOOKUP: begin
             if(exception_temp == 0) begin
                 rdata_sel       = 1;
                 wrt_data_sel    = 1;
                 pbuf_we         = 1;
+                if(op == WRITE) begin
+                    if(uncache) begin
+                        mbuf_we         = 1;
+                        wbuf_AXI_we     = 1;
+                        if(is_atom_rbuf) llbit_set = 1;
+                        else if
+                    end
+                end 
                 if(op == READ && is_atom_rbuf) begin
                     llbit_set = 1;
                 end
@@ -342,9 +312,9 @@ module main_FSM_d(
             wbuf_AXI_reset  = 1;
             cache_ready     = 1;
         end
-        IBAR_COPE: begin
-            count_en = 1;
-        end
+        // IBAR_COPE: begin
+        //     count_en = 1;
+        // end
         default:;
         endcase
     end
