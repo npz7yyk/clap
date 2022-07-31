@@ -132,8 +132,7 @@ module main_FSM_d(
                     else nxt = MISS;
                 end
                 else begin
-                    if(cache_hit) nxt = IDLE;
-                    else nxt = MISS;
+                    nxt = MISS;
                 end
             end
             else begin

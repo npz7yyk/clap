@@ -11,6 +11,7 @@ module wrt_buffer_AXI(
     input wrt_reset,
     input [511:0] w_line_mem,
     input uncache,
+    input wready,
 
     output reg wvalid,
     output reg wlast,
@@ -49,7 +50,7 @@ module wrt_buffer_AXI(
             else nxt = IDLE;
         end
         REQUEST: begin
-            if(wlast) nxt = WAIT_FINISH;
+            if(wlast && wready && wvalid) nxt = WAIT_FINISH;
             else nxt = REQUEST;
         end
         WAIT_FINISH: begin
@@ -83,7 +84,9 @@ module wrt_buffer_AXI(
     end
     always @(posedge clk)begin
         case(crt)
-        REQUEST: count <= count + 1;
+        REQUEST: begin
+            count <= count + 1;
+        end
         default: count <= 0;
         endcase
     end

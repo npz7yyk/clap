@@ -128,6 +128,7 @@ module dcache(
         .awready            (w_rdy),
         .uncache            (uncache_rbuf),
         .wrt_reset          (wbuf_AXI_reset),
+        .wready             (w_data_ready),
         .w_line_mem         (miss_sel_data),
         .wvalid             (w_data_req),
         .wlast              (w_last),
