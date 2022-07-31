@@ -794,7 +794,7 @@ module core_top(
         .eu0_unknown(is_eu0_unknown_3qW1U3J0hMn),
         
         .eu1_en(is_eu1_en_3qW1U3J0hMn),
-        .eu1_ready(~ex_stall),
+        .eu1_ready(~(ex_stall||stall_by_conflict)),
         .eu1_uop(is_eu1_uop_3qW1U3J0hMn),
         .eu1_rd(is_eu1_rd_3qW1U3J0hMn),
         .eu1_rj(is_eu1_rj_3qW1U3J0hMn),
