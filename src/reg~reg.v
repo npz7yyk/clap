@@ -85,21 +85,23 @@ always @(posedge clk) begin
 end
 `endif
 
-assign stall_by_conflict = eu0_en_out
-                        &&(eu0_en_in
-                        &&eu0_rd_out!=0
-                        &&(eu0_rj_in==eu0_rd_out
-                        ||eu0_rk_in==eu0_rd_out)
-                        ||eu1_en_in
-                        &&eu0_rd_out!=0
-                        &&(eu1_rj_in==eu0_rd_out
-                        ||eu1_rk_in==eu0_rd_out))
-                        &&(eu0_uop_out[`ITYPE_IDX_MUL]
-                        ||eu0_uop_out[`ITYPE_IDX_BR]
-                        ||eu0_uop_out[`ITYPE_IDX_CSR]
-                        ||eu0_uop_out[`ITYPE_IDX_DIV]
-                        ||eu0_uop_out[`ITYPE_IDX_MEM])
-                        ||eu0_uop_in[`ITYPE_IDX_DIV]&&eu0_uop_out[`ITYPE_IDX_DIV];
+assign stall_by_conflict =  eu0_en_out
+                            &&((eu0_en_in
+                                &&eu0_rd_out!=0
+                                &&(eu0_rj_in==eu0_rd_out
+                                    ||eu0_rk_in==eu0_rd_out)
+                                ||eu1_en_in
+                                    &&eu0_rd_out!=0
+                                    &&(eu1_rj_in==eu0_rd_out
+                                        ||eu1_rk_in==eu0_rd_out))
+                                &&(eu0_uop_out[`ITYPE_IDX_MUL]
+                                    ||eu0_uop_out[`ITYPE_IDX_CSR]
+                                    ||eu0_uop_out[`ITYPE_IDX_DIV]
+                                    ||eu0_uop_out[`ITYPE_IDX_MEM]))
+                            ||eu0_en_in
+                                &&eu0_uop_in[`ITYPE_IDX_DIV]
+                                &&eu0_en_out
+                                &&eu0_uop_out[`ITYPE_IDX_DIV];
 
 always @(posedge clk) begin
     if (!stall) begin
