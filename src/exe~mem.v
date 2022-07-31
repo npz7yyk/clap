@@ -83,6 +83,6 @@ module mem1 (
 
 assign vaddr_diff_out={32{data_valid}}&vaddr_diff_in;
 assign paddr_diff_out={32{data_valid}}&paddr_diff_in;
-assign data_diff_out={32{data_valid}}&data_diff_out;
+assign data_diff_out={32{data_valid}}&data_diff_in;
 
 endmodule

@@ -134,9 +134,9 @@ module decoder
         else if(is_sra) alu_op=`CTRL_ALU_SRA;
     end
 
-    assign uop[`UOP_PRIVILEDGED] = type_[`ITYPE_IDX_CACHE] | type_[`ITYPE_IDX_TLB] | type_[`ITYPE_IDX_CSR] | type_[`ITYPE_IDX_ERET] | type_[`ITYPE_IDX_IDLE];
+    assign uop[`UOP_PRIVILEDGED] = type_[`ITYPE_IDX_CACHE] | type_[`ITYPE_IDX_TLB] | type_[`ITYPE_IDX_CSR] | type_[`ITYPE_IDX_ERET] | type_[`ITYPE_IDX_IDLE] | type_[`ITYPE_IDX_BAR];
     //Hit类的CACOP指令可以在用户态下执行
-    assign is_priviledged = uop[`UOP_PRIVILEDGED]&&!(type_[`ITYPE_IDX_CACHE]&&inst[4:3]==2);
+    assign is_priviledged = type_[`ITYPE_IDX_CACHE]&&inst[4:3]!=2 || type_[`ITYPE_IDX_TLB] || type_[`ITYPE_IDX_CSR] || type_[`ITYPE_IDX_ERET] || type_[`ITYPE_IDX_IDLE];
     
     reg [3:0] cond;
     reg br_invalid;

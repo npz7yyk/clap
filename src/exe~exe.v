@@ -546,6 +546,7 @@ exe_privliedged exe_privliedged
     .is_cache(eu0_uop_in[`ITYPE_IDX_CACHE]),
     .is_idle(eu0_uop_in[`ITYPE_IDX_IDLE]),
     .is_ertn(eu0_uop_in[`ITYPE_IDX_ERET]),
+    .is_bar(eu0_uop_in[`ITYPE_IDX_BAR]),
     .inst(eu0_uop_in[`UOP_ORIGINAL_INST]),
     .sr0(eu0_sr0),
     .sr1(eu0_sr1),

@@ -1067,7 +1067,7 @@ module core_top(
         .vaddr_diff_in(vaddr_diff),
         .paddr_diff_in(paddr_diff),
         .data_diff_in(data_diff),
-        .vaddr_diff_out(ex_vdata_diff),
+        .vaddr_diff_out(ex_vaddr_diff),
         .paddr_diff_out(ex_paddr_diff),
         .data_diff_out(ex_data_diff)
     );
@@ -1093,7 +1093,10 @@ module core_top(
         .valid          (ex_mem_valid&~clear_clock_gate_require),
         .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
-        .uncache        (translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0),
+        // .uncache        (translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0),
+        .uncache        (1'b1),
+
+
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),
         .p_addr         (ex_mem_paddr),
         .signed_ext     (ex_signed_ext),
@@ -1324,8 +1327,9 @@ module core_top(
     reg [5:0] cmt_ecode;
     reg [63:0] cmt_stable_counter;
     reg [TLBIDX_WIDTH-1:0] fill_index_diff;
-    
-
+    reg [31:0]cmt_vaddr_diff;
+    reg [31:0]cmt_paddr_diff;
+    reg [31:0]cmt_data_diff;
     always @(posedge clk)
         if(fill_mode&&tlb_we)
             fill_index_diff<=tlb_fill_index;
@@ -1333,7 +1337,7 @@ module core_top(
     always @(posedge aclk)
         if(~aresetn) begin
             {cmt_valid0,cmt_valid1,cmt_pc0,cmt_pc1,cmt_inst0,cmt_inst1,cmt_wen0,cmt_wen1,cmt_wdest0,
-            cmt_wdest1,cmt_wdata0,cmt_wdata1,cmt_excp_valid,cmt_ecode}<=0;
+            cmt_wdest1,cmt_wdata0,cmt_wdata1,cmt_excp_valid,cmt_ecode,cmt_vaddr_diff,cmt_paddr_diff,cmt_data_diff}<=0;
         end else begin
             //防止出现eu0不提交但eu1提交
             cmt_stable_counter <= ex_stable_counter;
@@ -1364,6 +1368,9 @@ module core_top(
                 cmt_wen1    <= debug1_wb_rf_wen!=0;
                 cmt_wdest1  <= debug1_wb_rf_wnum;
                 cmt_wdata1  <= debug1_wb_rf_wdata;
+                cmt_vaddr_diff<=ex_vaddr_diff;
+                cmt_paddr_diff<=ex_paddr_diff;
+                cmt_data_diff<=ex_data_diff;
             end
         end
 
@@ -1430,16 +1437,49 @@ module core_top(
         .instrCnt(0)
     );
     
+    wire [31:0]cmt_data_diff_trimmed;
+    assign cmt_data_diff_trimmed=cmt_inst0[31:22] == 10'b0010100100 ?
+                                (cmt_paddr_diff[1:0]==0 ?
+                                    ({24'b0,cmt_data_diff[7:0]}):
+                                    (cmt_paddr_diff[1:0]==1 ?
+                                        ({16'b0,cmt_data_diff[7:0],8'b0}):
+                                        (cmt_paddr_diff[1:0]==2 ?
+                                            ({8'b0,cmt_data_diff[7:0],16'b0}):
+                                            ({cmt_data_diff[7:0],24'b0})))):
+                                (cmt_inst0[31:22] == 10'b0010100101 ?
+                                    (cmt_paddr_diff[1]==0 ?
+                                        ({16'b0,cmt_data_diff[15:0]}):
+                                        ({cmt_paddr_diff[15:0],16'b0})):
+                                    (cmt_data_diff));
+    
+    // always @(*) begin
+    //     case (cmt_inst0[31:22])
+    //         10'b0010100100:begin
+    //         case (cmt_paddr_diff[1:0])
+    //             0: cmt_data_diff_trimmed=
+    //             1:cmt_data_diff_trimmed=
+    //             2:cmt_data_diff_trimmed=
+    //             3: cmt_data_diff_trimmed=
+    //         endcase
+    //         end
+    //         10'b0010100101:begin
+    //           case (cmt_paddr_diff[1:0])
+    //             0: 
+    //             2:
+    //         endcase
+    //         end 
+    //     endcase
+    // end
     DifftestStoreEvent DifftestStoreEvent
     (
         .clock(aclk),
         .coreid(0),
         .index(0),
-        // .valid({4'b0, csr_llbctl_diff && (cmt_inst0[31:24] == 8'b00100001), cmt_inst0[31:22] == 10'b0010100110, 
-        //         cmt_inst0[31:22] == 10'b0010100101, cmt_inst0[31:22] == 10'b0010100100}),
-        // .storePAddr(ex_paddr_diff),
-        // .storeVAddr(ex_vaddr_diff),
-        // .storeData(ex_data_diff)
+        //.valid({4'b0, csr_llbctl_diff && (cmt_inst0[31:24] == 8'b00100001), cmt_inst0[31:22] == 10'b0010100110, 
+               // cmt_inst0[31:22] == 10'b0010100101, cmt_inst0[31:22] == 10'b0010100100}),
+        // .storePAddr(cmt_paddr_diff),
+        // .storeVAddr(cmt_vaddr_diff),
+        // .storeData(  cmt_data_diff_trimmed)
         .valid(0),
         .storePAddr(0),
         .storeVAddr(0),
@@ -1451,14 +1491,14 @@ module core_top(
         .clock(aclk),
         .coreid(0),
         .index(0),
-        // .valid({2'b0, cmt_inst0[31:24] == 8'b00100000, cmt_inst0[31:22] == 10'b0010100010, 
-        //         cmt_inst0[31:22] == 10'b0010101001, cmt_inst0[31:22] == 10'b0010100001,
-        //         cmt_inst0[31:22] == 10'b0010101000, cmt_inst0[31:22] == 10'b0010100000}),
-        // .paddr(ex_paddr_diff),
-        // .vaddr(ex_vaddr_diff)
-        .valid(0),
-        .paddr(0),
-        .vaddr(0)
+        .valid({2'b0, cmt_inst0[31:24] == 8'b00100000, cmt_inst0[31:22] == 10'b0010100010, 
+                cmt_inst0[31:22] == 10'b0010101001, cmt_inst0[31:22] == 10'b0010100001,
+                cmt_inst0[31:22] == 10'b0010101000, cmt_inst0[31:22] == 10'b0010100000}),
+        .paddr(cmt_paddr_diff),
+        .vaddr(cmt_vaddr_diff)
+        // .valid(0),
+        // .paddr(0),
+        // .vaddr(0)
     );
 
     DifftestGRegState DifftestGRegState(

@@ -9,7 +9,7 @@ module exe_privliedged(
     
     input en_in,
     input [31:0] pc_next,
-    input is_csr,is_tlb,is_cache,is_idle,is_ertn,
+    input is_csr,is_tlb,is_cache,is_idle,is_ertn,is_bar,
     input [31:0] inst,
     input [31:0] sr0,   //data from rj
     input [31:0] sr1,   //data from rk
@@ -76,36 +76,38 @@ module exe_privliedged(
         fill_index_next = fill_index_next^(fill_index_next<<5);
     end
     localparam
-        S_INIT      = 29'b00000000000000000000000000001,
-        S_CSR       = 29'b00000000000000000000000000010,
-        S_CACOP     = 29'b00000000000000000000000000100,
-        S_TLB       = 29'b00000000000000000000000001000,
-        S_IDLE      = 29'b00000000000000000000000010000,
-        S_ERTN      = 29'b00000000000000000000000100000,
-        S_DONE_CSR  = 29'b00000000000000000000001000000,
-        S_DONE_ERTN = 29'b00000000000000000000010000000,
-        S_DONE_TLB  = 29'b00000000000000000000100000000,
-        S_L1I_REQ   = 29'b00000000000000000001000000000,
-        S_L1D_REQ   = 29'b00000000000000000010000000000,
-        S_L2_REQ    = 29'b00000000000000000100000000000,
-        S_L1I_WAIT  = 29'b00000000000000001000000000000,
-        S_L1D_WAIT  = 29'b00000000000000010000000000000,
-        S_L2_WAIT   = 29'b00000000000000100000000000000,
-        S_DONE_L1I  = 29'b00000000000001000000000000000,
-        S_DONE_L1D  = 29'b00000000000010000000000000000,
-        S_DONE_L2   = 29'b00000000000100000000000000000,
-        S_TLB_SRCH  = 29'b00000000001000000000000000000,
-        S_TLB_RD    = 29'b00000000010000000000000000000,
-        S_TLB_WR    = 29'b00000000100000000000000000000,
-        S_TLB_FILL  = 29'b00000001000000000000000000000,
-        S_INVTLB    = 29'b00000010000000000000000000000,
-        S_DONE_IDLE = 29'b00000100000000000000000000000,
-        S_IDLE_WAIT1= 29'b00001000000000000000000000000,
-        S_IDLE_WAIT2= 29'b00010000000000000000000000000,
-        S_IDLE_PERF = 29'b00100000000000000000000000000,
-        S_IDLE_WAIT3= 29'b01000000000000000000000000000,
-        S_IDLE_WAIT4= 29'b10000000000000000000000000000;
-    reg [28:0] state,next_state;
+        S_INIT      = 31'b0000000000000000000000000000001,
+        S_CSR       = 31'b0000000000000000000000000000010,
+        S_CACOP     = 31'b0000000000000000000000000000100,
+        S_TLB       = 31'b0000000000000000000000000001000,
+        S_IDLE      = 31'b0000000000000000000000000010000,
+        S_ERTN      = 31'b0000000000000000000000000100000,
+        S_DONE_CSR  = 31'b0000000000000000000000001000000,
+        S_DONE_ERTN = 31'b0000000000000000000000010000000,
+        S_DONE_TLB  = 31'b0000000000000000000000100000000,
+        S_L1I_REQ   = 31'b0000000000000000000001000000000,
+        S_L1D_REQ   = 31'b0000000000000000000010000000000,
+        S_L2_REQ    = 31'b0000000000000000000100000000000,
+        S_L1I_WAIT  = 31'b0000000000000000001000000000000,
+        S_L1D_WAIT  = 31'b0000000000000000010000000000000,
+        S_L2_WAIT   = 31'b0000000000000000100000000000000,
+        S_DONE_L1I  = 31'b0000000000000001000000000000000,
+        S_DONE_L1D  = 31'b0000000000000010000000000000000,
+        S_DONE_L2   = 31'b0000000000000100000000000000000,
+        S_TLB_SRCH  = 31'b0000000000001000000000000000000,
+        S_TLB_RD    = 31'b0000000000010000000000000000000,
+        S_TLB_WR    = 31'b0000000000100000000000000000000,
+        S_TLB_FILL  = 31'b0000000001000000000000000000000,
+        S_INVTLB    = 31'b0000000010000000000000000000000,
+        S_DONE_IDLE = 31'b0000000100000000000000000000000,
+        S_IDLE_WAIT1= 31'b0000001000000000000000000000000,
+        S_IDLE_WAIT2= 31'b0000010000000000000000000000000,
+        S_IDLE_PERF = 31'b0000100000000000000000000000000,
+        S_IDLE_WAIT3= 31'b0001000000000000000000000000000,
+        S_IDLE_WAIT4= 31'b0010000000000000000000000000000,
+        S_BAR       = 31'b0100000000000000000000000000000,
+        S_DONE_BAR  = 31'b1000000000000000000000000000000;
+    reg [30:0] state,next_state;
 
     reg [1:0] which_cache;
     reg [0:0] inst_16;
@@ -122,12 +124,13 @@ module exe_privliedged(
         case(state)
         S_INIT: begin
             next_state = 0;
-            next_state[$clog2(S_INIT)] = !(en_in&&(is_csr||is_cache||is_tlb||is_idle||is_ertn));
+            next_state[$clog2(S_INIT)] = !(en_in&&(is_csr||is_cache||is_tlb||is_idle||is_ertn||is_bar));
             next_state[$clog2(S_CSR)] = en_in&&is_csr;
             next_state[$clog2(S_CACOP)] = en_in&&is_cache;
             next_state[$clog2(S_TLB)] = en_in&&is_tlb;
             next_state[$clog2(S_IDLE)] = en_in&&is_idle;
             next_state[$clog2(S_ERTN)] = en_in&&is_ertn;
+            next_state[$clog2(S_BAR)] = en_in&&is_bar;
         end
         S_CSR: next_state = S_DONE_CSR;
         S_ERTN: next_state = S_DONE_ERTN;
@@ -163,7 +166,8 @@ module exe_privliedged(
         S_IDLE_PERF: next_state = S_IDLE_WAIT3;
         S_IDLE_WAIT3: next_state = S_IDLE_WAIT4;
         S_IDLE_WAIT4: next_state = S_DONE_IDLE;
-        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB,S_DONE_L1I,S_DONE_L1D,S_DONE_L2,S_DONE_IDLE:
+        S_BAR: next_state = S_DONE_BAR;
+        S_DONE_CSR,S_DONE_ERTN,S_DONE_TLB,S_DONE_L1I,S_DONE_L1D,S_DONE_L2,S_DONE_IDLE,S_DONE_BAR:
             next_state = S_INIT;
         endcase
     end
@@ -355,6 +359,15 @@ module exe_privliedged(
             S_DONE_IDLE: begin
                 clear_clock_gate_require <= 0;
                 clear_clock_gate <= 0;
+                stall_by_priv<=0;
+                flush <= 1;
+                en_out<=1;
+            end
+            S_BAR: begin
+                stall_by_priv<=1;
+                pc_target<=pc_next;
+            end
+            S_DONE_BAR: begin
                 stall_by_priv<=0;
                 flush <= 1;
                 en_out<=1;
