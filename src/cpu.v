@@ -1093,8 +1093,8 @@ module core_top(
         .valid          (ex_mem_valid&~clear_clock_gate_require),
         .cache_ready    (ex_mem_dcache_ready),
         .op             (ex_mem_op),
-        // .uncache        (translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0),
-        .uncache        (1'b1),
+        .uncache        (translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0),
+        // .uncache        (1'b1),
 
 
         .addr           (ex_mem_l1d_en?ex_mem_cacop_rj_plus_imm:ex_mem_addr),

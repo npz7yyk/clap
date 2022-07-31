@@ -130,6 +130,7 @@ module dcache(
         .wrt_reset          (wbuf_AXI_reset),
         .w_line_mem         (miss_sel_data),
         .wvalid             (w_data_req),
+        .wready             (w_data_ready),
         .wlast              (w_last),
         .bready             (b_ready),
         .w_data_AXI         (w_data_AXI),
