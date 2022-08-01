@@ -50,7 +50,7 @@ module wrt_buffer_AXI(
             else nxt = IDLE;
         end
         REQUEST: begin
-            if(wlast) nxt = WAIT_FINISH;
+            if(wlast && wready && wvalid) nxt = WAIT_FINISH;
             else nxt = REQUEST;
         end
         WAIT_FINISH: begin

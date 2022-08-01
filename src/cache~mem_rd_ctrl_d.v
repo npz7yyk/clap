@@ -136,7 +136,14 @@ module mem_rd_ctrl_d(
         else if(cacop_en_rbuf && cacop_code_rbuf == 2'b10) begin
             miss_sel_data = way_data;
         end
-        else if(uncache_rbuf) miss_sel_data = {480'b0, w_data_CPU};
+        else if(uncache_rbuf) begin 
+            case(read_type_rbuf)
+            BYTE: miss_sel_data = {480'b0, {4{w_data_CPU[7:0]}}};
+            HALF: miss_sel_data = {480'b0, {2{w_data_CPU[15:0]}}};
+            WORD: miss_sel_data = {480'b0, w_data_CPU};
+            default: miss_sel_data = 0;
+            endcase
+        end
         else begin
             case(miss_way_sel)
             M_SEL0: miss_sel_data = mem_dout[511:0];
