@@ -65,7 +65,8 @@ module exe_privliedged(
     //进入
     output reg clear_clock_gate_require,//请求清除clock gate
     output reg clear_clock_gate,        //真正清除clock gate
-    input icache_idle,dcache_idle
+    input icache_idle,dcache_idle,
+    output reg ibar_en
 ); 
     reg [31:0] fill_index_next;
     // Xorshift random number generator
@@ -366,10 +367,12 @@ module exe_privliedged(
             S_BAR: begin
                 stall_by_priv<=1;
                 pc_target<=pc_next;
+                ibar_en <= 1;
             end
             S_DONE_BAR: begin
                 stall_by_priv<=0;
                 flush <= 1;
+                ibar_en <= 0;
                 en_out<=1;
             end
         endcase

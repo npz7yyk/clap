@@ -50,6 +50,8 @@ module icache
     wire cache_hit, rbuf_we;
     wire way_sel_en, cacop_en_rbuf;
     wire uncache_rbuf, tagv_clear;
+    wire [5:0] ibar_tagv_addr;
+    wire ibar_clear;
 
     wire [6:0] exception_temp;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
@@ -97,15 +99,17 @@ module icache
         .dout   (way_replace_mbuf)
     );
     TagV_memory tagv_mem(
-        .clk        (clk),
-        .r_addr     (pc_in),
-        .w_addr     (addr_pbuf),
-        .addr_rbuf  (addr_rbuf[31:0]),
-        .tag        (p_addr[31:12]),
-        .we         (tagv_we),
-        .tagv_clear (tagv_clear),
-        .hit        (hit),
-        .cache_hit  (cache_hit)
+        .clk                (clk),
+        .r_addr             (pc_in),
+        .w_addr             (addr_pbuf),
+        .addr_rbuf          (addr_rbuf[31:0]),
+        .tag                (p_addr[31:12]),
+        .we                 (tagv_we),
+        .tagv_clear         (tagv_clear),
+        .ibar_clear         (ibar_clear),
+        .ibar_tagv_addr     (ibar_tagv_addr),
+        .hit                (hit),
+        .cache_hit          (cache_hit)
     );
     inst_memory cache_memory(
         .clk        (clk),
@@ -136,6 +140,7 @@ module icache
         .r_data         (r_data_CPU)
     );
     wire data_valid_oIzprAXodb8T;
+
     main_FSM_i main_FSM(
         .clk            (clk),
         .rstn           (rstn),
@@ -167,8 +172,12 @@ module icache
         .cacop_en       (cacop_en),
         .cacop_code     (cacop_code_rbuf),
         .tagv_clear     (tagv_clear),
-        .exception      (exception)
+        .exception      (exception),
+
+        .ibar_en        (ibar_en),
+        .ibar_clear     (ibar_clear),
+        .ibar_tagv_addr (ibar_tagv_addr)
     );
 
-    assign data_valid = data_valid_oIzprAXodb8T&valid_reg;
+    assign data_valid = data_valid_oIzprAXodb8T & valid_reg;
 endmodule

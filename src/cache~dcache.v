@@ -288,6 +288,7 @@ module dcache(
         .cacop_ready        (cacop_ready),
         .llbit_set          (llbit_set),
         .llbit_clear        (llbit_clear)
+
     );
     
     register #(41) output_buffer(

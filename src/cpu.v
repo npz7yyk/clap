@@ -66,6 +66,7 @@ module core_top(
     wire clk;
     wire clear_clock_gate,set_clock_gate;
     wire clear_clock_gate_require;
+    wire ibar_en;
     clock_gate clock_gate
     (
         .aclk(aclk),
@@ -634,7 +635,8 @@ module core_top(
         .cacop_ready    (ex_mem_l1i_ready),
         .cacop_complete (ex_mem_l1i_complete),
 
-        .tlb_exception  (itlb_exp)    
+        .tlb_exception  (itlb_exp),
+        .ibar_en        (ibar_en)    
     );
     
     assign i_axi_awid = 0;
@@ -1063,6 +1065,7 @@ module core_top(
 
         .clear_clock_gate_require(clear_clock_gate_require),
         .clear_clock_gate(clear_clock_gate),
+        .ibar_en(ibar_en),
 
         .vaddr_diff_in(vaddr_diff),
         .paddr_diff_in(paddr_diff),

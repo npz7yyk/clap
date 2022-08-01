@@ -11,6 +11,7 @@ module main_FSM_i(
     input [3:0] lru_way_sel,
     input [3:0] hit,
     input [31:0] addr_rbuf,
+    input ibar_en,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -25,6 +26,8 @@ module main_FSM_i(
     output reg r_data_ready,
     output reg data_valid,
     output reg cache_ready,
+    output reg [5:0] ibar_tagv_addr,
+    output reg ibar_clear,
 
     output reg cacop_ready,
     output reg cacop_complete,
@@ -42,6 +45,7 @@ module main_FSM_i(
     parameter REFILL        = 3'd3;
     parameter CACOP_COPE    = 3'd4;
     parameter EXTRA_READY   = 3'd5;
+    parameter IBAR_COPE     = 3'd6;
 
     parameter STORE_TAG         = 2'b00;
     parameter INDEX_INVALIDATE  = 2'b01;
@@ -58,6 +62,12 @@ module main_FSM_i(
     end
 
     reg[2:0] crt, nxt;
+    reg [5:0] clear_addr;
+    reg count_en;
+    always @(posedge clk) begin
+        if(count_en) clear_addr <= clear_addr + 1'b1;
+        else clear_addr <= 0;
+    end
     
     always @(posedge clk) begin
         if(!rstn) crt <= IDLE;
@@ -67,7 +77,8 @@ module main_FSM_i(
     always @(*) begin
         case(crt)
         IDLE: begin
-            if(cacop_en) nxt = CACOP_COPE;
+            if(ibar_en) nxt = IBAR_COPE;
+            else if(cacop_en) nxt = CACOP_COPE;
             else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
         end
@@ -99,7 +110,10 @@ module main_FSM_i(
             else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
         end
-        
+        IBAR_COPE: begin
+            if(clear_addr == 4'd15) nxt = IDLE;
+            else nxt = IBAR_COPE;
+        end
         default: nxt = IDLE;
         endcase
     end
@@ -120,6 +134,8 @@ module main_FSM_i(
         tagv_clear = 0;
         cacop_ready = 0;
         cacop_complete = 0;
+        count_en = 0;
+        ibar_tagv_addr = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -171,6 +187,13 @@ module main_FSM_i(
                 tagv_we             = hit;
                 data_valid          = 1;
             end
+        end
+        IBAR_COPE: begin
+            count_en        = 1;
+            tagv_clear      = 1;
+            tagv_we         = 4'b1111;
+            ibar_tagv_addr  = clear_addr;
+            ibar_clear      = 1;
         end
         EXTRA_READY: begin
             data_valid = 1;

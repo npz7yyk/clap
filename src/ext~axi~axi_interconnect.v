@@ -549,7 +549,6 @@ always @* begin
                     axi_qos_next = current_s_axi_awqos;
                     s_axi_awready_next[s_select] = 1'b1;
                 end
-
                 state_next = STATE_DECODE;
             end else begin
                 state_next = STATE_IDLE;
