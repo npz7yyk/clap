@@ -218,6 +218,7 @@ module dcache(
         .wrt_data_sel       (wrt_data_sel),
         .mem_din            (mem_din),
         .cacop_en_rbuf      (cacop_en_rbuf),
+        .op_rbuf            (op_rbuf),
 
 
         .addr_rbuf          (addr_rbuf),
