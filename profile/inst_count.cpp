@@ -11,6 +11,7 @@ class decoder
 public:
     decoder()
     {
+        insert(std::vector<bool>(32,false),"双发射");
         insert({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0},"rdtimel.w");
         insert({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1},"rdtimeh.w");
         insert({0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0},"add.w");
@@ -127,7 +128,7 @@ int main(int argc,char **argv)
     }
     std::ifstream trace_in(argv[1]);
     trace_in>>std::hex;
-    std::map<int,int> pc2cnt;
+    std::map<unsigned,int> pc2cnt;
     std::map<string,int> type2cnt;
     while(true)
     {

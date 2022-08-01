@@ -8,7 +8,7 @@ module mem_wrt_ctrl_d(
     input [3:0] wrt_type,
     input wrt_data_sel,
     input cacop_en_rbuf,
-    input op_rbuf,
+    input uncache_rbuf,
     output reg [511:0] mem_din,
     output reg [63:0] mem_we_normal,
     output [3:0] AXI_we
@@ -61,5 +61,5 @@ module mem_wrt_ctrl_d(
         4'hf: mem_we_normal = {      AXI_we_temp, 60'b0};
         endcase
     end
-    assign AXI_we = op_rbuf ? AXI_we_temp : 4'b1111;
+    assign AXI_we = uncache_rbuf ? AXI_we_temp : 4'b1111;
 endmodule

@@ -1145,8 +1145,39 @@ module core_top(
         .paddr_diff     (paddr_diff),
         .data_diff      (data_diff)
     );
+
+    assign d_axi_awid = 1;
+    //assign d_axi_awlen = 8'd15;
+    //assign d_axi_awsize = 3'b010;
+    assign d_axi_awburst = 2'b01;
+    assign d_axi_awlock = 0;
+    assign d_axi_awcache = 0;
+    assign d_axi_awprot = 0;
+    assign d_axi_bid = 1;
+    assign d_axi_bresp = 0;
+    assign d_axi_arid = 1;
+    //assign d_axi_arlen = 8'd15;
+    assign d_axi_arburst = 2'b01;
+    //assign d_axi_arsize = 3'b010;
+    assign d_axi_arlock = 0;
+    assign d_axi_arcache = 0;
+    assign d_axi_arprot = 0;
+
     wire tlb_e_in;
     wire tlb_g_in;
+
+    `ifdef CLAP_CONFIG_AXI_PROFILE
+    integer axi_profile_fd;
+    initial axi_profile_fd = $fopen("../profile_axi.log");
+    reg d_axi_awvalid_last=0;
+    always @(posedge aclk) begin
+        d_axi_awvalid_last<=d_axi_awvalid;
+        if(d_axi_awvalid&&!d_axi_awvalid_last) begin
+            $fdisplay(axi_profile_fd,"%08h %02h %h %d",d_axi_awaddr,d_axi_awlen,d_axi_awsize,translate_mode[0]&&direct_d_mat==0 || translate_mode[1]&&dtlb_mat==0);
+            $fflush(axi_profile_fd);
+        end
+    end
+    `endif
 
     assign tlb_global_0_in = tlb_g_in;
     assign tlb_global_1_in = tlb_g_in;
@@ -1245,23 +1276,6 @@ module core_top(
         .dmw1_vseg      (dmw1_vseg),
         .dmw1_pseg      (dmw1_pseg)
     );
-
-    assign d_axi_awid = 1;
-    //assign d_axi_awlen = 8'd15;
-    //assign d_axi_awsize = 3'b010;
-    assign d_axi_awburst = 2'b01;
-    assign d_axi_awlock = 0;
-    assign d_axi_awcache = 0;
-    assign d_axi_awprot = 0;
-    assign d_axi_bid = 1;
-    assign d_axi_bresp = 0;
-    assign d_axi_arid = 1;
-    //assign d_axi_arlen = 8'd15;
-    assign d_axi_arburst = 2'b01;
-    //assign d_axi_arsize = 3'b010;
-    assign d_axi_arlock = 0;
-    assign d_axi_arcache = 0;
-    assign d_axi_arprot = 0;
 
     writeback the_writeback
     (
@@ -1470,13 +1484,18 @@ module core_top(
     //         end 
     //     endcase
     // end
+
+    wire [7:0] store_en_diff = {4'b0, csr_llbctl_diff && (cmt_inst0[31:24] == 8'b00100001), cmt_inst0[31:22] == 10'b0010100110, 
+                cmt_inst0[31:22] == 10'b0010100101, cmt_inst0[31:22] == 10'b0010100100};
+    wire [7:0] load_en_diff = {2'b0, cmt_inst0[31:24] == 8'b00100000, cmt_inst0[31:22] == 10'b0010100010, 
+                cmt_inst0[31:22] == 10'b0010101001, cmt_inst0[31:22] == 10'b0010100001,
+                cmt_inst0[31:22] == 10'b0010101000, cmt_inst0[31:22] == 10'b0010100000};
     DifftestStoreEvent DifftestStoreEvent
     (
         .clock(aclk),
         .coreid(0),
         .index(0),
-        //.valid({4'b0, csr_llbctl_diff && (cmt_inst0[31:24] == 8'b00100001), cmt_inst0[31:22] == 10'b0010100110, 
-               // cmt_inst0[31:22] == 10'b0010100101, cmt_inst0[31:22] == 10'b0010100100}),
+        //.valid(store_en_diff),
         // .storePAddr(cmt_paddr_diff),
         // .storeVAddr(cmt_vaddr_diff),
         // .storeData(  cmt_data_diff_trimmed)
@@ -1491,15 +1510,26 @@ module core_top(
         .clock(aclk),
         .coreid(0),
         .index(0),
-        .valid({2'b0, cmt_inst0[31:24] == 8'b00100000, cmt_inst0[31:22] == 10'b0010100010, 
-                cmt_inst0[31:22] == 10'b0010101001, cmt_inst0[31:22] == 10'b0010100001,
-                cmt_inst0[31:22] == 10'b0010101000, cmt_inst0[31:22] == 10'b0010100000}),
+        .valid(load_en_diff),
         .paddr(cmt_paddr_diff),
         .vaddr(cmt_vaddr_diff)
         // .valid(0),
         // .paddr(0),
         // .vaddr(0)
     );
+
+`ifdef CLAP_CONFIG_LD_ST_PROFILE
+    integer ld_st_profile_fd;
+    initial ld_st_profile_fd = $fopen("../profile_store.log");
+    always @(posedge clk) begin
+        if(store_en_diff!=0)
+            $fdisplay(ld_st_profile_fd,"st %08h %08b %08h %08h %08h",cmt_pc0,store_en_diff,cmt_paddr_diff,cmt_vaddr_diff,cmt_data_diff);
+        if(load_en_diff!=0)
+            $fdisplay(ld_st_profile_fd,"ld %08h %08b %08h %08h",cmt_pc0,load_en_diff,cmt_paddr_diff,cmt_vaddr_diff);
+        if(store_en_diff&&load_en_diff)
+            $fflush(ld_st_profile_fd);
+    end
+`endif
 
     DifftestGRegState DifftestGRegState(
         .clock              (aclk       ),
