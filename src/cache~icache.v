@@ -36,8 +36,7 @@ module icache
     output cacop_ready,
     output cacop_complete,
 
-    input [6:0] tlb_exception,
-    input ibar_en
+    input [6:0] tlb_exception
     );
     wire[31+COOKIE_WIDHT:0] addr_rbuf;
     wire [31:0] addr_pbuf;

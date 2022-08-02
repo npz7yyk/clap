@@ -42,6 +42,7 @@ module main_FSM_i(
     parameter REFILL        = 3'd3;
     parameter CACOP_COPE    = 3'd4;
     parameter EXTRA_READY   = 3'd5;
+    parameter IBAR_COPE     = 3'd6;
 
     parameter STORE_TAG         = 2'b00;
     parameter INDEX_INVALIDATE  = 2'b01;

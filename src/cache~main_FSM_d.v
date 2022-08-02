@@ -23,8 +23,6 @@ module main_FSM_d(
     input [6:0] exception,
     input is_atom_rbuf,
     input llbit_rbuf,
-    input ibar_en_rbuf,
-    input ibar_en,
     input dirty_data_ibar,
 
     output reg [3:0] way_visit,
@@ -60,10 +58,8 @@ module main_FSM_d(
     output reg cacop_ready,
     output reg tagv_clear,
     output reg llbit_set,
-    output reg llbit_clear,
+    output reg llbit_clear
 
-    output reg [5:0] tagv_ibar_index,
-    output reg r_tagv_sel
     );
     parameter IDLE          = 9'b000000001;
     parameter LOOKUP        = 9'b000000010;
@@ -113,15 +109,12 @@ module main_FSM_d(
     always @(posedge clk) begin
         if(!rstn) crt <= IDLE;
         else crt <= nxt;
-
-        if(count_en) tagv_ibar_index  <= tagv_ibar_index  + 1'b1;
     end
 
     always @(*) begin
         case(crt)
         IDLE: begin
             if(exception != 0) nxt = IDLE;
-            else if(ibar_en) nxt = IBAR_COPE;
             else if(cacop_en) nxt = CACOP_COPE;
             else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
@@ -144,7 +137,6 @@ module main_FSM_d(
             end
         end
         LOOKUP: begin
-            // check instruction
             if(exception_temp != 0) nxt = IDLE;
             // check uncache
             else if(uncache) begin
@@ -169,7 +161,7 @@ module main_FSM_d(
         end
         MISS: begin
             if(w_rdy_AXI) begin
-                if(ibar_en_rbuf || uncache || 
+                if(uncache || 
                   (cacop_en_rbuf && (cacop_code == INDEX_INVALIDATE || cacop_code == HIT_INVALIDATE))) nxt = WAIT_WRITE;
                 else nxt = REPLACE;
             end
@@ -203,13 +195,6 @@ module main_FSM_d(
             else if(valid) nxt = LOOKUP;
             else nxt = IDLE;
         end
-        IBAR_COPE: begin
-            if(tagv_ibar_index == 6'd63) nxt = EXTRA_READY;
-            else begin
-                if(!dirty_data_ibar) nxt = IBAR_COPE;
-                else nxt = MISS;
-            end
-        end
         default: nxt = IDLE;
         endcase
     end
@@ -225,8 +210,7 @@ module main_FSM_d(
         r_length = 8'd15;                   w_length = 8'd15;
         tagv_clear = 0;                     cacop_complete = 0;
         cacop_ready = 0;                    llbit_set = 0;
-        llbit_clear = 0;                    count_en = 0;
-        r_tagv_sel = 0;
+        llbit_clear = 0;                    
         case(crt)
         IDLE: begin
             if(valid || cacop_en) rbuf_we     = 1;
@@ -281,7 +265,7 @@ module main_FSM_d(
         end
         MISS: begin
             w_req   = 1;
-            if(uncache && !ibar_en_rbuf) begin
+            if(uncache) begin
                 w_length    = 8'd0;
                 w_size      = un_visit_type;
             end
@@ -341,9 +325,6 @@ module main_FSM_d(
             if(valid || cacop_en) rbuf_we         = 1;
             wbuf_AXI_reset  = 1;
             cache_ready     = 1;
-        end
-        IBAR_COPE: begin
-            count_en = 1;
         end
         default:;
         endcase

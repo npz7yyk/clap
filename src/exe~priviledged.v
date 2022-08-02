@@ -76,44 +76,47 @@ module exe_privliedged(
         fill_index_next = fill_index_next^(fill_index_next<<5);
     end
     localparam
-        S_INIT      = 31'b0000000000000000000000000000001,
-        S_CSR       = 31'b0000000000000000000000000000010,
-        S_CACOP     = 31'b0000000000000000000000000000100,
-        S_TLB       = 31'b0000000000000000000000000001000,
-        S_IDLE      = 31'b0000000000000000000000000010000,
-        S_ERTN      = 31'b0000000000000000000000000100000,
-        S_DONE_CSR  = 31'b0000000000000000000000001000000,
-        S_DONE_ERTN = 31'b0000000000000000000000010000000,
-        S_DONE_TLB  = 31'b0000000000000000000000100000000,
-        S_L1I_REQ   = 31'b0000000000000000000001000000000,
-        S_L1D_REQ   = 31'b0000000000000000000010000000000,
-        S_L2_REQ    = 31'b0000000000000000000100000000000,
-        S_L1I_WAIT  = 31'b0000000000000000001000000000000,
-        S_L1D_WAIT  = 31'b0000000000000000010000000000000,
-        S_L2_WAIT   = 31'b0000000000000000100000000000000,
-        S_DONE_L1I  = 31'b0000000000000001000000000000000,
-        S_DONE_L1D  = 31'b0000000000000010000000000000000,
-        S_DONE_L2   = 31'b0000000000000100000000000000000,
-        S_TLB_SRCH  = 31'b0000000000001000000000000000000,
-        S_TLB_RD    = 31'b0000000000010000000000000000000,
-        S_TLB_WR    = 31'b0000000000100000000000000000000,
-        S_TLB_FILL  = 31'b0000000001000000000000000000000,
-        S_INVTLB    = 31'b0000000010000000000000000000000,
-        S_DONE_IDLE = 31'b0000000100000000000000000000000,
-        S_IDLE_WAIT1= 31'b0000001000000000000000000000000,
-        S_IDLE_WAIT2= 31'b0000010000000000000000000000000,
-        S_IDLE_PERF = 31'b0000100000000000000000000000000,
-        S_IDLE_WAIT3= 31'b0001000000000000000000000000000,
-        S_IDLE_WAIT4= 31'b0010000000000000000000000000000,
-        S_BAR       = 31'b0100000000000000000000000000000,
-        S_DONE_BAR  = 31'b1000000000000000000000000000000;
-    reg [30:0] state,next_state;
+        S_INIT      = 33'b000000000000000000000000000000001,
+        S_CSR       = 33'b000000000000000000000000000000010,
+        S_CACOP     = 33'b000000000000000000000000000000100,
+        S_TLB       = 33'b000000000000000000000000000001000,
+        S_IDLE      = 33'b000000000000000000000000000010000,
+        S_ERTN      = 33'b000000000000000000000000000100000,
+        S_DONE_CSR  = 33'b000000000000000000000000001000000,
+        S_DONE_ERTN = 33'b000000000000000000000000010000000,
+        S_DONE_TLB  = 33'b000000000000000000000000100000000,
+        S_L1I_REQ   = 33'b000000000000000000000001000000000,
+        S_L1D_REQ   = 33'b000000000000000000000010000000000,
+        S_L2_REQ    = 33'b000000000000000000000100000000000,
+        S_L1I_WAIT  = 33'b000000000000000000001000000000000,
+        S_L1D_WAIT  = 33'b000000000000000000010000000000000,
+        S_L2_WAIT   = 33'b000000000000000000100000000000000,
+        S_DONE_L1I  = 33'b000000000000000001000000000000000,
+        S_DONE_L1D  = 33'b000000000000000010000000000000000,
+        S_DONE_L2   = 33'b000000000000000100000000000000000,
+        S_TLB_SRCH  = 33'b000000000000001000000000000000000,
+        S_TLB_RD    = 33'b000000000000010000000000000000000,
+        S_TLB_WR    = 33'b000000000000100000000000000000000,
+        S_TLB_FILL  = 33'b000000000001000000000000000000000,
+        S_INVTLB    = 33'b000000000010000000000000000000000,
+        S_DONE_IDLE = 33'b000000000100000000000000000000000,
+        S_IDLE_WAIT1= 33'b000000001000000000000000000000000,
+        S_IDLE_WAIT2= 33'b000000010000000000000000000000000,
+        S_IDLE_PERF = 33'b000000100000000000000000000000000,
+        S_IDLE_WAIT3= 33'b000001000000000000000000000000000,
+        S_IDLE_WAIT4= 33'b000010000000000000000000000000000,
+        S_BAR       = 33'b000100000000000000000000000000000,
+        S_BAR_REQ  =  33'b001000000000000000000000000000000,
+        S_BAR_WAIT =  33'b010000000000000000000000000000000,
+        S_DONE_BAR  = 33'b100000000000000000000000000000000;
+    reg [32:0] state,next_state;
 
     reg [1:0] which_cache;
     reg [0:0] inst_16;
     reg [1:0] inst_11_10;
     reg [4:0] inst_4_0;
     reg [31:0] sr0_save,imm_save;
+    reg ibar_en, ibar_reset;
 
     always @(posedge clk)
         if(~rstn) state <= S_INIT;
@@ -171,7 +174,6 @@ module exe_privliedged(
             next_state = S_INIT;
         endcase
     end
-
     always @(posedge clk)
         if(~rstn) begin
             fill_index<=19260817;
@@ -373,4 +375,70 @@ module exe_privliedged(
                 en_out<=1;
             end
         endcase
+    // localparam
+    //     I_IDLE = 4'b0001,
+    //     I_REQ  = 4'b0010,
+    //     I_WAIT = 4'b0100,
+    //     I_DONE = 4'b1000;
+    // localparam
+    //     D_IDLE = 4'b0001,
+    //     D_REQ  = 4'b0010,
+    //     D_WAIT = 4'b0100,
+    //     D_DONE = 4'b1000;
+    // reg [3:0] i_crt, d_crt;
+    // reg [3:0] i_nxt, d_nxt;
+    // reg [7:0] 
+    // always @(posedge clk) begin
+    //     if(!rstn) begin
+    //         i_crt <= I_IDLE;
+    //         d_crt <= D_IDLE;
+    //     end
+    //     else begin
+    //         i_crt <= i_nxt;
+    //         d_crt <= d_nxt;
+    //     end
+    // end
+    // always @(*) begin
+    //     case(i_crt) 
+    //     I_IDLE: begin
+    //         if(ibar_en)     i_nxt = I_REQ;
+    //         else            i_nxt = I_IDLE;
+    //     end
+    //     I_REQ: begin
+    //         if(l1i_ready)   i_nxt = I_WAIT;
+    //         else            i_nxt = I_REQ;
+    //     end
+    //     I_WAIT: begin
+    //         if(l1i_complete)    i_nxt = I_DONE;
+    //         else                i_nxt = I_WAIT;
+    //     end
+    //     I_DONE: begin
+    //         if(ibar_reset)     i_nxt = I_IDLE;
+    //         else                i_nxt = I_DONE;
+    //     end
+    //     endcase
+    //     case(d_crt) 
+    //     D_IDLE: begin
+    //         if(ibar_en)     d_nxt = D_REQ;
+    //         else            d_nxt = D_IDLE;
+    //     end
+    //     D_REQ: begin
+    //         if(l1d_ready)   d_nxt = D_WAIT;
+    //         else            d_nxt = D_REQ;
+    //     end
+    //     D_WAIT: begin
+    //         if(l1d_complete)    d_nxt = D_DONE;
+    //         else                d_nxt = D_WAIT;
+    //     end
+    //     D_DONE: begin
+    //         if(ibar_reset)      d_nxt = D_IDLE;
+    //         else                d_nxt = D_DONE;
+    //     end
+    //     endcase
+    // end
+    // always @(posedge clk) begin
+    //     case(i_crt)
+    //     I_REQ: 
+    // end
+
 endmodule
