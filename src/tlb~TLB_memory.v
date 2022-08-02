@@ -87,6 +87,26 @@ module TLB_memory#(
     reg [1:0]   tlb_plv1    [TLBNUM-1:0];
     reg         tlb_d1      [TLBNUM-1:0];
     reg         tlb_v1      [TLBNUM-1:0];
+    integer k;
+    initial begin
+        for(k = 0; k < TLBNUM; k =  k + 1) begin
+            tlb_vpn2[k] = 0;
+            tlb_asid[k] = 0;
+            tlb_ps[k] = 0;
+            tlb_g[k] = 0;
+            tlb_e[k] = 0;
+            tlb_pfn0[k] = 0;
+            tlb_mat0[k] = 0;
+            tlb_plv0[k] = 0;
+            tlb_d0[k] = 0;
+            tlb_v0[k] = 0;
+            tlb_pfn1[k] = 0;
+            tlb_mat1[k] = 0;
+            tlb_plv1[k] = 0;
+            tlb_d1[k] = 0;
+            tlb_v1[k] = 0;
+        end
+    end
 
     genvar i;
     for (i = 0; i < TLBNUM; i = i + 1)begin

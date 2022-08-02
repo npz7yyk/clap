@@ -336,10 +336,10 @@ module TLB#(
 
         .s0_addr            (s0_vaddr_obuf),
         .s1_addr            (s1_vaddr_obuf),
-        .s0_dmw_mat         (s0_dmw_mat),
-        .s1_dmw_mat         (s1_dmw_mat),
+        .s0_dmw_mat         (s0_dmw_mat_obuf),
+        .s1_dmw_mat         (s1_dmw_mat_obuf),
         .s0_tlb_mat         (found_mat0),
-        .s1_tlb_mat         (found_mat0),
+        .s1_tlb_mat         (found_mat1),
         .s0_dmw_paddr       (s0_dmw_paddr_obuf),
         .s1_dmw_paddr       (s1_dmw_paddr_obuf),
         .s0_pfn             (found_pfn0_obuf),
