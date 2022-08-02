@@ -235,6 +235,7 @@ module TLB#(
         .s_vpn2     (s_vpn2),
         .s_asid     (s_asid),
         .s_e        (s_e),
+        .w_index    (w_index),
         .s_index    (s_index)
     );
     /* TLB hit */
