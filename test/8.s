@@ -1,5 +1,5 @@
 # -*- LoongArch Assembly -*-
-# branch
+# mod after div
 .globl _start 
 .type _start, @function
 .text
