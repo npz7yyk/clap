@@ -324,7 +324,7 @@ module TLB#(
         .rstn           (rstn),
         .we             (1'b1),
         .din            ({s1_vaddr, s1_en}),
-        .dout           ({s1_vaddr, s1_en_obuf})
+        .dout           ({s1_vaddr_obuf, s1_en_obuf})
     );
 
     TLB_out addr_output(
