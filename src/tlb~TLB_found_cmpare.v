@@ -18,6 +18,7 @@ module TLB_found_compare#(
     input  [         18:0] s_vpn2,
     input  [          9:0] s_asid,
     output                 s_e,
+    input [$clog2(TLBNUM)-1:0] w_index,
     output [$clog2(TLBNUM)-1:0] s_index
     );
     wire [   TLBNUM-1:0] found_search;
@@ -35,7 +36,8 @@ module TLB_found_compare#(
                            (all_vpn2[19*i+18:19*i] == s_vpn2);
     end 
     assign s_e = |found_search;
-    assign s_index = {5{found_search[0]}} & 5'h0 
+    assign s_index = !s_e ? w_index : 
+                    ({5{found_search[0]}} & 5'h0 
                    | {5{found_search[1]}} & 5'h1
                    | {5{found_search[2]}} & 5'h2 
                    | {5{found_search[3]}} & 5'h3
@@ -66,5 +68,5 @@ module TLB_found_compare#(
                    | {5{found_search[28]}} & 5'h1c
                    | {5{found_search[29]}} & 5'h1d
                    | {5{found_search[30]}} & 5'h1e
-                   | {5{found_search[31]}} & 5'h1f;
+                   | {5{found_search[31]}} & 5'h1f);
 endmodule
