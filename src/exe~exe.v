@@ -130,7 +130,7 @@ wire eu0_mul_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_MUL];
 wire eu0_div_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_DIV];
 wire eu0_br_en   = eu0_en_in && eu0_uop_in[`ITYPE_IDX_BR];
 wire eu0_mem_en  = eu0_en_in && eu0_uop_in[`ITYPE_IDX_MEM];
-wire eu0_priv_en = eu0_en_in && eu0_uop_in[`UOP_PRIVILEDGED];
+wire eu0_priv_en = eu0_en_in && eu0_uop_in[`UOP_EXCLUSIVE];
 wire eu1_alu_en  = eu1_en_in && eu1_uop_in[`ITYPE_IDX_ALU];
 
 wire [31:0] eu0_sr0;

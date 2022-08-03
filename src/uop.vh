@@ -32,12 +32,14 @@
 `define UOP_COND 18:15
 `define UOP_SIGN 19:19
 `define UOP_MEM_ATM 20:20
-`define UOP_PRIVILEDGED 21:21
+`define UOP_EXCLUSIVE 21:21
+`define UOP_SEQUENCE 22:22
+`define UOP_CHEKCPOINT 23:23
 //NEMPTY=0，当且仅当指令是flush后填充流水线的空操作
-`define UOP_NEMPTY 22:22
-`define UOP_ORIGINAL_INST 54:23
-`define WIDTH_UOP 55
-`define UOP_EXCEPT_TYPE 54:11
+`define UOP_NEMPTY 24:24
+`define UOP_ORIGINAL_INST 59:28
+`define WIDTH_UOP 60
+`define UOP_EXCEPT_TYPE 59:11
 
 `define ITYPE_IDX_ALU   0
 `define ITYPE_IDX_MUL   1
