@@ -1,5 +1,9 @@
 # Timeline
 
+## 2022-08-03
+
+Succeed in running Linux via simulation.
+
 ## 2022-07-28
 
 Test func_lab15 passed.
