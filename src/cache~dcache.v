@@ -86,10 +86,20 @@ module dcache(
         );
     `endif
 
+    reg [6:0] tlb_exception_locked;
+    reg valid_delay;
+
+    always @(posedge clk)
+        if(~rstn)valid_delay=0;
+        else valid_delay<=valid;
+    always @(posedge clk)
+        if(~rstn) tlb_exception_locked<=0;
+        else if(valid_delay)tlb_exception_locked<=tlb_exception;
+    
     assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
-    assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
+    assign exception_temp = tlb_exception_locked == `EXP_ADEM ? tlb_exception_locked : (exception_cache == 0 ? tlb_exception_locked : exception_cache);
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),

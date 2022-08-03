@@ -50,9 +50,19 @@ module icache
     wire way_sel_en, cacop_en_rbuf;
     wire uncache_rbuf, tagv_clear;
 
+    reg [6:0] tlb_exception_locked;
+    reg valid_delay;
+
+    always @(posedge clk)
+        if(~rstn)valid_delay=0;
+        else valid_delay<=valid;
+    //在查询数据的一个周期后，锁定tlb_exception
+    always @(posedge clk)
+        if(~rstn) tlb_exception_locked<=0;
+        else if(valid_delay)tlb_exception_locked<=tlb_exception;
     wire [6:0] exception_temp;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
-    assign exception = (exception_temp == 0 || tlb_exception == `EXP_ADEF)? tlb_exception : exception_temp;
+    assign exception = (exception_temp == 0 || tlb_exception_locked == `EXP_ADEF)? tlb_exception_locked : exception_temp;
     assign badv = exception != 0 ? addr_rbuf[31:0] : 0;
     assign {cookie_out,pc_out} = addr_rbuf;
     reg valid_reg;
