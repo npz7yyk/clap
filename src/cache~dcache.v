@@ -65,10 +65,10 @@ module dcache(
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
     wire w_dirty_data, rbuf_we, wbuf_AXI_we, wbuf_AXI_reset, wrt_AXI_finish;
-    wire pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf;
+    wire pbuf_we, cacop_en_rbuf, is_atom_rbuf, llbit_rbuf, exp_sel;
     wire [3:0] mem_en, hit, way_replace, way_replace_mbuf, tagv_we, dirty_we, write_type_rbuf, way_visit;
     wire [1:0] cacop_code_rbuf;
-    wire [6:0] exception_cache, exception_temp, exception_obuf;
+    wire [6:0] exception_cache, exception_temp, exception_obuf, exception_mbuf;
     wire [19:0] replace_tag, store_data;
     wire [31:0] r_data_CPU_temp, addr_rbuf, w_data_CPU_rbuf, addr_pbuf, w_addr_mbuf;
     wire [63:0] mem_we, mem_we_normal;
@@ -86,20 +86,20 @@ module dcache(
         );
     `endif
 
-    reg [6:0] tlb_exception_locked;
-    reg valid_delay;
+    // reg [6:0] tlb_exception_locked;
+    // reg valid_delay;
 
-    always @(posedge clk)
-        if(~rstn)valid_delay=0;
-        else valid_delay<=valid;
-    always @(posedge clk)
-        if(~rstn) tlb_exception_locked<=0;
-        else if(valid_delay)tlb_exception_locked<=tlb_exception;
+    // always @(posedge clk)
+    //     if(~rstn)valid_delay=0;
+    //     else valid_delay<=valid;
+    // always @(posedge clk)
+    //     if(~rstn) tlb_exception_locked<=0;
+    //     else if(valid_delay)tlb_exception_locked<=tlb_exception;
     
     assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
-    assign exception_temp = tlb_exception_locked == `EXP_ADEM ? tlb_exception_locked : (exception_cache == 0 ? tlb_exception_locked : exception_cache);
+    assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
@@ -149,12 +149,12 @@ module dcache(
 
     /* miss buffer */
     // addr to be write, way to be replaced, dirty_data
-    register#(37) miss_buf(
+    register#(44) miss_buf(
         .clk        (clk),
         .rstn       (rstn),
         .we         (mbuf_we),
-        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data}),
-        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf})
+        .din        ({replace_tag, addr_rbuf[11:6], 6'b0, way_replace, dirty_data, exception_temp}),
+        .dout       ({w_addr_mbuf, way_replace_mbuf, dirty_data_mbuf, exception_mbuf})
     );
 
     /* return buffer */
@@ -313,7 +313,8 @@ module dcache(
         .cacop_complete     (cacop_complete),
         .cacop_ready        (cacop_ready),
         .llbit_set          (llbit_set),
-        .llbit_clear        (llbit_clear)
+        .llbit_clear        (llbit_clear),
+        .exp_sel            (exp_sel)
 
         //.tlb_exception      (tlb_exception)
     );
@@ -322,7 +323,7 @@ module dcache(
         .clk        (clk),
         .rstn       (rstn),
         .we         (1'b1),
-        .din        ({r_data_CPU_temp, data_valid_temp, exception_temp, cache_ready_temp}),
+        .din        ({r_data_CPU_temp, data_valid_temp, exp_sel ? exception_mbuf : exception_temp, cache_ready_temp}),
         .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
     );
     reg [6:0] exception_old;

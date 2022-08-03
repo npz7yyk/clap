@@ -50,21 +50,14 @@ module icache
     wire way_sel_en, cacop_en_rbuf;
     wire uncache_rbuf, tagv_clear;
 
-    reg [6:0] tlb_exception_locked;
-    reg valid_delay;
 
-    always @(posedge clk)
-        if(~rstn)valid_delay=0;
-        else valid_delay<=valid;
-    //在查询数据的一个周期后，锁定tlb_exception
-    always @(posedge clk)
-        if(~rstn) tlb_exception_locked<=0;
-        else if(valid_delay)tlb_exception_locked<=tlb_exception;
-    wire [6:0] exception_temp;
+    wire [6:0] exception_temp, exception_normal, exception_mbuf;
+    wire exp_sel;
     assign r_addr = uncache_rbuf ? {addr_pbuf[31:3], 3'b0} : {addr_pbuf[31:6], 6'b0};
-    assign exception = (exception_temp == 0 || tlb_exception_locked == `EXP_ADEF)? tlb_exception_locked : exception_temp;
+    assign exception_normal = (exception_temp == 0 || tlb_exception == `EXP_ADEF)? tlb_exception : exception_temp;
     assign badv = exception != 0 ? addr_rbuf[31:0] : 0;
     assign {cookie_out,pc_out} = addr_rbuf;
+    assign exception = exp_sel ? exception_mbuf : exception_normal;
     reg valid_reg;
     always @(posedge clk)
         if(flush) valid_reg <= 0;
@@ -98,12 +91,12 @@ module icache
         .fill_finish    (fill_finish),
         .mem_din        (mem_din)
     );
-    register#(4) miss_buf(
+    register#(11) miss_buf(
         .clk    (clk),
         .rstn   (rstn),
         .we     (mbuf_we),
-        .din    (way_replace),
-        .dout   (way_replace_mbuf)
+        .din    ({way_replace, exception_normal}),
+        .dout   ({way_replace_mbuf, exception_mbuf})
     );
     TagV_memory tagv_mem(
         .clk        (clk),
@@ -176,7 +169,8 @@ module icache
         .cacop_en       (cacop_en),
         .cacop_code     (cacop_code_rbuf),
         .tagv_clear     (tagv_clear),
-        .exception      (exception)
+        .exception      (exception),
+        .exp_sel        (exp_sel)
     );
 
     assign data_valid = data_valid_oIzprAXodb8T&valid_reg;

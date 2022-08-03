@@ -58,7 +58,8 @@ module main_FSM_d(
     output reg cacop_ready,
     output reg tagv_clear,
     output reg llbit_set,
-    output reg llbit_clear
+    output reg llbit_clear,
+    output reg exp_sel
 
     );
     parameter IDLE          = 9'b000000001;
@@ -210,7 +211,7 @@ module main_FSM_d(
         r_length = 8'd15;                   w_length = 8'd15;
         tagv_clear = 0;                     cacop_complete = 0;
         cacop_ready = 0;                    llbit_set = 0;
-        llbit_clear = 0;                    
+        llbit_clear = 0;                    exp_sel = 0;
         case(crt)
         IDLE: begin
             if(valid || cacop_en) rbuf_we     = 1;
@@ -320,6 +321,7 @@ module main_FSM_d(
         end
         EXTRA_READY: begin
             data_valid      = 1;
+            exp_sel         = 1;
             if(cacop_en_rbuf) cacop_complete  = 1;
             cacop_ready     = 1;
             if(valid || cacop_en) rbuf_we         = 1;

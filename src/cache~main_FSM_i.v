@@ -34,7 +34,8 @@ module main_FSM_i(
     input cacop_en_rbuf,
 
     output reg tagv_clear,
-    input [6:0] exception
+    input [6:0] exception,
+    output reg exp_sel
     );
     parameter IDLE          = 3'd0;
     parameter LOOKUP        = 3'd1;
@@ -121,6 +122,7 @@ module main_FSM_i(
         tagv_clear = 0;
         cacop_ready = 0;
         cacop_complete = 0;
+        exp_sel = 0;
         case(crt)
         IDLE: begin
             rbuf_we = 1;
@@ -178,6 +180,7 @@ module main_FSM_i(
             rbuf_we = 1;
             cache_ready = 1;
             cacop_ready = 1;
+            exp_sel = 1;
             if(cacop_en_rbuf) cacop_complete = 1;
         end
         default:;
