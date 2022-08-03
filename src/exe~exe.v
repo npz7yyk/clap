@@ -514,7 +514,8 @@ mem1  u_mem1 (
 
 div  u_div (
     .clk                     ( clk                      ),
-    .rstn                    ( rstn&&!flush_by_writeback),
+    .rstn                    ( rstn                     ),
+    .flush_by_writeback      ( flush_by_writeback       ),
     .div_en_in               ( eu0_div_en&&!stall_by_cache&&!stall_by_priv&&!flush&&!div_en_out),
     .div_op                  ( eu0_uop_in[`UOP_MD_SEL]  ),
     .div_sign                ( eu0_uop_in[`UOP_SIGN]    ),
@@ -535,7 +536,8 @@ div  u_div (
 //特权指令
 exe_privliedged exe_privliedged
 (
-    .clk(clk),.rstn(rstn&&!flush_by_writeback),
+    .clk(clk),.rstn(rstn),
+    .flush_by_writeback(flush_by_writeback),
     
     .en_in(eu0_priv_en&&!stall3&&!stall4&&!flush),
     .pc_next(eu0_pc_next_in),

@@ -6,6 +6,7 @@
 module exe_privliedged(
     input clk,
     input rstn,
+    input flush_by_writeback,
     
     input en_in,
     input [31:0] pc_next,
@@ -175,8 +176,10 @@ module exe_privliedged(
         endcase
     end
     always @(posedge clk)
-        if(~rstn) begin
-            fill_index<=19260817;
+        if(~rstn)fill_index<=20220803;
+        else if(next_state==S_DONE_TLB) fill_index <= fill_index_next;
+    always @(posedge clk)
+        if(!rstn||flush_by_writeback) begin
             en_out<=0;
             pc_target<=0;
             flush<=0;
@@ -282,7 +285,6 @@ module exe_privliedged(
                 stall_by_priv<=0;
                 flush <= 1;
                 clear_mem <= 0;
-                fill_index <= fill_index_next;
             end
             S_CACOP: begin
                 which_cache <= inst[1:0];

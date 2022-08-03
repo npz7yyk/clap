@@ -2,6 +2,7 @@
 module div(
     input [0:0]         clk,
     input [0:0]         rstn,
+    input flush_by_writeback,
              
     input [0:0]         div_en_in,
     input [0:0]         div_op,   
@@ -54,7 +55,7 @@ exe_log2_plus_one log2_1(a,m_pre);
 exe_log2_plus_one log2_2(b,n_pre);
 
 always @(posedge clk) begin
-    if (!rstn||div_en_out) begin
+    if (!rstn||div_en_out||flush_by_writeback) begin
         state <= 0;
     end else begin
         state <= next_state;
