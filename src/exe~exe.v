@@ -476,6 +476,7 @@ mem0  u_mem0 (
     .mem_exp_in              (eu0_exp_in                 ),
     .mem_sign                ( eu0_uop_in[`UOP_SIGN]     ),
     .is_atom_in              ( eu0_uop_in[`UOP_MEM_ATM]  ),
+    .is_preload              ( eu0_uop_in[`UOP_PRELOAD]  ),
 
     .valid                   ( valid           ),
     .op                      ( op              ),

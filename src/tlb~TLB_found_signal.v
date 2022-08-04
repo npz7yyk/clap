@@ -12,7 +12,8 @@ module TLB_found_signal#(
     input  [       TLBNUM-1:0]  all_d0,
     input  [       TLBNUM-1:0]  all_v0,
     input  [       TLBNUM-1:0]  found0,
-    input                       odd0_bit,
+    input                       odd0_bit_12,
+    input                       odd0_bit_21,
 
     input  [    TLBNUM*20-1:0]  all_pfn1,
     input  [     TLBNUM*2-1:0]  all_mat1,
@@ -20,7 +21,8 @@ module TLB_found_signal#(
     input  [       TLBNUM-1:0]  all_d1,
     input  [       TLBNUM-1:0]  all_v1,
     input  [       TLBNUM-1:0]  found1,
-    input                       odd1_bit,
+    input                       odd1_bit_12,
+    input                       odd1_bit_21,
 
     output                   found_v0, 
     output                   found_d0, 
@@ -37,6 +39,9 @@ module TLB_found_signal#(
 
 
     );
+    wire odd0_bit, odd1_bit;
+    assign odd0_bit = (found_ps0 == 6'd12) ? odd0_bit_12 : odd0_bit_21;
+    assign odd1_bit = (found_ps1 == 6'd12) ? odd1_bit_12 : odd1_bit_21;
     // v0
     assign found_v0 = found0[ 0] & (odd0_bit ? all_v1[ 0] : all_v0[ 0]) 
                     | found0[ 1] & (odd0_bit ? all_v1[ 1] : all_v0[ 1]) 

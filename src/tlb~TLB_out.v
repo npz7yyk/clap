@@ -41,7 +41,7 @@ module TLB_out(
             else begin
                 case(found_ps0)
                 6'd12: s0_paddr = {s0_pfn, s0_addr[11:0]};
-                6'd22: s0_paddr = {s0_pfn[9:0], s0_addr[21:0]};
+                6'd21: s0_paddr = {s0_pfn[19:9], s0_addr[20:0]};
                 default: s0_paddr = 0;
                 endcase
             end
@@ -53,7 +53,7 @@ module TLB_out(
             else begin
                 case(found_ps1)
                 6'd12: s1_paddr = {s1_pfn, s1_addr[11:0]};
-                6'd22: s1_paddr = {s1_pfn[9:0], s1_addr[21:0]};
+                6'd21: s1_paddr = {s1_pfn[19:9], s1_addr[20:0]};
                 default: s1_paddr = 0;
                 endcase
             end

@@ -508,10 +508,10 @@ module core_top(
     wire icache_ready;
     wire pc_stall_n=icache_ready & ~if_buf_full;
     
-    reg [31:0] pc;
-    wire [31:0] pc_next;
-    wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
-    wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
+    (* mark_debug = "true" *)reg [31:0] pc;
+    (* mark_debug = "true" *)wire [31:0] pc_next;
+    (* mark_debug = "true" *)wire set_pc_by_decoder,set_pc_by_executer,set_pc_by_writeback;
+    (* mark_debug = "true" *)wire [31:0] pc_decoder,pc_executer,pc_writeback,ex_pc_tar;
     always @(posedge clk) begin
         if(~aresetn)
             //龙芯架构32位精简版参考手册 v1.00 p. 53

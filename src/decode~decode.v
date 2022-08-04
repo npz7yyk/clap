@@ -56,6 +56,7 @@ module decoder
     assign type_[`ITYPE_IDX_BAR] = inst[30:16]=='b011100001110010;
     assign type_[`ITYPE_IDX_MEM] = inst[30:28]=='b010;
     wire is_preload = inst[30:22]=='b010101011;
+    assign uop[`UOP_PRELOAD] = is_preload;
     wire is_pcadd = inst[30:25]=='b001110;
     wire is_lui = inst[30:25]=='b001010;
     assign type_[`ITYPE_IDX_CSR] = inst[30:24]=='b0000100;
@@ -245,7 +246,7 @@ module decoder
     wire [31:0] i16_result = {{16{inst[25]}},inst[25:10]};
     wire [31:0] i26_result = {{6{inst[9]}},{inst[9:0],inst[25:10]}};
     wire [31:0] i20_result = {inst[24:5],12'b0};
-    wire [31:0] i14_sll2_result = {{10{inst[23]}},inst[23:10],2'b0};
+    wire [31:0] i14_sll2_result = {{16{inst[23]}},inst[23:10],2'b0};
     
     assign imm = 
         i12_result&{32{is_i12}} |

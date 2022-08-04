@@ -13,6 +13,7 @@ module mem0 (
     input  [6:0]       mem_exp_in,
     input  [0:0]       mem_sign,
     input  [0:0]       is_atom_in,
+    input              is_preload,
     //向cache输出
     output [0:0]       valid,                 //    valid request
     output [0:0]       op,                    //    write: 1, read: 0
@@ -28,7 +29,8 @@ module mem0 (
 );
     assign valid = mem_en_in;
     assign op    = mem_write;
-    assign addr  = mem_sr + mem_imm;
+    wire [31:0] addr_tmp = mem_sr + mem_imm;
+    assign addr  = {addr_tmp[31:3],addr_tmp[2:0]&~{3{is_preload}}};
 
     always @(*) begin
         case (mem_width_in)

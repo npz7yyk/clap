@@ -5,13 +5,13 @@
 /* verilator lint_off DECLFILENAME */
 module writeback
 (   
-    input eu0_valid,eu1_valid,
-    input [31:0] eu0_data,eu1_data,
-    input [4:0] eu0_rd,eu1_rd,
-    input [31:0] eu0_pc,eu1_pc,
-    input [6:0] eu0_exception,
+    (* mark_debug = "true" *)input eu0_valid,eu1_valid,
+    (* mark_debug = "true" *)input [31:0] eu0_data,eu1_data,
+    (* mark_debug = "true" *)input [4:0] eu0_rd,eu1_rd,
+    (* mark_debug = "true" *)input [31:0] eu0_pc,eu1_pc,
+    (* mark_debug = "true" *)input [6:0] eu0_exception,
     input [31:0] eu0_badv,
-    input [31:0] eu0_inst,eu1_inst,
+    (* mark_debug = "true" *)input [31:0] eu0_inst,eu1_inst,
 
     //connect to register file
     output wen0,wen1,
