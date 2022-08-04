@@ -29,13 +29,13 @@ module TLB_found_compare#(
                            (all_g[i] || (all_asid[10*i+9:10*i] == s0_asid)) && 
                            ((all_ps[6*i+5:6*i] == 6'd12) ? 
                            (all_vpn2[19*i+18:19*i] == s0_vpn2) :
-                           (all_vpn2[19*i+18:19*i+8] == s0_vpn2[18:8]));
+                           (all_vpn2[19*i+18:19*i+9] == s0_vpn2[18:9]));
         
         assign found1[i] = all_e[i] && 
                            (all_g[i] || (all_asid[10*i+9:10*i] == s1_asid)) && 
                            ((all_ps[6*i+5:6*i] == 6'd12) ? 
                            (all_vpn2[19*i+18:19*i] == s1_vpn2) :
-                           (all_vpn2[19*i+18:19*i+8] == s1_vpn2[18:8]));
+                           (all_vpn2[19*i+18:19*i+9] == s1_vpn2[18:9]));
         assign found_search[i] = all_e[i] && 
                            (all_g[i] || (all_asid[10*i+9:10*i] == s_asid)) && 
                            (all_vpn2[19*i+18:19*i] == s_vpn2);

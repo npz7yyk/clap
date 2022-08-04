@@ -720,7 +720,7 @@ module csr
             if(wen[29]) tlbidx_ps[29]<=wdata[29];
             if(wen[31]) tlbidx_ne[31]<=wdata[31];
         end else begin
-            if(tlb_index_we) tlbidx_index <= {11'b0,tlb_index_in};
+            if(tlb_index_we) tlbidx_index <= {{16-TLBIDX_WIDTH{1'b0}},tlb_index_in};
             if(tlb_ps_we) tlbidx_ps <= tlb_ps_in;
             if(tlb_ne_we) tlbidx_ne <= tlb_ne_in;
         end
@@ -1153,7 +1153,7 @@ module csr
     assign translate_mode = {crmd_pg,crmd_da};
     assign direct_i_mat = crmd_datf;
     assign direct_d_mat = crmd_datm;
-    assign tlb_index_out = tlbidx_index[4:0];
+    assign tlb_index_out = tlbidx_index[TLBIDX_WIDTH-1:0];
     assign tlb_ps_out = tlbidx_ps;
     assign tlb_ne_out = tlbidx_ne;
     assign tlb_vppn_out = tlbehi_vppn;
