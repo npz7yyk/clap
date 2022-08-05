@@ -331,7 +331,7 @@ module dcache(
     );
     reg [6:0] exception_old;
     wire [6:0] exception_new;
-    assign exception_new = ({7{data_valid}} | {7{cacop_en_rbuf}}) & exception_obuf;
+    assign exception_new = ({7{data_valid}} | {7{cacop_en_rbuf && cacop_code == 2'd2}}) & exception_obuf;
     always @(posedge clk) begin
         exception_old <= exception_new;
     end
