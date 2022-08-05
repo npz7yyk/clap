@@ -99,15 +99,14 @@ module dcache(
     assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
-    assign exception_temp = tlb_exception == `EXP_ADEM ? tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache);
+    assign exception_temp = {7{!(cacop_en_rbuf && cacop_code_rbuf != 2'd2) || (op_rbuf && is_atom_rbuf && !llbit_rbuf)}} 
+                            & (tlb_exception == `EXP_ADEM ? 
+                            tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache));
     /* exception */
     cache_exception_d exp(
         .addr_rbuf      (addr_rbuf),
         .type_          (write_type_rbuf),
         .cacop_en_rbuf  (cacop_en_rbuf),
-        .op_rbuf        (op_rbuf),
-        .llbit_rbuf     (llbit_rbuf),
-        .is_atom_rbuf   (is_atom_rbuf),
         .exception      (exception_cache)
     );
 
@@ -331,7 +330,7 @@ module dcache(
     );
     reg [6:0] exception_old;
     wire [6:0] exception_new;
-    assign exception_new = ({7{data_valid}} | {7{cacop_en_rbuf && cacop_code == 2'd2}}) & exception_obuf;
+    assign exception_new = ({7{data_valid}} | {7{cacop_en_rbuf}}) & exception_obuf;
     always @(posedge clk) begin
         exception_old <= exception_new;
     end
