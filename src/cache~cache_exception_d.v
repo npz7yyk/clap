@@ -6,6 +6,9 @@ module cache_exception_d(
     input [31:0] addr_rbuf,
     input [3:0] type_,
     input cacop_en_rbuf,
+    input is_atom_rbuf,
+    input llbit_rbuf,
+    input op_rbuf,
     output [6:0] exception
     );
     //parameter BYTE = 4'b0001;
@@ -24,5 +27,5 @@ module cache_exception_d(
         default: exception_temp = 0;
         endcase
     end
-    assign exception = {7{~cacop_en_rbuf}} & exception_temp;
+    assign exception =  ({7{!(op_rbuf && !llbit_rbuf && is_atom_rbuf)}} | {7{~cacop_en_rbuf}}) & exception_temp;
 endmodule

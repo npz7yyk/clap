@@ -105,6 +105,9 @@ module dcache(
         .addr_rbuf      (addr_rbuf),
         .type_          (write_type_rbuf),
         .cacop_en_rbuf  (cacop_en_rbuf),
+        .op_rbuf        (op_rbuf),
+        .llbit_rbuf     (llbit_rbuf),
+        .is_atom_rbuf   (is_atom_rbuf),
         .exception      (exception_cache)
     );
 
