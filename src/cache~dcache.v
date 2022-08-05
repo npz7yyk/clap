@@ -36,7 +36,7 @@ module dcache(
     output            [3:0] w_strb,
     output           [31:0] w_data_AXI,
     input                   w_rdy,
-    input                   w_data_ready, //%Warning-UNUSED
+    input                   w_data_ready, 
     //back
     output                  b_ready,
     input                   b_valid,
@@ -85,21 +85,11 @@ module dcache(
             .dout       ({vaddr_diff, data_diff})
         );
     `endif
-
-    // reg [6:0] tlb_exception_locked;
-    // reg valid_delay;
-
-    // always @(posedge clk)
-    //     if(~rstn)valid_delay=0;
-    //     else valid_delay<=valid;
-    // always @(posedge clk)
-    //     if(~rstn) tlb_exception_locked<=0;
-    //     else if(valid_delay)tlb_exception_locked<=tlb_exception;
     
     assign r_addr = uncache_rbuf || cacop_en ? addr_pbuf : {addr_pbuf[31:6], 6'b0};
     assign w_addr = uncache_rbuf || cacop_en ? addr_pbuf : w_addr_mbuf;
     assign badv = addr_rbuf[31:0];
-    assign exception_temp = {7{!(cacop_en_rbuf && cacop_code_rbuf != 2'd2) || (op_rbuf && is_atom_rbuf && !llbit_rbuf)}} 
+    assign exception_temp = {7{!((cacop_en_rbuf && cacop_code_rbuf != 2'd2) || (op_rbuf && is_atom_rbuf && !llbit_rbuf))}} 
                             & (tlb_exception == `EXP_ADEM ? 
                             tlb_exception : (exception_cache == 0 ? tlb_exception : exception_cache));
     /* exception */
@@ -325,12 +315,13 @@ module dcache(
         .clk        (clk),
         .rstn       (rstn),
         .we         (1'b1),
-        .din        ({r_data_CPU_temp, data_valid_temp, exp_sel ? exception_mbuf : exception_temp, cache_ready_temp}),
+        .din        ({r_data_CPU_temp, data_valid_temp, (data_valid_temp || cacop_en_rbuf) ? 
+                    (exp_sel ? exception_mbuf : exception_temp) : 7'b0, cache_ready_temp}),
         .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
     );
     reg [6:0] exception_old;
     wire [6:0] exception_new;
-    assign exception_new = ({7{data_valid}} | {7{cacop_en_rbuf}}) & exception_obuf;
+    assign exception_new = exception_obuf;
     always @(posedge clk) begin
         exception_old <= exception_new;
     end
