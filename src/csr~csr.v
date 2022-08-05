@@ -687,7 +687,7 @@ module csr
             llbctl_rollb<=llbctl_klo;
             llbctl_klo<=0;
         end else if(software_query_en&&addr==`CSR_LLBCTL) begin
-            if(wen[1]) llbctl_rollb<=0;
+            if(wen[1]&&wdata[1]) llbctl_rollb<=0;
             if(wen[2]) llbctl_klo<=wdata[2];
         end
     
