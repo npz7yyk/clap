@@ -938,8 +938,8 @@ module csr
         end else if(software_query_en&&addr==`CSR_DMW0) begin
             if(wen[ 0]) dmw0_plv0<=wdata[ 0];
             if(wen[ 3]) dmw0_plv3<=wdata[ 3];
-            if(wen[ 4]) dmw0_mat[ 4]<=wdata[ 4];
-            if(wen[ 5]) dmw0_mat[ 5]<=wdata[ 5];
+            if(wen[ 4]) dmw0_mat[ 0]<=wdata[ 4];
+            if(wen[ 5]) dmw0_mat[ 1]<=wdata[ 5];
             if(wen[25]) dmw0_pseg[29]<=wdata[25];
             if(wen[26]) dmw0_pseg[30]<=wdata[26];
             if(wen[27]) dmw0_pseg[31]<=wdata[27];
@@ -958,8 +958,8 @@ module csr
         end else if(software_query_en&&addr==`CSR_DMW1) begin
             if(wen[ 0]) dmw1_plv0<=wdata[ 0];
             if(wen[ 3]) dmw1_plv3<=wdata[ 3];
-            if(wen[ 4]) dmw1_mat[ 4]<=wdata[ 4];
-            if(wen[ 5]) dmw1_mat[ 5]<=wdata[ 5];
+            if(wen[ 4]) dmw1_mat[ 0]<=wdata[ 4];
+            if(wen[ 5]) dmw1_mat[ 1]<=wdata[ 5];
             if(wen[25]) dmw1_pseg[29]<=wdata[25];
             if(wen[26]) dmw1_pseg[30]<=wdata[26];
             if(wen[27]) dmw1_pseg[31]<=wdata[27];
