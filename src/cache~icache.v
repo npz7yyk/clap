@@ -120,7 +120,7 @@ module icache
 
     miss_way_sel_lru u_way_sel(
         .clk            (clk),
-        .addr_rbuf      (addr_rbuf),
+        .addr_rbuf      (addr_rbuf[31:0]),
         .cacop_en_rbuf  (cacop_en_rbuf),
         .cacop_code_rbuf(cacop_code_rbuf),
         .visit          (way_visit),

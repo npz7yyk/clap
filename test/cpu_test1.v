@@ -2,7 +2,7 @@ module cpu_test1();
     // core_top Inputs
     reg   aclk;
     reg   aresetn;
-    wire   [ 7:0]  intrpt;
+    wire   [ 7:0]  intrpt=0;
     wire   arready;
     wire   [ 3:0]  rid;
     wire   [31:0]  rdata;

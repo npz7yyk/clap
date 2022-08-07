@@ -56,12 +56,14 @@ module core_top(
     output [ 4:0] debug0_wb_rf_wnum,
     output [31:0] debug0_wb_rf_wdata,
     output [31:0] debug0_wb_inst,
+    output debug0_valid,
 
     output [31:0] debug1_wb_pc,
     output [ 3:0] debug1_wb_rf_wen,
     output [ 4:0] debug1_wb_rf_wnum,
     output [31:0] debug1_wb_rf_wdata,
-    output [31:0] debug1_wb_inst
+    output [31:0] debug1_wb_inst,
+    output debug1_valid
 );
     wire clk;
     wire clear_clock_gate,set_clock_gate;
@@ -1325,10 +1327,14 @@ module core_top(
         .pgd(csr_pgd_in),
         .pgd_wen(csr_pgd_wen)
     );
+    
+    assign debug0_valid=ex_eu0_en;
+    assign debug1_valid=ex_eu1_en;
 
     //L2 cache is not implemented
     assign ex_mem_l2_ready = 1;
     assign ex_mem_l2_complete = 1;
+    
 
 `ifdef CLAP_CONFIG_DIFFTEST
     reg cmt_valid0,cmt_valid1;
