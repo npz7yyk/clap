@@ -963,12 +963,14 @@ module core_top(
     wire[2:0] clear_mem;
     wire[0:0]ex_is_atom;
     wire[31:0] tlb_fill_index;
+`ifdef CLAP_CONFIG_DIFFTEST
     wire [31:0] vaddr_diff;
     wire [31:0] paddr_diff;
     wire [31:0] data_diff;
     wire [31:0] ex_vaddr_diff;
     wire [31:0] ex_paddr_diff;
     wire [31:0] ex_data_diff;
+`endif
 
     exe the_exe(
         .clk           (clk           ),
@@ -1064,14 +1066,15 @@ module core_top(
         .fill_index             (tlb_fill_index),
 
         .clear_clock_gate_require(clear_clock_gate_require),
-        .clear_clock_gate(clear_clock_gate),
-
-        .vaddr_diff_in(vaddr_diff),
+        .clear_clock_gate(clear_clock_gate)
+`ifdef CLAP_CONFIG_DIFFTEST
+        ,.vaddr_diff_in(vaddr_diff),
         .paddr_diff_in(paddr_diff),
         .data_diff_in(data_diff),
         .vaddr_diff_out(ex_vaddr_diff),
         .paddr_diff_out(ex_paddr_diff),
         .data_diff_out(ex_data_diff)
+`endif
     );
     assign tlb_ps_we = tlb_other_we;
     assign tlb_vppn_we = tlb_other_we;

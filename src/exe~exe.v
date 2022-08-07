@@ -40,9 +40,11 @@ module exe(
     output reg [31:0]       eu0_inst,
     output reg [31:0]       eu1_pc_out,
     output reg [31:0]       eu1_inst,
+    `ifdef CLAP_CONFIG_DIFFTEST
     output reg [31:0]       vaddr_diff_out,
     output reg [31:0]       paddr_diff_out,
     output reg [31:0]       data_diff_out,
+    `endif
     //向issue段输出
     output [0:0]            stall3,
     output [0:0]            stall4,
@@ -73,11 +75,11 @@ module exe(
     input [ 6:0 ]           icache_exception,
     input                   dcache_ready,
     input                   icache_ready,
+    
+    `ifdef CLAP_CONFIG_DIFFTEST
     input [31:0]            vaddr_diff_in,
     input [31:0]            paddr_diff_in,
     input [31:0]            data_diff_in,
-
-    `ifdef CLAP_CONFIG_DIFFTEST
     input [63:0] stable_counter_diff_in,
     output reg [63:0] stable_counter_diff_out,
     `endif
@@ -216,9 +218,11 @@ wire [4:0]  priv_addr_out;
 reg  [31:0] branch_addr_calculated;
 wire [6:0] priv_exp_out;
 //末段寄存器
+`ifdef CLAP_CONFIG_DIFFTEST
 wire [31:0]vaddr_diff_mid;
 wire [31:0]paddr_diff_mid;
 wire [31:0]data_diff_mid;
+`endif
 reg  [0:0]  eu0_en_1_internal;
 reg  [0:0]  eu1_en_1_internal;
 assign correct_pc_next = flush_because_br?branch_addr_calculated:priv_pc;
@@ -321,9 +325,11 @@ always @(posedge clk) begin
         badv_out          <= badv_exe1|cache_badv_out|priv_badv_out;
         eu0_pc_out        <= eu0_pc_exe1|div_pc_out;
         eu0_inst          <= inst0_mid|div_inst_out;
+        `ifdef CLAP_CONFIG_DIFFTEST
         vaddr_diff_out    <= vaddr_diff_mid;
         paddr_diff_out    <= paddr_diff_mid;
         data_diff_out     <= data_diff_mid;
+        `endif
     end 
     else begin
         en_out0           <= 0;
@@ -498,19 +504,23 @@ mem1  u_mem1 (
     .r_data_CPU              ( r_data_CPU            ),
     .cache_badv_in           ( dcache_badv           ),
     .cache_exception         ( dcache_exception      ),
+    `ifdef CLAP_CONFIG_DIFFTEST
     .vaddr_diff_in           (vaddr_diff_in          ),
     .paddr_diff_in           (paddr_diff_in          ),
     .data_diff_in            (data_diff_in           ),
+    `endif
 
     .mem_exp_out             ( mem_exp_out           ),
     .mem_rd_out              ( mem_rd_out            ),
     .mem_data_out            ( mem_data_out          ),
     .mem_en_out              ( mem_en_out            ),
     .cache_badv_out          ( cache_badv_out        ),
-    .stall_by_cache          ( stall_by_cache        ),
+    `ifdef CLAP_CONFIG_DIFFTEST
     .vaddr_diff_out          ( vaddr_diff_mid          ),
     .paddr_diff_out          ( paddr_diff_mid          ),
-    .data_diff_out           ( data_diff_mid           )
+    .data_diff_out           ( data_diff_mid           ),
+    `endif
+    .stall_by_cache          ( stall_by_cache        )
 );
 
 div  u_div (
