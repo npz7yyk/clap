@@ -1160,7 +1160,7 @@ module csr
     assign tlbrentry = csr_tlbrentry;
     assign has_interrupt_cpu  = crmd_ie&&(ecfg_lie&csr_estat[`ESTAT_IS])!=0;
     assign has_interrupt_idle = csr_estat[`ESTAT_IS]!=0;
-    assign translate_mode = {crmd_pg,crmd_da};
+    assign translate_mode = {crmd_pg,crmd_da}==2'b10 ? 2'b10:2'b01;
     assign direct_i_mat = crmd_datf;
     assign direct_d_mat = crmd_datm;
     assign tlb_index_out = tlbidx_index[TLBIDX_WIDTH-1:0];
