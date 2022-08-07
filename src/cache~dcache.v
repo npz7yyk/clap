@@ -54,13 +54,15 @@ module dcache(
     output                  llbit_set,
     //atom store
     input                   llbit,
-    output                  llbit_clear,
+    output                  llbit_clear
     // diff test
-    output            [31:0] vaddr_diff,
+    `ifdef CLAP_CONFIG_DIFFTEST
+    ,output            [31:0] vaddr_diff,
     output            [31:0] paddr_diff,
-    output            [31:0] data_diff,
+    output            [31:0] data_diff
+    `endif
 
-    output                  miss_signal
+    //,output                  miss_signal
     );
     wire op_rbuf, r_data_sel, wrt_data_sel, cache_hit, data_valid_temp, cache_ready_temp;
     wire fill_finish, way_sel_en, mbuf_we, dirty_data, dirty_data_mbuf;
@@ -75,7 +77,7 @@ module dcache(
     wire [511:0] w_line_AXI, miss_sel_data, mem_din;
     wire [2047:0] mem_dout;
     wire signed_ext_rbuf, uncache_rbuf, tagv_clear;
-    `ifdef VERILATOR
+    `ifdef CLAP_CONFIG_DIFFTEST
         assign paddr_diff = addr_pbuf;
         register#(64) diff_buffer(
             .clk        (clk),
@@ -97,7 +99,10 @@ module dcache(
         .addr_rbuf      (addr_rbuf),
         .type_          (write_type_rbuf),
         .cacop_en_rbuf  (cacop_en_rbuf),
-        .exception      (exception_cache)
+        .exception      (exception_cache),
+        .is_atom_rbuf   (is_atom_rbuf),
+        .llbit_rbuf     (llbit_rbuf),
+        .op_rbuf        (op_rbuf)
     );
 
     /* request buffer*/
@@ -306,7 +311,9 @@ module dcache(
         .cacop_ready        (cacop_ready),
         .llbit_set          (llbit_set),
         .llbit_clear        (llbit_clear),
-        .exp_sel            (exp_sel)
+        .exp_sel            (exp_sel),
+        
+        .dirty_data_ibar    (0)
 
         //.tlb_exception      (tlb_exception)
     );

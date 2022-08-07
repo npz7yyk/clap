@@ -18,7 +18,7 @@ module clock_gate
         else if(clear_ps) pause <= 1;
         else if(set_clock_gate) pause <= 0;
     reg l_pause=0;
-    always @(aclk)
+    always @(aclk,pause)
         if(~aclk) l_pause = pause;
     
     assign clk = aclk&~l_pause;

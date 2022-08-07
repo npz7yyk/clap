@@ -1141,11 +1141,12 @@ module core_top(
         .is_atom        (ex_is_atom),
         .llbit          (llbit),
         .llbit_set      (llbit_set),
-        .llbit_clear    (llbit_clear_by_other),
-
-        .vaddr_diff     (vaddr_diff),
+        .llbit_clear    (llbit_clear_by_other)
+`ifdef CLAP_CONFIG_DIFFTEST
+        ,.vaddr_diff     (vaddr_diff),
         .paddr_diff     (paddr_diff),
         .data_diff      (data_diff)
+`endif
     );
 
     assign d_axi_awid = 1;
@@ -1196,7 +1197,7 @@ module core_top(
         .s0_paddr       (p_pc),
         .s0_asid        (asid_out),
         .s0_plv         (privilege),
-        .s0_mem_type    (use_tlb_s0_by_exe?0:2),
+        .s0_mem_type    (use_tlb_s0_by_exe?2'd0:2'd2),
         .s0_en          (!if_buf_full&&translate_mode[1] || use_tlb_s0_by_exe),
         .s0_exception   (itlb_exp),
         .s0_mat         (itlb_mat),

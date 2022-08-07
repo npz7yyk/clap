@@ -125,6 +125,7 @@ module icache
         .cacop_code_rbuf(cacop_code_rbuf),
         .visit          (way_visit),
         .en             (way_sel_en),
+        .hit            (hit),
         .way_sel        (way_replace)
     );
     
