@@ -103,11 +103,9 @@ assign stall_by_conflict =  eu0_en_out
                                 &&eu0_en_out
                                 &&eu0_uop_out[`ITYPE_IDX_DIV];
 
-always @(posedge clk) begin
-    if (!stall) begin
-        stall_by_conflict_old<=stall_by_conflict;
-end
-    end
+always @(posedge clk) 
+    if(~rstn) stall_by_conflict_old<=0;
+    else if(!stall) stall_by_conflict_old<=stall_by_conflict;
     
 always @(posedge clk) begin
     if (write_en_0&&(write_addr_0!=write_addr_1||write_en_1==0)) begin

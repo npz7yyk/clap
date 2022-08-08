@@ -1,5 +1,6 @@
 `include "clap_config.vh"
 
+`ifdef CLAP_CONFIG_BR_PROFILE
 module profile_branch
 #(
     FILENAME = "../profile_branch.log"
@@ -26,3 +27,4 @@ module profile_branch
             $fflush(fd);
     end
 endmodule
+`endif

@@ -157,6 +157,7 @@ module dcache(
     /* return buffer */
     ret_buf_d ret_buf(
         .clk                (clk),
+        .rstn               (rstn),
         .addr_rbuf          (addr_rbuf),
         .wrt_type           (write_type_rbuf),
         .op_rbuf            (op_rbuf),
@@ -329,8 +330,8 @@ module dcache(
     reg [6:0] exception_old;
     wire [6:0] exception_new;
     assign exception_new = exception_obuf;
-    always @(posedge clk) begin
-        exception_old <= exception_new;
-    end
+    always @(posedge clk) 
+        if(~rstn) exception_old <= 0;
+        else exception_old <= exception_new;
     assign exception = ~exception_old & exception_new;
 endmodule

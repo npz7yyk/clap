@@ -367,6 +367,8 @@ module csr
     always @(posedge clk)
         if(~rstn) begin
             estat_is_0 <= 0;
+            estat_ecode <= 0;
+            estat_subecode <= 0;
         end else if(expcode_wen) begin
             estat_ecode <= expcode_in[5:0];
             estat_subecode <= expcode_in[5:0]==0 ? 0:{8'b0,expcode_in[6]};
@@ -378,7 +380,7 @@ module csr
     //ERA
     always @(posedge clk)
         if(~rstn) begin
-            csr_era <= era_in;
+            csr_era <= 0;
         end else if(era_wen) begin
             csr_era <= era_in;
         end else if(software_query_en&&addr==`CSR_ERA) begin
@@ -1049,7 +1051,8 @@ module csr
     
     reg just_set_timer;
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL]!=0)
+        if(~rstn) just_set_timer<=0;
+        else if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL]!=0)
             just_set_timer<=1;
         else just_set_timer<=0;
     
@@ -1079,7 +1082,9 @@ module csr
     
     //CTAG
     always @(posedge clk)
-        if(software_query_en&&addr==`CSR_CTAG) begin
+        if(~rstn) begin
+            csr_ctag <= 0;
+        end else if(software_query_en&&addr==`CSR_CTAG) begin
             if(wen[ 0]) csr_ctag[ 0]<=wdata[ 0];
             if(wen[ 1]) csr_ctag[ 1]<=wdata[ 1];
             if(wen[ 2]) csr_ctag[ 2]<=wdata[ 2];

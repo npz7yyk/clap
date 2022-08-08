@@ -83,12 +83,12 @@ module wrt_buffer_AXI(
         default:;
         endcase
     end
-    always @(posedge clk)begin
-        case(crt)
+    always @(posedge clk)
+        if(~rstn) count <= 0;
+        else case(crt)
         REQUEST: if(wready) count <= count + 1;
         default: count <= 0;
         endcase
-    end
     //w_data
     always @(*) begin
         case(count)

@@ -84,11 +84,6 @@ module predict_unit #(
     reg [(1 << GUESS_DEPTH) - 1:0] inGuess1;
     reg [(1 << GUESS_DEPTH) - 1:0] inGuess2;
 
-    initial begin
-        inGuess1 = 32'b0;
-        inGuess2 = 32'b0;
-    end
-
     // new values for inGuess
     wire inGuess1_new, inGuess2_new;
 

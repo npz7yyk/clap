@@ -2,7 +2,7 @@
 
 /* verilator lint_off DECLFILENAME */
 module ret_buf_d(
-    input clk,
+    input clk,rstn,
     input [31:0] addr_rbuf,
     input [3:0] wrt_type,
     input op_rbuf,
@@ -18,18 +18,19 @@ module ret_buf_d(
     parameter WORD = 4'b1111;
     parameter READ = 1'b0;
     reg [3:0] count;
-    initial begin
-        count = 0;
-        w_data_AXI = 0;
-    end
 
     reg finish_pos;
     wire ret_finish;
-    always @(posedge clk) begin
-        finish_pos <= ret_last & ret_valid;
-    end
+    always @(posedge clk) 
+        if(~rstn) finish_pos <= 0;
+        else finish_pos <= ret_last & ret_valid;
     assign ret_finish = !finish_pos & ret_last & ret_valid;
-    always @(posedge clk) begin
+    always @(posedge clk) 
+        if(~rstn) begin
+            count <= 0;
+            w_data_AXI <= 0;
+            fill_finish <=0 ;
+        end else begin
         if(ret_valid)begin
             if(uncache_rbuf) begin
                 w_data_AXI <= {480'b0, r_data_AXI};

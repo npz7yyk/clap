@@ -28,6 +28,7 @@ module decode_unit_input_reg
     always @(posedge clk)
         if(~rstn || flush)begin
             input_valid_out <= 0;
+            exception_out <= 0;
         end
         else begin
             input_valid_out <= input_valid_in;

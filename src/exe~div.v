@@ -14,7 +14,7 @@ module div(
     input [31:0]        div_inst_in,
 
     output reg [0:0]    div_en_out,
-    output reg [0:0]        stall_by_div,
+    output reg [0:0]    stall_by_div,
     output reg [ 31:0 ] div_result,
     output reg [ 4:0 ]  div_addr_out,
     output [31:0]       div_pc_out,
@@ -91,7 +91,25 @@ always @(*) begin
     endcase
 end
 
-always @(posedge clk) begin
+always @(posedge clk) 
+    if(~rstn) begin
+        div_en_out<=0;
+        stall_by_div<=0;
+        div_result<=0;
+        div_addr_out<=0;
+        i<=0;
+        dividend<=0;
+        divisor<=0;
+        op<=0;
+        dividend_sign<=0;
+        divisor_sign<=0;
+        addr<=0;
+        qoucient<=0;
+        m<=0;
+        n<=0;
+        div_pc<=0;
+        div_inst<=0;
+    end else begin
     case (state)
         IDLE: begin
             if(div_en_in)begin

@@ -1,5 +1,6 @@
 `include "clap_config.vh"
 
+`ifdef CLAP_CONFIG_CACHE_PROFILE
 module profile_cache
 #(
     FILENAME = "../profile_cache.log"
@@ -28,3 +29,4 @@ module profile_cache
             $fflush(fd);
     end
 endmodule
+`endif

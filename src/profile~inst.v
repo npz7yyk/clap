@@ -1,5 +1,6 @@
 `include "clap_config.vh"
 
+`ifdef CLAP_CONFIG_INST_PROFILE
 module profile_inst_statisic
 #(
     FILENAME = "../profile_inst.log"
@@ -32,3 +33,5 @@ module profile_inst_statisic
             $fflush(fd);
     end
 endmodule
+
+`endif

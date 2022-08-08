@@ -60,7 +60,7 @@ module icache
     assign exception = exp_sel ? exception_mbuf : exception_normal;
     reg valid_reg;
     always @(posedge clk)
-        if(flush) valid_reg <= 0;
+        if(flush||!rstn) valid_reg <= 0;
         else if(rbuf_we) valid_reg <= valid;
     register#(36+COOKIE_WIDHT) req_buf(
         .clk    (clk),
@@ -85,6 +85,7 @@ module icache
     
     ret_buf_i ret_buf(    
         .clk            (clk),
+        .rstn           (rstn),
         .r_data_AXI     (r_data_AXI),
         .ret_valid      (ret_valid),
         .ret_last       (ret_last),
