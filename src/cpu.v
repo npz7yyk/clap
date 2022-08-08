@@ -88,8 +88,8 @@ module core_top(
     wire [0:0]  i_axi_awlock;       wire [0:0]  d_axi_awlock;
     wire [3:0]  i_axi_awcache;      wire [3:0]  d_axi_awcache;
     wire [2:0]  i_axi_awprot;       wire [2:0]  d_axi_awprot;
-    wire [3:0]  i_axi_awqos;        wire [3:0]  d_axi_awqos;
-    wire [3:0]  i_axi_awregion;     wire [3:0]  d_axi_awregion;
+    // wire [3:0]  i_axi_awqos;        wire [3:0]  d_axi_awqos;
+    // wire [3:0]  i_axi_awregion;     wire [3:0]  d_axi_awregion;
     wire [0:0]  i_axi_awvalid;      wire [0:0]  d_axi_awvalid;
     wire [0:0]  i_axi_awready;      wire [0:0]  d_axi_awready;
     wire [31:0] i_axi_wdata;        wire [31:0] d_axi_wdata;
@@ -109,8 +109,8 @@ module core_top(
     wire [0:0]  i_axi_arlock;       wire [0:0]  d_axi_arlock;
     wire [3:0]  i_axi_arcache;      wire [3:0]  d_axi_arcache;
     wire [2:0]  i_axi_arprot;       wire [2:0]  d_axi_arprot;
-    wire [3:0]  i_axi_arqos;        wire [3:0]  d_axi_arqos;
-    wire [3:0]  i_axi_arregion;     wire [3:0]  d_axi_arregion;
+    // wire [3:0]  i_axi_arqos;        wire [3:0]  d_axi_arqos;
+    // wire [3:0]  i_axi_arregion;     wire [3:0]  d_axi_arregion;
     wire [0:0]  i_axi_arvalid;      wire [0:0]  d_axi_arvalid;
     wire [0:0]  i_axi_arready;      wire [0:0]  d_axi_arready;
     wire [3:0]  i_axi_rid;          wire [3:0]  d_axi_rid;
@@ -654,10 +654,8 @@ module core_top(
     assign i_axi_wvalid = 0;
     assign i_axi_bid = 0;
     assign i_axi_bready = 0;
-    assign i_axi_bresp = 0;
     assign i_axi_arid = 0;
     assign i_axi_arburst = 2'b01;
-    //assign i_axi_arlen = 8'd15;
     assign i_axi_arsize = 3'b010;
     assign i_axi_arlock = 0;
     assign i_axi_arcache = 0;
@@ -1153,18 +1151,13 @@ module core_top(
     );
 
     assign d_axi_awid = 1;
-    //assign d_axi_awlen = 8'd15;
-    //assign d_axi_awsize = 3'b010;
     assign d_axi_awburst = 2'b01;
     assign d_axi_awlock = 0;
     assign d_axi_awcache = 0;
     assign d_axi_awprot = 0;
     assign d_axi_bid = 1;
-    assign d_axi_bresp = 0;
     assign d_axi_arid = 1;
-    //assign d_axi_arlen = 8'd15;
     assign d_axi_arburst = 2'b01;
-    //assign d_axi_arsize = 3'b010;
     assign d_axi_arlock = 0;
     assign d_axi_arcache = 0;
     assign d_axi_arprot = 0;
@@ -1344,7 +1337,7 @@ module core_top(
     reg cmt_valid0,cmt_valid1;
     reg [31:0] cmt_pc0,cmt_pc1;
     reg [31:0] cmt_inst0,cmt_inst1;
-    reg [31:0] cmt_wen0,cmt_wen1;
+    reg cmt_wen0,cmt_wen1;
     reg [4:0] cmt_wdest0,cmt_wdest1;
     reg [31:0] cmt_wdata0,cmt_wdata1;
     reg cmt_excp_valid;
@@ -1356,7 +1349,7 @@ module core_top(
     reg [31:0]cmt_data_diff;
     always @(posedge clk)
         if(fill_mode&&tlb_we)
-            fill_index_diff<=tlb_fill_index;
+            fill_index_diff<=tlb_fill_index[TLBIDX_WIDTH-1:0];
 
     always @(posedge aclk)
         if(~aresetn) begin

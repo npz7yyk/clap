@@ -39,7 +39,8 @@ module decoder
     output [4:0] rj,
     output [4:0] rk
 );
-    assign uop[`UOP_NEMPTY] = nempty_unknown_badv_exception_pcnext_pc_inst[136];
+    wire uop_nempty = nempty_unknown_badv_exception_pcnext_pc_inst[136];
+    assign uop[`UOP_NEMPTY] = uop_nempty;
     wire [31:0] inst = nempty_unknown_badv_exception_pcnext_pc_inst[31:0];
     assign pc=nempty_unknown_badv_exception_pcnext_pc_inst[63:32];
     assign pc_next=nempty_unknown_badv_exception_pcnext_pc_inst[95:64];
@@ -166,7 +167,7 @@ module decoder
         end
     end
     
-    assign uop[`UOP_TYPE]=(!uop[`UOP_NEMPTY]||invalid_instruction)?0:type_;
+    assign uop[`UOP_TYPE]=(!uop_nempty||invalid_instruction)?0:type_;
     assign uop[`UOP_SRC1]=src1;
     assign uop[`UOP_SRC2]=src2;
     assign uop[`UOP_MEM_ATM]= ~inst[27];
