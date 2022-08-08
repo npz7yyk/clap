@@ -82,10 +82,13 @@ generate
                 assign stage_enc[l][(n+1)*(l+1)-1:n*(l+1)] = stage_valid[l-1][n*2+1] ? {1'b1, stage_enc[l-1][(n*2+2)*l-1:(n*2+1)*l]} : {1'b0, stage_enc[l-1][(n*2+1)*l-1:(n*2+0)*l]};
             end
         end
+        if(l>=2) begin
+            assign stage_enc[l][W/2-1:W/(2*2**l)*(l+1)] = 0;
+        end
     end
 endgenerate
 
-assign output_valid = stage_valid[LEVELS-1]!=0;
+assign output_valid = stage_valid[LEVELS-1][0];
 assign output_encoded = stage_enc[LEVELS-1];
 assign output_unencoded = 1 << output_encoded;
 
