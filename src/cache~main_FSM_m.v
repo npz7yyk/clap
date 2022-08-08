@@ -26,14 +26,28 @@ module main_FSM_d(
     input i_ready,
     input d_ready,
     // cache status
-    input i_uncache,
-    input d_uncache,
-    input [7:0] hit,
+    input uncache,
+
+    input [3:0] hit,
     input cache_hit,
     input dirty_data,
     input dirty_data_mbuf,
     input wrt_AXI_finish,
+    input ret_buf_fill_finish,
+    input [63:0] mem_we_normal,
+    output reg [63:0] mem_we,
+    output reg [3:0] mem_en,
+    output reg [3:0] dirty_we,
+    output reg wdata_dirty,
 
+    output reg rbuf_we,
+    output reg mbuf_we,
+    output reg wbuf_AXI_we,
+    output reg rdata_from_mem,
+    output reg way_sel_en,
+    output reg [3:0] way_visit,
+    output reg [7:0] wlength,
+    output reg [2:0] wsize,
 
     );
     localparam 
@@ -87,16 +101,85 @@ module main_FSM_d(
             end
         end
         MISS: begin
-            if(awready) begin
-                if(i_uncache || d_uncache) nxt = WAIT_WRITE;
+            if(awready_AXI) begin
+                if(uncache) nxt = WAIT_WRITE;
                 else nxt = REPLACE;
             end
             else nxt = MISS;
         end
         REPLACE: begin
-            if(arready) begin
-                
+            if(arready_AXI) nxt = REFILL;
+            else nxt = REPLACE;
+        end
+        REFILL: begin
+            if(ret_buf_fill_finish) nxt = WAIT_WRITE;
+            else nxt = REFILL;
+        end
+        WAIT_WRITE: begin
+            if(uncache) begin
+                if(wrt_AXI_finish || op == 1'b0) nxt = EXTRA_READY;
+                else nxt = WAIT_WRITE;
             end
+            else begin
+                if(wrt_AXI_finish || op == 1'b0 || !dirty_data_mbuf) nxt = EXTRA_READY;
+                else nxt = WAIT_WRITE;
+            end
+        end
+        EXTRA_READY: begin
+            nxt = IDLE;
+        end
+        default: nxt = IDLE;
+        endcase
+    end
+
+    always @(*) begin
+        rbuf_we = 0;
+        mbuf_we = 0;
+        d_ready = 0;
+        i_ready = 0;
+        rdata_from_mem = 0;
+        i_set = 0;
+        d_set = 0;
+        way_sel_en = 0;
+        way_visit = 0;
+        mem_en = 0;
+        mem_we = 0;
+        awvalid_AXI = 0;
+        case(crt)
+        IDLE: begin
+            if(i_avalid || d_avalid) begin
+                rbuf_we = 1;
+                if(d_avalid) begin
+                    d_ready = 1;
+                    d_set = 1;
+                end
+                else if(i_avalid) begin
+                    i_ready = 1;
+                    i_set = 1;
+                end
+            end
+        end
+        LOOKUP: begin
+            rdata_from_mem = 1;
+            mbuf_we = 1;
+            wbuf_AXI_we = 1;
+            way_sel_en = cache_hit;
+            way_visit = hit;
+            if(!uncache) begin
+                if(cache_hit) begin
+                    i_valid = !visit_mode;
+                    d_valid = visit_mode;
+                end
+            end
+            if(op == 1'b1) begin
+                mem_en = hit;
+                mem_we = mem_we_normal;
+                dirty_we = hit;
+                wdata_dirty = 1;
+            end
+        end
+        MISS: begin
+            awvalid_AXI = 1;
         end
     end
         
