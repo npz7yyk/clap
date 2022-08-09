@@ -1052,7 +1052,7 @@ module csr
     reg just_set_timer;
     always @(posedge clk)
         if(~rstn) just_set_timer<=0;
-        else if(software_query_en&&addr==`CSR_TCFG&&wen[`TCFG_INITVAL]!=0)
+        else if(software_query_en&&addr==`CSR_TCFG&&wen!=0)
             just_set_timer<=1;
         else just_set_timer<=0;
     

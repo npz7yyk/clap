@@ -76,6 +76,14 @@ module core_top(
         .clear_clock_gate(clear_clock_gate),
         .set_clock_gate(set_clock_gate)
     );
+    reg [7:0] intrpt_sync_buf0,intrpt_sync_buf1;
+    wire [7:0] intrpt_sync = intrpt_sync_buf1;
+    always @(posedge clk)
+        if(aresetn) intrpt_sync_buf0<=0;
+        else intrpt_sync_buf0 <= intrpt;
+    always @(posedge clk)
+        if(aresetn) intrpt_sync_buf1<=0;
+        else intrpt_sync_buf1 <= intrpt_sync_buf0;
     assign wid = awid;
     assign arlock[1] = 0;
     assign awlock[1] = 0;
@@ -392,7 +400,7 @@ module core_top(
         .pgdh_base_out           ( pgdh_out               ),
 
         //interrupt
-        .hardware_int            ( intrpt                 ),
+        .hardware_int            ( intrpt_sync            ),
         .has_interrupt_cpu       ( has_interrupt_cpu      ),
         .has_interrupt_idle      ( has_interrupt_idle     ),
 
@@ -1202,7 +1210,7 @@ module core_top(
         .s1_paddr       (ex_mem_paddr),
         .s1_asid        (asid_out),
         .s1_plv         (privilege),
-        .s1_mem_type    (use_tlb_s1_by_exe?0:{1'b0, ex_mem_op}),
+        .s1_mem_type    (use_tlb_s1_by_exe?2'b0:{1'b0, ex_mem_op}),
         .s1_en          (ex_mem_valid&&translate_mode[1] || use_tlb_s1_by_exe),
         .s1_exception   (dtlb_exp),
         .s1_mat         (dtlb_mat),
