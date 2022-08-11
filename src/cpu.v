@@ -79,10 +79,10 @@ module core_top(
     reg [7:0] intrpt_sync_buf0,intrpt_sync_buf1;
     wire [7:0] intrpt_sync = intrpt_sync_buf1;
     always @(posedge clk)
-        if(aresetn) intrpt_sync_buf0<=0;
+        if(~aresetn) intrpt_sync_buf0<=0;
         else intrpt_sync_buf0 <= intrpt;
     always @(posedge clk)
-        if(aresetn) intrpt_sync_buf1<=0;
+        if(~aresetn) intrpt_sync_buf1<=0;
         else intrpt_sync_buf1 <= intrpt_sync_buf0;
     assign wid = awid;
     assign arlock[1] = 0;
