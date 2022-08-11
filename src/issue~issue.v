@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// issue.v: 发射指令（不支持乱序，组合）
+// issue.v: 发射指令
 
 // Authors: 张子辰 <zichen350@gmail.com>
 
@@ -20,75 +20,160 @@
 `include "exception.vh"
 
 /* verilator lint_off DECLFILENAME */
+//暂时不允许br/ld/st指令重排
 module is_stage
-(
-    ////控制信号////
-    output [1:0] num_read,  //实际读取的指令条数 00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
+#(
+    LOG_PREGS = 6,
+    LOG_CHECKPOINTS = 2,
+    SIZE = 8,
+    INSTID_WIDHT = 5
+)(
+    input clk,rstn,
+    input flush,
+    input [LOG_CHECKPOINTS-1:0] flush_chekpoint,
+    output read,
     ////输入信号////
-    input [`WIDTH_UOP-1:0] uop0, uop1,
-    input [4:0] rd0,rj0,rk0,rd1,rj1,rk1,
-    input [31:0] imm0,imm1,
-    input [6:0] exception0,exception1,
-    input [31:0] badv0,badv1,
+    input inst0_valid,
+    input [INSTID_WIDHT-1:0] instid0,
+    input [LOG_PREGS-1:0] prd0,prj0,prk0,prr0,
+    input prd0_v,prj0_v,prk0_v,prr0_v,
+    input [LOG_CHECKPOINTS-1:0] checkpoint0,
+    input [`WIDTH_UOP-1:0] uop0,
+    input [31:0] imm0,
     input [31:0] pc0,pc_next0,
+    input [6:0] exception0,
+    input [31:0] badv0,
+    input pd_known0,
+    input inst1_valid,
+    input [INSTID_WIDHT-1:0] instid1,
+    input [LOG_PREGS-1:0] prd1,prj1,prk1,prr1,
+    input prd1_v,prj1_v,prk1_v,prr1_v,
+    input [LOG_CHECKPOINTS-1:0] checkpoint1,
+    input [`WIDTH_UOP-1:0] uop1,
+    input [31:0] imm1,
     input [31:0] pc1,pc_next1,
-    input unknown0,unknown1,
-    input has_interrupt,
+    input [6:0] exception1,
+    input [31:0] badv1,
+    input pd_known1,
     ////输出信号////
-    //execute unit #0
-    output reg eu0_en,
-    input eu0_ready,
+    //execute unit #0 //ALU+DIV+PRIV+BR
+    output eu0_en,
+    input eu0_ready,eu0_finish,//只有div和priv发出finish信号
+    input [LOG_PREGS-1:0] eu0_finish_prd,
+    output eu0_instid,
     output [`WIDTH_UOP-1:0] eu0_uop,
-    output [4:0] eu0_rd,eu0_rj,eu0_rk,
+    output [LOG_PREGS-1:0] eu0_prd,eu0_prj,eu0_prk,eu0_prr,
+    output eu0_prd_v,eu0_prj_v,eu0_prk_v,eu0_prr_v,
     output [31:0] eu0_imm,
     output [31:0] eu0_pc,eu0_pc_next,
+    output [LOG_CHECKPOINTS-1:0] eu0_checkpoint,
     output [6:0] eu0_exception,
     output [31:0] eu0_badv,
-    output eu0_unknown,
-    //execute unit #1 //ALU only
-    output reg eu1_en,
+    output eu0_pdknown,
+    //execute unit #1 //ALU+MUL
+    output eu1_en,
     input eu1_ready,
+    output eu1_instid,
     output [`WIDTH_UOP-1:0] eu1_uop,
-    output [4:0] eu1_rd,eu1_rj,eu1_rk,
+    output [LOG_PREGS-1:0] eu1_prd,eu1_prj,eu1_prk,eu1_prr,
+    output eu1_prd_v,eu1_prj_v,eu1_prk_v,eu1_prr_v,
     output [31:0] eu1_imm,
-    output [31:0] eu1_pc,eu1_pc_next,
-    output [6:0] eu1_exception,
-    output [31:0] eu1_badv,
-    output eu1_unknown
+    output [31:0] eu1_pc,
+    //execute unit #2 //MEM
+    output eu2_en,
+    input eu2_ready,eu2_finish,
+    input [LOG_PREGS-1:0] eu2_finish_prd,
+    output eu2_instid,
+    output [`WIDTH_UOP-1:0] eu2_uop,
+    output [LOG_PREGS-1:0] eu2_prd,eu2_prj,eu2_prk,eu2_prr,
+    output eu2_prd_v,eu2_prj_v,eu2_prk_v,eu2_prr_v,
+    output [31:0] eu2_imm,
+    output [31:0] eu2_pc
 );
-    //pc_next,pc,badv,exception,imm,rd,rk,rj,uop
-    reg [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] fifo0,fifo1;
-    reg [1:0] fifo_size;
-    
-    //FIXME: 无效的指令也可能带上中断
-    wire [6:0] exception0_Ustut79un = has_interrupt&&uop0[`UOP_NEMPTY]?`EXP_INT:exception0;
-    wire [6:0] exception1_Ustut79un = exception1;
+    //free physic registers
+    reg [2**LOG_PREGS-1:0] preg_free,preg_free_next;
+    reg [2**LOG_PREGS-1:0] eu1_free_delay;//乘法延迟一个周期出结果
 
-    wire [`UOP_TYPE] zero_TB2wQt8mmI = 0;
+    always @(posedge clk)
+        if(~rstn) eu1_free_delay <= 0;
+        else if(eu1_en&&eu1_uop[`ITYPE_IDX_MUL]&&eu1_prd_v)
+            eu1_free_delay <= 1<<eu1_prd;
+        else eu1_free_delay <= 0;
 
-    wire [`WIDTH_UOP-1:0] uop0_5nCt64uroR = {uop0[`UOP_EXCEPT_TYPE],exception0_Ustut79un?zero_TB2wQt8mmI:uop0[`UOP_TYPE]};
-    wire [`WIDTH_UOP-1:0] uop1_5nCt64uroR = {uop1[`UOP_EXCEPT_TYPE],exception1_Ustut79un?zero_TB2wQt8mmI:uop1[`UOP_TYPE]};
-
-    wire first_nop = !uop0[`UOP_NEMPTY] && exception0_Ustut79un==0;
-    wire second_nop = !uop1[`UOP_NEMPTY] && exception1_Ustut79un==0;
-    
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input0 = {unknown0,pc_next0,pc0,badv0,exception0_Ustut79un,imm0,rd0,rk0,rj0,uop0_5nCt64uroR};
-    wire [1+32+32+32+7+32+5+5+5+`WIDTH_UOP-1:0] input1 = {unknown1,pc_next1,pc1,badv1,exception1_Ustut79un,imm1,rd1,rk1,rj1,uop1_5nCt64uroR};
-    
-    assign {eu0_unknown,eu0_pc_next,eu0_pc,eu0_badv,eu0_exception,eu0_imm,eu0_rd,eu0_rk,eu0_rj,eu0_uop} = input0;
-    assign {eu1_unknown,eu1_pc_next,eu1_pc,eu1_badv,eu1_exception,eu1_imm,eu1_rd,eu1_rk,eu1_rj,eu1_uop} = input1;
-    
     always @* begin
-        eu0_en = 0;
-        eu1_en = 0;
-        if(eu0_ready&&!first_nop) begin
-            eu0_en = 1;
-
-            if(eu1_ready&&input1[`ITYPE_IDX_ALU]&&(eu0_rd==0||eu1_rj!=eu0_rd&&eu1_rk!=eu0_rd)) begin
-                eu1_en = 1;
-            end
-        end
+        preg_free_next = preg_free|eu1_free_delay;
+        if(eu0_en&&eu0_prd_v&&(eu0_uop[`ITYPE_IDX_ALU]||eu0_uop[`ITYPE_IDX_BR]))
+            preg_free_next[eu0_prd] = 1;
+        if(eu1_en&&eu1_prd_v&&eu1_uop[`ITYPE_IDX_ALU])
+            preg_free_next[eu1_prd] = 1;
+        if(eu0_finish)
+            preg_free_next[eu0_finish_prd] = 1;
+        if(eu2_finish)
+            preg_free_next[eu2_finish_prd] = 1;
     end
 
-    assign num_read = {eu1_en,eu0_en};
+    always @(posedge clk)
+        if(~rstn||flush) preg_free <= {2**LOG_PREGS{1'b1}};
+        else preg_free <= preg_free_next;
+
+    localparam DATA_WIDHT = 1+32+32+32+7+32+LOG_CHECKPOINTS+(LOG_PREGS+1)*4+`WIDTH_UOP+1+INSTID_WIDHT;
+    //packed input
+    wire [DATA_WIDHT-1:0] input0 = {pd_known0,pc_next0,pc0,badv0,exception0,imm0,checkpoint0,prd0_v,prk0_v,prj0_v,prr0_v,prd0,prk0,prj0,prr0,uop0,inst0_valid,instid0};
+    wire [DATA_WIDHT-1:0] input1 = {pd_known1,pc_next1,pc1,badv1,exception1,imm1,checkpoint1,prd1_v,prk1_v,prj1_v,prr1_v,prd1,prk1,prj1,prr1,uop1,inst1_valid,instid1};
+
+    //issue buffer
+    reg [DATA_WIDHT-1:0] fifo[0:SIZE-1];
+    wire fifo_data_ready[0:SIZE-1];
+    wire fifo_issue[0:SIZE-1];
+    wire fifo_valid[0:SIZE-1];
+    wire [LOG_PREGS-1:0] fifo_prd[0:SIZE-1],fifo_prj[0:SIZE-1],fifo_prk[0:SIZE-1],fifo_prr[0:SIZE-1];
+    wire fifo_prd_v[0:SIZE-1],fifo_prj_v[0:SIZE-1],fifo_prk_v[0:SIZE-1],fifo_prr_v[0:SIZE-1];
+    wire [LOG_CHECKPOINTS-1:0] fifo_checkpoint[0:SIZE-1];
+    wire [`WIDTH_UOP-1:0] fifo_uop[0:SIZE-1];
+    wire [31:0] fifo_imm[0:SIZE-1];
+    wire [31:0] fifo_pc[0:SIZE-1],fifo_pc_next[0:SIZE-1];
+    wire [6:0] fifo_exception[0:SIZE-1];
+    wire [31:0] fifo_badv[0:SIZE-1];
+    wire fifo_pdknown[0:SIZE-1];
+    wire fifo_instid[0:SIZE-1];
+
+    generate
+        for(genvar i=0;i<SIZE;i=i+1) begin: unpack_fifo
+            assign {
+                fifo_pdknown[i],
+                fifo_pc_next[i],
+                fifo_pc[i],
+                fifo_badv[i],
+                fifo_exception[i],
+                fifo_imm[i],
+                fifo_checkpoint[i],
+                fifo_prd_v[i],
+                fifo_prk_v[i],
+                fifo_prj_v[i],
+                fifo_prr_v[i],
+                fifo_prd[i],
+                fifo_prk[i],
+                fifo_prj[i],
+                fifo_prr[i],
+                fifo_uop[i],
+                fifo_valid[i],
+                fifo_instid[i]} = fifo[i];
+        end
+        for(genvar i=0;i<SIZE;i=i+1) begin: data_ready
+            assign fifo_data_ready[i] = (!fifo_prj_v[i]||preg_free[fifo_prj[i]])&&(!fifo_prk_v[i]||preg_free[fifo_prk[i]])
+                //确保br/ld/st指令不会被重排
+                &&fifo_checkpoint[i]==fifo_checkpoint[0];
+        end
+    endgenerate
+
+    wire [3:0] output_cnt = eu0_en+eu1_en+eu2_en;
+    reg [3:0] fifo_size;
+    assign read = fifo_size<=6;
+    always @(posedge clk)
+        if(~rstn) fifo_size <= 0;
+        else if(read) fifo_size <= fifo_size+2 - output_cnt;
+        else fifo_size <= fifo_size - output_cnt;
+    
+    always @(posedge clk)
+        if(~rstn) fifo[0]<=0;
 endmodule

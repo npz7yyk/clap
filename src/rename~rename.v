@@ -18,7 +18,15 @@
 `include "clap_config.vh"
 `include "uop.vh"
 
-//输出必须被立即取走，而不能被stall，所以issue-queue在剩余容量是2时
+//About Checkpoint
+//1. Build checkpoint for branch inst and ld/st inst.
+//2. Every instruction will get a checkpoint number, which is the same as the
+// checkpoint number of the first br/ld/st inst after this inst, so when branch
+// prediction failed or an exception occurs during ld/st, instrutions that have
+// the same checkpoint number as the br/ld/st instruction should be preserved, while
+// other instrucions should be flushed.
+
+//输出必须被立即取走，而不能被stall，所以ROB在剩余容量是2时
 //就发出stall信号
 module register_rename
 #(
@@ -28,23 +36,19 @@ module register_rename
     input clk,rstn,stall,
     input restore_en,
     input [LOG_CHECKPOINTS-1:0] restore_checkpoint,
-    output [1:0] num_read,
+    output [1:0] num_read, //实际读取的指令条数 00: 不读取, 01: 读取一条, 11: 读取两条, 10:无效
     //input signals
     input [4:0] lrd0,lrj0,lrk0,
-    input may_flush0,   //indication an instrucion may flush pipeline, eg. beq
     input [4:0] lrd1,lrj1,lrk1,
-    input may_flush1,
     //output signals
     output reg inst0_valid,
     output reg [LOG_PREGS-1:0] prd0,prj0,prk0,prr0, //rr: register that will be released 
     output reg prd0_v,prj0_v,prk0_v,prr0_v,         //    after the retirement of the instruction
     output reg [LOG_CHECKPOINTS-1:0] checkpoint0,   //v:  true if the instruction used this field
-    output reg checkpoint0_v,
     output reg inst1_valid,
     output reg [LOG_PREGS-1:0] prd1,prj1,prk1,prr1, //
     output reg prd1_v,prj1_v,prk1_v,prr1_v,         //
     output reg [LOG_CHECKPOINTS-1:0] checkpoint1,   //
-    output reg checkpoint1_v,
     //pass signals
     input [`WIDTH_UOP-1:0] uop0_in       , uop1_in       ,
     input [31:0]           imm0_in       , imm1_in       ,
@@ -96,6 +100,15 @@ module register_rename
             checkpoint_index <= checkpoint_index+1;
         end else begin
             n_free_checkpoints <= n_free_checkpoints_after_retire;
+        end
+    
+    always @(posedge clk)
+        if(~rstn) begin
+            checkpoint0 <= 0;
+            checkpoint1 <= 0;
+        end else begin
+            checkpoint0 <= checkpoint_index;
+            checkpoint1 <= checkpoint_index;
         end
     
     reg [LOG_PREGS*32-1:0] logic2physic_next;
@@ -185,9 +198,11 @@ module register_rename
         prd0 <= logic2physic_next[lrd0*LOG_PREGS +: LOG_PREGS];
         prj0 <= logic2physic[lrj0*LOG_PREGS +: LOG_PREGS];
         prk0 <= logic2physic[lrk0*LOG_PREGS +: LOG_PREGS];
+        prr0 <= logic2physic[lrd0*LOG_PREGS +: LOG_PREGS];
         prj1 <= lrj1==lrd0?logic2physic_next[lrd0*LOG_PREGS +: LOG_PREGS]:logic2physic[lrj1*LOG_PREGS +: LOG_PREGS];
         prk1 <= lrk1==lrd0?logic2physic_next[lrd0*LOG_PREGS +: LOG_PREGS]:logic2physic[lrk1*LOG_PREGS +: LOG_PREGS];
         prd1 <= logic2physic_next[lrd1*LOG_PREGS +: LOG_PREGS];
+        prr1 <= logic2physic[lrd1*LOG_PREGS +: LOG_PREGS];
     end
 
     //valid signals
