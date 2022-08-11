@@ -1415,8 +1415,8 @@ module core_top(
         .wen(cmt_wen0),
         .wdest({3'd0,cmt_wdest0}),
         .wdata({32'd0,cmt_wdata0}),
-        .csr_rstat(0),
-        .csr_data(0)
+        .csr_rstat(cmt_inst0[31:24]=='b00000100&&cmt_inst0[23:10]==5),
+        .csr_data(reg_diff[inst0[4:0]])
     );
 
     DifftestInstrCommit DifftestInstrCommit1
