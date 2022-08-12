@@ -319,14 +319,19 @@ module dcache(
         //.tlb_exception      (tlb_exception)
     );
     
-    register #(41) output_buffer(
-        .clk        (clk),
-        .rstn       (rstn),
-        .we         (1'b1),
-        .din        ({r_data_CPU_temp, data_valid_temp, (data_valid_temp || cacop_en_rbuf) ? 
-                    (exp_sel ? exception_mbuf : exception_temp) : 7'b0, cache_ready_temp}),
-        .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
-    );
+    // register #(41) output_buffer(
+    //     .clk        (clk),
+    //     .rstn       (rstn),
+    //     .we         (1'b1),
+    //     .din        ({r_data_CPU_temp, data_valid_temp, (data_valid_temp || cacop_en_rbuf) ? 
+    //                 (exp_sel ? exception_mbuf : exception_temp) : 7'b0, cache_ready_temp}),
+    //     .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
+    // );
+    assign r_data_CPU = r_data_CPU_temp;
+    assign data_valid = data_valid_temp;
+    assign exception_obuf = (data_valid_temp || cacop_en_rbuf) ? (exp_sel ? exception_mbuf : exception_temp) : 7'b0;
+    assign cache_ready = cache_ready_temp;
+    
     reg [6:0] exception_old;
     wire [6:0] exception_new;
     assign exception_new = exception_obuf;
