@@ -1,5 +1,8 @@
 # Timeline
 
+## 2022-08-12
+Succeed in running Linux on Loongson development board.
+
 ## 2022-08-03
 
 Succeed in running Linux via simulation.
