@@ -20,7 +20,7 @@ module exe_privliedged(
     output reg en_out,
     output reg [31:0] pc_target,
     output reg flush,
-    output reg stall_by_priv,
+    output stall_by_priv,
     output reg [31:0] result,
     output reg [4:0] addr_out,
     output reg [6:0] exp_out,
@@ -137,6 +137,42 @@ module exe_privliedged(
         S_DONE_L1D: badv_out = cacop_dbadv_buf;
         default : badv_out = 0;
         endcase
+    
+    reg en_buf;
+    reg [31:0] pc_next_buf;
+    reg is_csr_buf,is_tlb_buf,is_cache_buf,is_idle_buf,is_ertn_buf,is_bar_buf;
+    reg [31:0] inst_buf;
+    reg [31:0] sr0_buf;   //data from rj
+    reg [31:0] sr1_buf;   //data from rk
+    reg [4:0] addr_buf;
+    reg [31:0] imm_buf;
+    reg stall_by_priv_internal;
+    assign stall_by_priv = stall_by_priv_internal || en_buf;
+
+    always @(posedge clk)
+        if(~rstn||flush_by_writeback) en_buf<=0;
+        else en_buf<=en_in;
+    
+    always @(posedge clk)
+        pc_next_buf<=pc_next;
+    
+    always @(posedge clk)
+        {is_csr_buf,is_tlb_buf,is_cache_buf,is_idle_buf,is_ertn_buf,is_bar_buf} <= {is_csr,is_tlb,is_cache,is_idle,is_ertn,is_bar};
+    
+    always @(posedge clk)
+        inst_buf<=inst;
+    
+    always @(posedge clk)
+        sr0_buf<=sr0;
+    
+    always @(posedge clk)
+        sr1_buf<=sr1;
+    
+    always @(posedge clk)
+        addr_buf<=addr_in;
+    
+    always @(posedge clk)
+        imm_buf<=imm;
 
     reg [1:0] which_cache;
     reg [0:0] inst_16;
@@ -154,13 +190,13 @@ module exe_privliedged(
         case(state)
         S_INIT: begin
             next_state = 0;
-            next_state[$clog2(S_INIT)] = !(en_in&&(is_csr||is_cache||is_tlb||is_idle||is_ertn||is_bar));
-            next_state[$clog2(S_CSR)] = en_in&&is_csr;
-            next_state[$clog2(S_CACOP)] = en_in&&is_cache;
-            next_state[$clog2(S_TLB)] = en_in&&is_tlb;
-            next_state[$clog2(S_IDLE)] = en_in&&is_idle;
-            next_state[$clog2(S_ERTN)] = en_in&&is_ertn;
-            next_state[$clog2(S_BAR)] = en_in&&is_bar;
+            next_state[$clog2(S_INIT)] = !(en_buf&&(is_csr_buf||is_cache_buf||is_tlb_buf||is_idle_buf||is_ertn_buf||is_bar_buf));
+            next_state[$clog2(S_CSR)] = en_buf&&is_csr_buf;
+            next_state[$clog2(S_CACOP)] = en_buf&&is_cache_buf;
+            next_state[$clog2(S_TLB)] = en_buf&&is_tlb_buf;
+            next_state[$clog2(S_IDLE)] = en_buf&&is_idle_buf;
+            next_state[$clog2(S_ERTN)] = en_buf&&is_ertn_buf;
+            next_state[$clog2(S_BAR)] = en_buf&&is_bar_buf;
         end
         S_CSR: next_state = S_DONE_CSR;
         S_ERTN: next_state = S_DONE_ERTN;
@@ -209,7 +245,7 @@ module exe_privliedged(
             en_out<=0;
             pc_target<=0;
             flush<=0;
-            stall_by_priv<=0;
+            stall_by_priv_internal<=0;
             result<=0;
             addr_out<=0;
             csr_software_query_en<=0;
@@ -240,29 +276,29 @@ module exe_privliedged(
                 result <=0;
             end
             S_CSR: begin
-                pc_target<=pc_next;
-                stall_by_priv<=1;
-                addr_out<=addr_in;
+                pc_target<=pc_next_buf;
+                stall_by_priv_internal<=1;
+                addr_out<=addr_buf;
                 csr_software_query_en<=1;
-                csr_addr<=imm[13:0];
-                csr_wen<=inst[9:5]==1 ? 32'hFFFFFFFF:sr0;
-                csr_wdata<=sr1;
+                csr_addr<=imm_buf[13:0];
+                csr_wen<=inst_buf[9:5]==1 ? 32'hFFFFFFFF:sr0_buf;
+                csr_wdata<=sr1_buf;
             end
             S_DONE_CSR: begin
                 en_out<=1;
                 flush<=1;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 result<=csr_rdata;
                 csr_software_query_en<=0;
             end
             S_TLB: begin
-                stall_by_priv<=1;
-                pc_target<=pc_next;
-                inst_16 <= inst[16];
-                inst_11_10 <= inst[11:10];
-                inst_4_0 <= inst[4:0];
-                clear_asid <= sr0[9:0];
-                clear_vaddr <= sr1;
+                stall_by_priv_internal<=1;
+                pc_target<=pc_next_buf;
+                inst_16 <= inst_buf[16];
+                inst_11_10 <= inst_buf[11:10];
+                inst_4_0 <= inst_buf[4:0];
+                clear_asid <= sr0_buf[9:0];
+                clear_vaddr <= sr1_buf;
             end
             S_TLB_SRCH: begin
                 check_mode <= 1;
@@ -288,7 +324,7 @@ module exe_privliedged(
             S_ERTN: begin
                 pc_target <= era;
                 restore_state <= 1;
-                stall_by_priv<=1;
+                stall_by_priv_internal<=1;
                 llbit_clear_by_eret<=1;
             end
             S_DONE_ERTN: begin
@@ -296,7 +332,7 @@ module exe_privliedged(
                 en_out<=1;
                 flush<=1;
                 llbit_clear_by_eret<=0;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
             end
             S_DONE_TLB: begin
                 tlb_we <= 0;
@@ -304,17 +340,17 @@ module exe_privliedged(
                 tlb_index_we <= 0;
                 tlb_other_we <= 0;
                 en_out<=1;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 clear_mem <= 0;
             end
             S_CACOP: begin
-                which_cache <= inst[1:0];
-                stall_by_priv<=1;
-                pc_target<=pc_next;
-                cacop_code <= inst[4:3];
-                sr0_save <= sr0;
-                imm_save <= imm;
+                which_cache <= inst_buf[1:0];
+                stall_by_priv_internal<=1;
+                pc_target<=pc_next_buf;
+                cacop_code <= inst_buf[4:3];
+                sr0_save <= sr0_buf;
+                imm_save <= imm_buf;
             end
             S_L1I_REQ: begin
                 l1i_en <= 1;
@@ -326,7 +362,7 @@ module exe_privliedged(
             end
             S_DONE_L1I: begin
                 l1i_en <= 0;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 use_tlb_s0 <= 0;
                 en_out<=1;
@@ -341,7 +377,7 @@ module exe_privliedged(
             end
             S_DONE_L1D: begin
                 l1d_en <= 0;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 use_tlb_s1 <= 0;
                 en_out<=1;
@@ -355,13 +391,13 @@ module exe_privliedged(
             end
             S_DONE_L2: begin
                 l2_en <= 0;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 en_out<=1;
             end
             S_IDLE: begin
-                stall_by_priv<=1;
-                pc_target<=pc_next;
+                stall_by_priv_internal<=1;
+                pc_target<=pc_next_buf;
                 clear_clock_gate_require <= 1;
             end
             S_IDLE_WAIT1: begin
@@ -381,16 +417,16 @@ module exe_privliedged(
             S_DONE_IDLE: begin
                 clear_clock_gate_require <= 0;
                 clear_clock_gate <= 0;
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 en_out<=1;
             end
             S_BAR: begin
-                stall_by_priv<=1;
-                pc_target<=pc_next;
+                stall_by_priv_internal<=1;
+                pc_target<=pc_next_buf;
             end
             S_DONE_BAR: begin
-                stall_by_priv<=0;
+                stall_by_priv_internal<=0;
                 flush <= 1;
                 en_out<=1;
             end
