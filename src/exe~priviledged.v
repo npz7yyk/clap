@@ -112,6 +112,32 @@ module exe_privliedged(
         S_DONE_BAR  = 33'b100000000000000000000000000000000;
     reg [32:0] state,next_state;
 
+    reg [6:0] cacop_dexp_buf,cacop_iexp_buf;
+    reg [31:0] cacop_dbadv_buf,cacop_ibadv_buf;
+
+    always @(posedge clk)
+        cacop_dexp_buf <= cacop_dexp_in;
+    always @(posedge clk)
+        cacop_iexp_buf <= cacop_iexp_in;
+    always @(posedge clk)
+        cacop_dbadv_buf <= cacop_dbadv_in;
+    always @(posedge clk)
+        cacop_ibadv_buf <= cacop_ibadv_in;
+
+    always @* 
+        case(state)
+        S_DONE_L1I: exp_out = cacop_iexp_buf;
+        S_DONE_L1D: exp_out = cacop_dexp_buf;
+        default : exp_out = 0;
+        endcase
+    
+    always @* 
+        case(state)
+        S_DONE_L1I: badv_out = cacop_ibadv_buf;
+        S_DONE_L1D: badv_out = cacop_dbadv_buf;
+        default : badv_out = 0;
+        endcase
+
     reg [1:0] which_cache;
     reg [0:0] inst_16;
     reg [1:0] inst_11_10;
@@ -203,8 +229,6 @@ module exe_privliedged(
             sr0_save <= 0;
             imm_save <= 0;
             {use_tlb_s0,use_tlb_s1}<= 0;
-            exp_out<=0;
-            badv_out<=0;
             clear_clock_gate_require<=0;
             clear_clock_gate<=0;
             llbit_clear_by_eret<=0;
@@ -214,8 +238,6 @@ module exe_privliedged(
                 flush<=0;
                 addr_out<=0;
                 result <=0;
-                exp_out<=0;
-                badv_out<=0;
             end
             S_CSR: begin
                 pc_target<=pc_next;
@@ -308,8 +330,6 @@ module exe_privliedged(
                 flush <= 1;
                 use_tlb_s0 <= 0;
                 en_out<=1;
-                exp_out<=cacop_iexp_in;
-                badv_out<=cacop_ibadv_in;
             end
             S_L1D_REQ: begin
                 l1d_en <= 1;
@@ -325,8 +345,6 @@ module exe_privliedged(
                 flush <= 1;
                 use_tlb_s1 <= 0;
                 en_out<=1;
-                exp_out<=cacop_dexp_in;
-                badv_out<=cacop_dbadv_in;
             end
             S_L2_REQ: begin
                 l2_en <= 1;
