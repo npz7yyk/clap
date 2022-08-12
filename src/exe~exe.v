@@ -359,7 +359,7 @@ always @(posedge clk) begin
     `endif
 end
 
-assign stall4           = exp_out!=0&&eu0_en_1_internal||exp_exe1!=0&&eu0_en_0||mem_exp_out!=0;
+assign stall4           = exp_out!=0&&eu0_en_1_internal||exp_exe1!=0&&eu0_en_0;
 assign stall3           = stall_by_div||stall_by_cache||stall_by_priv;
 
 forward  u_forward (

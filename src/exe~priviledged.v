@@ -151,7 +151,7 @@ module exe_privliedged(
 
     always @(posedge clk)
         if(~rstn||flush_by_writeback) en_buf<=0;
-        else en_buf<=en_in;
+        else en_buf<=en_in&&cacop_dexp_in==0;
     
     always @(posedge clk)
         pc_next_buf<=pc_next;
