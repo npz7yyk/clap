@@ -32,6 +32,9 @@ module predict_unit #(
 
     input wire [ADDR_WIDTH - 1:0] pc_now,
 
+    input wire                    push,
+    input wire [ADDR_WIDTH - 1:0] addr,
+
     input wire                    exist1,
     input wire                    exist2,
     input wire [ADDR_WIDTH - 1:0] info1,
@@ -45,9 +48,9 @@ module predict_unit #(
     input wire                    ex_vld,
     input wire                    ex_wrong,
 
-    output wire [ADDR_WIDTH - 1:0] pc_new,
-    output wire                    branch,
-    output wire                    reason
+    output reg [ADDR_WIDTH - 1:0] pc_new,
+    output wire                   branch,
+    output wire                   reason
 );
     // start of guess log part
     localparam GUESS_DEPTH = HASH_DEPTH;
@@ -104,8 +107,23 @@ module predict_unit #(
     end
     // end of guess log part
 
-    wire [HASH_WIDTH - 1:0] key = pc_now[
-        HASH_WIDTH + HASH_DEPTH + 2:HASH_DEPTH + 3];//%Warning-UNUSED: /home/songxiao/Desktop/chiplab/IP/myCPU/branch~predict_unit.v:113:29: Signal is not used: 'key'
+    wire useReg = (reason ? info2[1:0] : info1[1:0]) == 2'b11;
+    wire [0:0] empty;
+    wire [ADDR_WIDTH - 1:0] pc_stack;
+    stack return_stack (
+        .clk        (clk),
+        .rstn       (rstn),
+
+        .push       (push),
+        .addr       (addr),
+        .pop        (en & useReg),
+
+        .inGuessIn  (en & (inGuess1_new | inGuess2_new)),
+        .clear      (ex_vld & ex_vld),
+
+        .empty      (empty),
+        .pred       (pc_stack)
+    );
 
     // Whether a branch is needed decided by guess state or log
     reg branch_past1, branch_past2;
@@ -163,8 +181,8 @@ module predict_unit #(
         end else branch2 = 1'b0;
     end
 
-    assign inGuess1_new = pcAtHalf ? 1'b0 : exist1 & past_vld1 & info1[0];
-    assign inGuess2_new = branch1 ? 1'b0 : exist2 & past_vld2 & info2[0];
+    assign inGuess1_new = pcAtHalf ? 1'b0 : exist1 & past_vld1 & info1[1:0] == 2'b01;
+    assign inGuess2_new = branch1 ? 1'b0 : exist2 & past_vld2 & info2[1:0] == 2'b01;
     assign branch = pcAtHalf ? branch2 : branch1 | branch2;
     assign reason = pcAtHalf ? 1'b1 : ~branch1 & branch2;
 
@@ -184,7 +202,13 @@ module predict_unit #(
     wire [ADDR_WIDTH - 3:0] pc_choose = reason ?
         info2[ADDR_WIDTH - 1:2] : info1[ADDR_WIDTH - 1:2];
 
-    assign pc_new = branch ?
-        {pc_choose, 2'b00} : {pc_now[ADDR_WIDTH - 1:3], 3'b0} + 8;
+    wire [ADDR_WIDTH - 1:0] pc_norm = {pc_now[ADDR_WIDTH - 1:3], 3'b0} + 8;
+
+    always @(*) begin
+        if (useReg)
+            if (empty) pc_new = pc_norm;
+            else pc_new = pc_stack;
+        else pc_new = branch ? {pc_choose, 2'b00} : pc_norm;
+    end
 
 endmodule

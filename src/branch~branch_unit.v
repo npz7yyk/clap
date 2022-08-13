@@ -50,6 +50,9 @@ module branch_unit #(
     input wire                    exKnown,
     // verilator lint_on UNUSED
 
+    input wire                    push,
+    input wire [ADDR_WIDTH - 1:0] pc_stack,
+
     output wire [ADDR_WIDTH - 1:0] pdPC,            // pc predicted
     output wire                    pdBranch,        // whether a branch is predicted
     output wire                    pdReason,        // if branch, which inst causes this
@@ -157,6 +160,9 @@ module branch_unit #(
         .en         (ifVld),
 
         .pc_now     (ifPC),
+
+        .push       (push),
+        .pc_stack   (pc_stack),
 
         .exist1     (ifFactExist1),
         .exist2     (ifFactExist2),

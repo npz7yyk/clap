@@ -58,8 +58,8 @@ module data #(
 );
     wire [0:0] idUsefulLower;
     wire [0:0] idUsefulUpper;
-    assign idUsefulLower = ^idTypeLower;
-    assign idUsefulUpper = ^idTypeUpper;
+    assign idUsefulLower = |idTypeLower;
+    assign idUsefulUpper = |idTypeUpper;
 
     wire [HASH_DEPTH - 1:0] idWaddr = idPC[HASH_DEPTH + 2:3];
     wire [HASH_DEPTH - 1:0] exRaddr = exPC[HASH_DEPTH + 2:3];
