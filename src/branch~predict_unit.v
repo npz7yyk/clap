@@ -119,7 +119,7 @@ module predict_unit #(
         .pop        (en & useReg),
 
         .inGuessIn  (en & (inGuess1_new | inGuess2_new)),
-        .clear      (ex_vld & ex_vld),
+        .clear      (ex_vld & ex_wrong),
 
         .empty      (empty),
         .pred       (pc_stack)
