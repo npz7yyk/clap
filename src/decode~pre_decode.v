@@ -27,7 +27,7 @@ module pre_decoder
     output reg [31:0] pc_offset,
     output should_push
 );
-    assign should_push = inst[31:27]=='b010101;
+    assign should_push = inst[31:26]=='b010101;
     assign category[1]=inst[31:27]=='b01010||inst=={6'b010011,16'd0,5'd1,5'd0};
     assign category[0]=inst[31:30]=='b01&&(
         inst[29:26]=='b0110 || inst[29:26]=='b1011 ||

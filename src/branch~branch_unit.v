@@ -22,8 +22,8 @@
 /* verilator lint_off DECLFILENAME */
 module branch_unit #(
     parameter ADDR_WIDTH = 32,
-              HASH_DEPTH = 5,
-              HASH_WIDTH = 24
+              HASH_DEPTH = 6,
+              HASH_WIDTH = ADDR_WIDTH-3-HASH_DEPTH
 )(
     input wire                    clk,
     input wire                    rstn,
