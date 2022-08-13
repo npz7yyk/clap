@@ -37,7 +37,7 @@ module stack #(
     output wire [ADDR_WIDTH - 1:0] pred
 );
     reg [ADDR_WIDTH - 1:0] mem [(1 << QUEUE_ADDR) - 1:0];
-    reg [QUEUE_ADDR:0] count; 
+    reg [QUEUE_ADDR:0] count, saveCount;
     reg [QUEUE_ADDR - 1:0] ptr, savePtr;
     reg inGuess;
 
@@ -47,16 +47,19 @@ module stack #(
     always @(posedge clk) begin
         if (!rstn) begin
             count <= 0;
+            saveCount <= 0;
             ptr <= 0;
             savePtr <= 0;
             inGuess <= 0;
         end
         else if (clear) begin
+            count <= saveCount;
             ptr <= savePtr;
             inGuess <= 0;
         end
         else begin
             if (inGuessIn & !inGuess) begin
+                saveCount <= count;
                 savePtr <= ptr;
                 inGuess <= 1;
             end
