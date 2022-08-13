@@ -544,6 +544,8 @@ module core_top(
     wire pred_known0,pred_known1;
     wire [31:0] pred_record0,pred_record1;
     wire pd_branch,pd_reason;
+    wire pd_push;
+    wire [31:0] pd_push_addr;
     // reg id_feedback_valid_reg;
     // reg [31:0] id_pc_for_predict_reg;
     // reg [31:0] id_jmpdist0_reg,id_jmpdist1_reg;
@@ -589,7 +591,10 @@ module core_top(
         .pdKnown1(pred_known0),.pdKnown2(pred_known1),
         .pdAddrType1(pred_record0),.pdAddrType2(pred_record1),
         .pdBranch(pd_branch),
-        .pdReason(pd_reason)
+        .pdReason(pd_reason),
+
+        .push(pd_push),
+        .pc_stack(pd_push_addr)
     );
 
     wire [1:0] ex_mem_cacop_code;
@@ -753,6 +758,7 @@ module core_top(
         .pc_for_predict(id_pc_for_predict),
         .jmpdist0(id_jmpdist0),.jmpdist1(id_jmpdist1),
         .category0(id_category0),.category1(id_category1),
+        .ras_push(pd_push),.ras_return_addr(pd_push_addr),
 
         .probably_right_destination(pc_decoder),
         .set_pc(set_pc_by_decoder)

@@ -46,9 +46,7 @@ module branch_unit #(
     input wire              [1:0] exType,           // instruction type
     input wire                    exBranch,         // whether this instruction branches
     input wire                    exWrong,          // ex pc wrongly predicted
-    /* verilator lint_off UNUSED */ // (left for future optimization)
     input wire                    exKnown,
-    // verilator lint_on UNUSED
 
     input wire                    push,
     input wire [ADDR_WIDTH - 1:0] pc_stack,
@@ -162,7 +160,7 @@ module branch_unit #(
         .pc_now     (ifPC),
 
         .push       (push),
-        .pc_stack   (pc_stack),
+        .addr   (pc_stack),
 
         .exist1     (ifFactExist1),
         .exist2     (ifFactExist2),

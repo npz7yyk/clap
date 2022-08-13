@@ -69,7 +69,9 @@ module id_stage
     output feedback_valid,
     output [31:0] pc_for_predict,
     output [31:0] jmpdist0,jmpdist1,//跳转目标
-    output [1:0] category0,category1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr
+    output [1:0] category0,category1,//指令种类 00: 非跳转, 01: 条件跳转, 10: b/bl, 11: jilr r0,r1,0
+    output ras_push,    // return address stack push
+    output [31:0] ras_return_addr,
     //给PC
     output reg [31:0] probably_right_destination,
     output wire set_pc
@@ -77,10 +79,14 @@ module id_stage
     wire valid0_before_predecode = input_valid && ~pc_in[2];      //输入的指令0有效
     wire valid1_before_predecode = input_valid && ~first_inst_jmp;  //输入的指令1有效
 
+    /////////////////////////////////////////////
     //预译码
     wire [31:0] pc_offset0,pc_offset1;
-    pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0));
-    pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1));
+    wire ras_push0,ras_push1;
+    pre_decoder pre_decoder0 (.inst(inst0),.category(category0),.pc_offset(pc_offset0),.should_push(ras_push0));
+    pre_decoder pre_decoder1 (.inst(inst1),.category(category1),.pc_offset(pc_offset1),.should_push(ras_push1));
+    assign ras_push = input_valid&&( valid0_before_predecode&&ras_push0 || !first_inst_jmp&&ras_push1);
+    assign ras_return_addr = valid0_before_predecode&&ras_push0? pc_in+4:pc_in+8;
     assign pc_for_predict = pc_in;
     wire [31:0] pc_inst0_sGec6sQ = {pc_in[31:3],3'd0};
     wire [31:0] pc_inst1_sGec6sQ = {pc_in[31:3],3'd4};
@@ -122,6 +128,8 @@ module id_stage
             set_pc_due_to_inst1 = 1;
         end
     end
+    //预译码结束
+    /////////////////////////////////////////
 
     wire valid0 = valid0_before_predecode;
     wire valid1 = valid1_before_predecode & ~set_pc_due_to_inst0;
