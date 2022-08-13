@@ -229,7 +229,7 @@ module main_FSM_d(
                 way_sel_en      = 1;
                 if(op == READ) begin
                     if(is_atom_rbuf) llbit_set = 1;
-                    if(cache_hit) begin
+                    if(cache_hit && !uncache) begin
                         data_valid = 1;
                         cacop_ready = 1;
                         cache_ready = 1;
@@ -244,7 +244,7 @@ module main_FSM_d(
                         dirty_we        = hit;
                         w_dirty_data    = 1;
                     end
-                    if(cache_hit) begin
+                    if(cache_hit && !uncache) begin
                         data_valid = 1;
                         cacop_ready = 1;
                         cache_ready = 1;
