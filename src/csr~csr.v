@@ -284,6 +284,8 @@ module csr
     //end control state registers defination
     ///////////////////////////////////////
 
+    wire [1:0] pg_da_next = {wen[4]?wdata[4]:crmd_pg,wen[3]?wdata[3]:crmd_da};
+
     ///////////////////////////////////////
     //CSR update
     //CRMD
@@ -313,12 +315,15 @@ module csr
             if(wen[0]) crmd_plv[0]  <= wdata[0];
             if(wen[1]) crmd_plv[1]  <= wdata[1];
             if(wen[2]) crmd_ie[2]   <= wdata[2];
-            if(wen[3]) crmd_da[3]   <= wdata[3];
-            if(wen[4]) crmd_pg[4]   <= wdata[4];
             if(wen[5]) crmd_datf[5] <= wdata[5];
             if(wen[6]) crmd_datf[6] <= wdata[6];
             if(wen[7]) crmd_datm[7] <= wdata[7];
             if(wen[8]) crmd_datm[8] <= wdata[8];
+            //只在{pg,da}处在合法状态时更新
+            if(wen[3]||wen[4]) begin
+                if(pg_da_next[0]^pg_da_next[1])
+                    {crmd_pg,crmd_da} <= pg_da_next;
+            end
         end
     
     //PRMD
@@ -1165,7 +1170,7 @@ module csr
     assign tlbrentry = csr_tlbrentry;
     assign has_interrupt_cpu  = crmd_ie&&(ecfg_lie&csr_estat[`ESTAT_IS])!=0;
     assign has_interrupt_idle = csr_estat[`ESTAT_IS]!=0;
-    assign translate_mode = {crmd_pg,crmd_da}==2'b10 ? 2'b10:2'b01;
+    assign translate_mode = {crmd_pg,crmd_da};
     assign direct_i_mat = crmd_datf;
     assign direct_d_mat = crmd_datm;
     assign tlb_index_out = tlbidx_index[TLBIDX_WIDTH-1:0];
