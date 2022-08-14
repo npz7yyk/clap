@@ -23,7 +23,6 @@ module main_FSM_d(
     input [6:0] exception,
     input is_atom_rbuf,
     input llbit_rbuf,
-    input dirty_data_ibar,
 
     output reg [3:0] way_visit,
     output reg mbuf_we,
@@ -227,14 +226,14 @@ module main_FSM_d(
                 wbuf_AXI_we     = 1;
                 way_visit       = hit;
                 way_sel_en      = 1;
+                if(cache_hit && !uncache) begin
+                    data_valid = 1;
+                    cacop_ready = 1;
+                    cache_ready = 1;
+                    if(valid || cacop_en) rbuf_we = 1;
+                end
                 if(op == READ) begin
                     if(is_atom_rbuf) llbit_set = 1;
-                    if(cache_hit && !uncache) begin
-                        data_valid = 1;
-                        cacop_ready = 1;
-                        cache_ready = 1;
-                        if(valid || cacop_en) rbuf_we = 1;
-                    end
                 end
                 else begin
                     if(is_atom_rbuf) llbit_clear = 1;
@@ -244,52 +243,7 @@ module main_FSM_d(
                         dirty_we        = hit;
                         w_dirty_data    = 1;
                     end
-                    if(cache_hit && !uncache) begin
-                        data_valid = 1;
-                        cacop_ready = 1;
-                        cache_ready = 1;
-                        if(valid || cacop_en) rbuf_we = 1;
-                    end
                 end
-
-            //     if(op == READ && is_atom_rbuf) begin
-            //         llbit_set = 1;
-            //     end
-            //     if(op == WRITE && is_atom_rbuf) begin
-            //         llbit_clear = 1;
-            //     end
-            //     if(uncache)begin
-            //         mbuf_we     = 1;
-            //         wbuf_AXI_we = 1;
-            //         if(cache_hit) begin
-            //             way_visit   = hit;
-            //             way_sel_en  = 1;
-            //             if(op == WRITE && !(is_atom_rbuf && !llbit_rbuf))begin
-            //                 mem_en          = hit;
-            //                 mem_we          = mem_we_normal;
-            //                 dirty_we        = hit;
-            //                 w_dirty_data    = 1;
-            //             end
-            //         end
-            //     end
-            //     else if(!cache_hit) begin
-            //         mbuf_we     = 1;
-            //         wbuf_AXI_we = 1;
-            //     end
-            //     else begin
-            //         data_valid  = 1;
-            //         if(valid ||cacop_en) rbuf_we     = 1;
-            //         way_visit   = hit;
-            //         way_sel_en  = 1;
-            //         cache_ready = 1;
-            //         cacop_ready = 1;
-            //         if(op == WRITE && !(is_atom_rbuf && !llbit_rbuf))begin
-            //             mem_en          = hit;
-            //             mem_we          = mem_we_normal;
-            //             dirty_we        = hit;
-            //             w_dirty_data    = 1;
-            //         end
-            //     end
             end
             else data_valid = 1;
         end

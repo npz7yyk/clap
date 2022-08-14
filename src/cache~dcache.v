@@ -312,24 +312,12 @@ module dcache(
         .cacop_ready        (cacop_ready),
         .llbit_set          (llbit_set),
         .llbit_clear        (llbit_clear),
-        .exp_sel            (exp_sel),
-        
-        .dirty_data_ibar    (0)
-
-        //.tlb_exception      (tlb_exception)
+        .exp_sel            (exp_sel)
     );
     
-    // register #(41) output_buffer(
-    //     .clk        (clk),
-    //     .rstn       (rstn),
-    //     .we         (1'b1),
-    //     .din        ({r_data_CPU_temp, data_valid_temp, (data_valid_temp || cacop_en_rbuf) ? 
-    //                 (exp_sel ? exception_mbuf : exception_temp) : 7'b0, cache_ready_temp}),
-    //     .dout       ({r_data_CPU, data_valid, exception_obuf, cache_ready})
-    // );
     assign r_data_CPU = r_data_CPU_temp;
     assign data_valid = data_valid_temp;
-    assign exception_obuf = (data_valid_temp || cacop_en_rbuf) ? (exp_sel ? exception_mbuf : exception_temp) : 7'b0;
+    assign exception_obuf = {7{(data_valid_temp || cacop_en_rbuf)}} & (exp_sel ? exception_mbuf : exception_temp);
     assign cache_ready = cache_ready_temp;
     
     reg [6:0] exception_old;

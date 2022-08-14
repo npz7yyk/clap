@@ -68,10 +68,6 @@ module TLB_out(
 
     always @(*) begin
         case(ad_mode)
-        DIRECT: begin
-            s0_mat = 0;
-            s1_mat = 0;
-        end
         MAP: begin
             if(s0_dmw_hit) begin
                 s0_mat = s0_dmw_mat;

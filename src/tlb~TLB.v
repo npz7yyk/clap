@@ -92,10 +92,6 @@ module TLB#(
     input  [               1:0] dmw1_mat,
     input  [               2:0] dmw1_vseg,
     input  [               2:0] dmw1_pseg
-    //excp
-    // input                       cacop_en,
-    // input  [               4:0] cacop_code,
-    // output [               6:0] asmd_excp
 
     );
     wire s0_found, s1_found;
