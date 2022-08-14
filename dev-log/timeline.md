@@ -1,7 +1,16 @@
 # Timeline
 
+## 2022-08-14
+
+Succeed in booting Linux with the offical PMOM.
+
 ## 2022-08-12
+
 Succeed in running Linux on Loongson development board.
+
+## 2022-08-07
+
+Succeed in booting Linux with our self-compiled PMON on Loongson development board.
 
 ## 2022-08-03
 
