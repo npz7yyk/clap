@@ -72,8 +72,6 @@ S_INIT-->S_ERTN-->S_DONE_ERTN-->S_INIT
 S_INIT-->S_BAR-->SDONE_BAR-->S_INIT
 ```
 
-
-
 ### MUL
 
 MUL 单元采用两级流水模式，第一级进行 16 位数的分组相乘，第二级将分组相乘的结果合理相加。这样做的目的是充分利用板上的 DSP 元件，达到比用通用电路实现的 Booth 编码 + 矩阵转置 + Wallace 树更好的时序。其数学原理如下：
@@ -320,7 +318,74 @@ TLB生成的所有例外信息，将会全部送往对应的Cache，在Cache中�
 
 ## 操作系统与应用
 
-我们在启动 PMON 时，发现了 chiplab 平台给出的 PMON 的一处操作与《龙芯架构32位精简版参考手册》v1.02相违背，便在 Gitee 平台 chiplab 仓库提出了 issue [#I5L39E](https://gitee.com/loongson-edu/chiplab/issues/I5L39E) ，为大赛的后续组织作出了贡献。
+在启动 PMON 时，我们发现了 chiplab 平台给出的 PMON 的一处操作与《龙芯架构32位精简版参考手册》v1.02相违背，便在 Gitee 平台 chiplab 仓库提出了 issue [#I5L39E](https://gitee.com/loongson-edu/chiplab/issues/I5L39E) ，为大赛的后续组织作出了贡献。
+
+大赛提供的 PMON 和 Linux 的 cache 参数均与我们的 CPU 不一致，所以，我们仔细阅读了两者的源代码，找到了配置 cache 参数的函数，调整了 cache 参数。PMON 的 cache 参数由 `pmom/arch/loongarch32/cache.S:CPU_ConfigCache`设置，修改后的函数如下：
+```assembly
+LEAF(CPU_ConfigCache)
+    li.w      t0, 64 
+    la      t1, CpuPrimaryInstCacheLSize 
+    st.w    t0, t1, 0  
+    la      t1, CpuPrimaryDataCacheLSize 
+    st.w    t0, t1, 0
+    li.w      t0, 4096 
+    la      t1, CpuPrimaryInstSetSize 
+    st.w    t0, t1, 0 
+    la      t1, CpuPrimaryDataSetSize 
+    st.w    t0, t1, 0 
+    li.w      t0, 16384 
+    la      t1, CpuPrimaryDataCacheSize 
+    st.w    t0, t1, 0 
+    la      t1, CpuPrimaryInstCacheSize 
+    st.w    t0, t1, 0 
+    la      t1, CpuCacheAliasMask  
+    li.w      t0, 0 
+    st.w    t0, t1, 0 
+    la      t1, CpuSecondaryCacheSize 
+    st.w    t0, t1, 0 
+    la      t1, CpuTertiaryCacheSize 
+    st.w    t0, t1, 0 
+    la      t1, CpuNWayCache 
+    li.w      t0, 4 
+    st.w    t0, t1, 0  
+    jirl    zero, ra, 0
+```
+Linux 的 cache 参数由 `arch/loongarch/mm/cache.c:probe_pcache(void)`设置，修改后的函数如下：
+```c
+static void probe_pcache(void)
+{
+	struct cpuinfo_loongarch *c = &current_cpu_data;
+
+	c->icache.linesz = 64;
+	c->icache.sets = 64;
+	c->icache.ways = 4;
+	icache_size = c->icache.sets *
+                                          c->icache.ways *
+                                          c->icache.linesz;
+	c->icache.waysize = icache_size / c->icache.ways;
+
+	c->dcache.linesz = 64;
+	c->dcache.sets = 64;
+	c->dcache.ways = 4;
+	dcache_size = c->dcache.sets *
+                                          c->dcache.ways *
+                                          c->dcache.linesz;
+	c->dcache.waysize = dcache_size / c->dcache.ways;
+	c->options |= LOONGARCH_CPU_PREFETCH;
+
+	pr_info("Primary instruction cache %ldkB, %s, %s, linesize %d bytes.\n",
+		icache_size >> 10, way_string[c->icache.ways], "VIPT", c->icache.linesz);
+
+	pr_info("Primary data cache %ldkB, %s, %s, %s, linesize %d bytes\n",
+		dcache_size >> 10, way_string[c->dcache.ways], "VIPT", "no aliases", c->dcache.linesz);
+#ifdef CONFIG_32BIT
+    _dma_cache_wback_inv    = la32_dma_cache_wback_inv;
+    _dma_cache_wback    = la32_dma_cache_wback_inv;
+    _dma_cache_inv      = la32_dma_cache_inv;
+#endif
+
+}
+```
 
 本 CPU 成功启动了 Linux 操作系统，在其上运行了性能测试，记录最终性能得分如下：
 
@@ -345,8 +410,21 @@ TLB生成的所有例外信息，将会全部送往对应的Cache，在Cache中�
 | dhrystone-5000000 | 197.368 | 197.368  |   4.9836    |
 |      geomean      |         |          | **3.95387** |
 
-我们在 Linux 上成功运行了一个 C 语言解释器，下面是通过串口输出的截图：
-
+作为应用，我们移植了极轻量的适合嵌入式系统的 C 语言解释器 PicoC[^1]，下面是通过串口输出的截图：
 ![](./picoc.png)
 
+PicoC 的依赖有 GNU Readline 和 libncurses。两者都是基于 Autoconfig 的 C 库，只需在`config.sub`文件的`case $basic_machine in` 中加上`loongarch32r`，然后在配置时指定`--build=x86_64-linux-gnu --host=loongarch32r-linux-gnu ` ，即可交叉编译为 LoongArch 32r 的二进制文件。PicoC 自己的构建系统是 Makefile，只需修改它的 makefile 的前三行即可完成移植。
+
+```makefile
+CC=loongarch32r-linux-gnu-gcc
+CFLAGS=-Wall -pedantic -g -DUNIX_HOST -DVER=\"2.1\" -I<path to readline install directory>/include -L<path to readline install directory>/lib -L<path to libcurses install directory>/lib
+LIBS=-lm -lreadline -lncurses
+```
+
+我们将 PicoC 的可执行文件连同其依赖一同打包进了 initrd.cpio.gz，重新编译 Linux 即可得到包含 PicoC 的 vmlinux。
+
 ## 总结与展望
+
+# 参考
+
+[^1]: Zik Saleeba. *PicoC*[CP/OL]. GitLab. 2018 (20180605) [2022-08-16]. https://gitlab.com/zsaleeba/picoc
