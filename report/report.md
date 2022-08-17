@@ -19,19 +19,64 @@ CPU 采用顺序双发射八级流水结构，流水线分为 IF0、IF1、FIFO�
 
 ## 流水级级间设计
 
-## 访存子系统设计
+## 执行单元设计
+
+执行单元采用双发射形式，一路为全能单元，可以执行全部指令，在指令到达时将其根据指令类别放入ALU0，BR，DIV，PRIV，MUL，dcache 六个执行路径之一。另一路仅可执行 ALU 指令。
+
+### ALU
+
+ALU 单元可以执行 ADD.W、SUB.W、SLT、SLTU、AND、OR、NOR、XOR、SLL.W、SRL.W、SRA.W 共11种运算。在得到运算结果后，向后空流水一级，以便与两级流水的运算单元补齐。
+
+### BR
+
+BR 单元可以执行 JIRL、B、BL、BEQ、BNE、BLT、BGE、BLTU、BGEU 共 9 种分支指令，在得到分支方向后，与从分支预测器经过流水级传递的信息进行比较，认可或纠正分支，并向分支预测器进行反馈。得到的分支结果寄存一级后再使用，以缩短关键路径。
+
+### DIV
+
+DIV 单元可以执行 DIV.W、MOD.W、DIV.WU、MOD.WU 共 4 种除法指令。采用提前开始方式，使用状态机控制，达到了不定长周期的效果。当进行除法时，将流水线阻塞。状态机如下：
 
 ```mermaid
-stateDiagram
-    [*] --> Still
-    Still --> [*]
-
-    Still --> Moving
-    Moving --> Still
-    Moving --> Crash
-    Crash --> [*]
+graph LR
+    IDLE --> PREPARE
+    IDLE --> IDLE
+    PREPARE --> FINISH
+    PREPARE --> CALCULATE
+    CALCULATE --> FINISH
+    CALCULATE --> CALCULATE
+    FINISH --> IDLE
 ```
 
+### PRIV
+
+PRIV 单元执行特权指令，采用状态机控制。在准备执行特权指令前，等待直到流水线中没有其他指令执行；当执行指令时，阻塞流水线，并在执行结束后 flush 一次前面的流水级，以确保稳定性。状态机如下：
+
+```mermaid
+graph LR
+S_INIT-->S_INIT-->S_CSR-->S_DONE_CSR-->S_INIT
+S_INIT-->S_CACOP-->S_L1I_REQ-->S_L1I_REQ-->S_DONE_L1I-->S_INIT
+S_L1I_REQ-->S_L1I_WAIT-->S_L1I_WAIT-->S_DONE_L1I
+S_CACOP-->S_L1D_REQ-->S_L1D_REQ-->S_DONE_L1D-->S_INIT
+S_L1D_REQ-->S_L1D_WAIT-->S_L1D_WAIT-->S_DONE_L1D
+S_CACOP-->S_L2_REQ-->S_L2_REQ-->S_DONE_L2-->S_INIT
+S_L2_REQ-->S_L2_WAIT-->S_L2_WAIT-->S_DONE_L2
+S_INIT-->S_TLB-->S_INVTLB-->S_DONE_TLB-->S_INIT
+S_TLB-->S_TLB_SRCH-->S_DONE_TLB
+S_TLB-->S_TLB_RD-->S_DONE_TLB
+S_TLB-->S_TLB_WR-->S_DONE_TLB
+S_TLB-->S_TLB_FILL-->S_DONE_TLB
+S_INIT-->S_IDLE-->S_IDLE_WAIT1-->S_IDLE_WAIT2-->S_IDLE_WAIT2-->S_IDLE_PERF-->S_IDLE_WAIT3-->S_IDLE_WAIT4-->S_DONE_IDLE-->S_INIT
+S_INIT-->S_ERTN-->S_DONE_ERTN-->S_INIT
+S_INIT-->S_BAR-->SDONE_BAR-->S_INIT
+```
+
+
+
+### MUL
+
+MUL 单元采用两级流水模式，第一级进行 16 位数的分组相乘，第二级将分组相乘的结果合理相加。这样做的目的是充分利用板上的 DSP 元件，达到比用通用电路实现的 Booth 编码 + 矩阵转置 + Wallace 树更好的时序。其数学原理如下：
+$$
+(2^{16}a+b)(2^{16}c+d)=2^{32}ac+2^{16}(bc+ad)+bd.
+$$
 
 ## 高速缓存设计
 
@@ -205,10 +250,6 @@ Cache均采用**两拍式流水线**进行内存访问，保证了连续Cache访
 
 TLB生成的所有例外信息，将会全部送往对应的Cache，在Cache中结合Cache生成的例外信息，进行优先级比较，之后由Cache统一送回流水线。这样可以使得流水线减少一个例外接口，简化了例外处理的设计。
 
-
-
-
-
 ## 操作系统与应用
 
 本 CPU 成功启动了 Linux 操作系统，在其上运行了性能测试，记录最终性能得分如下：
@@ -233,6 +274,10 @@ TLB生成的所有例外信息，将会全部送往对应的Cache，在Cache中�
 |    coremark-1     | 177.932 | 21.4363  |   8.30049   |
 | dhrystone-5000000 | 197.368 | 197.368  |   4.9836    |
 |      geomean      |         |          | **3.95387** |
+
+我们在 Linux 上成功运行了一个 C 语言解释器，下面是通过串口输出的截图：
+
+![](./picoc.png)
 
 ## 总结与展望
 
