@@ -286,7 +286,7 @@ graph LR
 PRIV 单元执行特权指令，采用状态机控制。在准备执行特权指令前，等待直到流水线中没有其他指令执行；当执行指令时，阻塞流水线，并在执行结束后 flush 一次前面的流水级，以确保稳定性。状态机如下：
 
 ```mermaid
-graph LR
+graph TB
 S_INIT-->S_INIT-->S_CSR-->S_DONE_CSR-->S_INIT
 S_INIT-->S_CACOP-->S_L1I_REQ-->S_L1I_REQ-->S_DONE_L1I-->S_INIT
 S_L1I_REQ-->S_L1I_WAIT-->S_L1I_WAIT-->S_DONE_L1I
